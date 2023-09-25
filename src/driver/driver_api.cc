@@ -21,6 +21,9 @@
  *  Compile executable modules.
  * \file driver_api.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <dmlc/thread_local.h>
 #include <tvm/driver/driver_api.h>
 #include <tvm/ir/transform.h>
@@ -226,6 +229,8 @@ Array<tvm::transform::Pass> CreatePassList(bool disable_loop_partition) {
   // PHASE 2
   if (!disable_loop_partition) {
     pass_list.push_back(tir::transform::LoopPartition());
+    pass_list.push_back(tir::transform::Simplify());
+    pass_list.push_back(tir::transform::RemoveNoOp());
   }
 
   pass_list.push_back(tir::transform::VectorizeLoop(!disable_vectorize));

@@ -21,6 +21,9 @@
  * \brief Compute Op.
  * \file compute_op.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "compute_op.h"
 
 #include <tvm/arith/analyzer.h>
@@ -263,13 +266,23 @@ Stmt BaseComputeOpNode::BuildRealize(const Stage& stage,
                                      const Stmt& body, String storage_scope) const {
   ICHECK_EQ(stage->op.get(), this);
   Region bounds;
-  for (IterVar iv : this->axis) {
+  // For stages who have applied primitive "compute_inside", the bounds are
+  // composed of leaf iteration variables instead of the original iteration
+  // variables.
+  Array<IterVar> axes = stage.IsComputeInside() ? stage->leaf_iter_vars : axis;
+  for (const IterVar& iv : axes) {
     bounds.push_back(realize_map.at(iv));
   }
   Stmt realize = body;
   for (int i = this->num_outputs(); i > 0; --i) {
     Tensor t = stage->op.output(i - 1);
     realize = tir::ProducerRealize(t, bounds, const_true(), realize, storage_scope);
+    if (stage.IsComputeInside()) {
+      // Hand on the information from the current "Tensor Expression" phase to
+      // the "TIR" phase, so we still can know which buffer is created by the
+      // primitive "compute_inside".
+      realize = AttrStmt(t, tir::attr::from_compute_inside, 1, realize);
+    }
     // alignment requirement, only useful for compute
     for (size_t i = 0; i < num_schedulable_dims(); ++i) {
       auto it = stage->iter_var_attrs.find(this->axis[i]);

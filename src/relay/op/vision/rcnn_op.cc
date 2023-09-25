@@ -21,6 +21,10 @@
  * \file rcnn_op.cc
  * \brief Faster RCNN and Mask RCNN operators
  */
+
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/relay/attrs/vision.h>
 #include <tvm/relay/op.h>
 #include <tvm/relay/op_attr_types.h>
@@ -38,8 +42,9 @@ bool ROIAlignRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
   ICHECK_EQ(types.size(), 3);
   const auto* data = types[0].as<TensorTypeNode>();
   const auto* rois = types[1].as<TensorTypeNode>();
-  ICHECK(data);
-  ICHECK(rois);
+  if (data == nullptr || rois == nullptr) {
+    return false;
+  }
   const auto& dshape = data->shape;
   const auto& rshape = rois->shape;
   ICHECK(roi_align_attrs);

@@ -14,6 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 package org.apache.tvm;
 
@@ -36,6 +39,8 @@ class LibInfo {
   native void tvmFuncPushArgBytes(byte[] arg);
 
   native void tvmFuncPushArgHandle(long arg, int argType);
+
+  native void tvmFuncPushArgDevice(int deviceType, int deviceId);
 
   native int tvmFuncListGlobalNames(List<String> funcNames);
 

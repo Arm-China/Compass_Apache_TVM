@@ -21,6 +21,9 @@
  * \file src/ir/op.cc
  * \brief Primitive operators and intrinsics.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/ir/op.h>
 #include <tvm/ir/type.h>
 #include <tvm/runtime/module.h>
@@ -190,6 +193,11 @@ TVM_REGISTER_GLOBAL("ir.RegisterOpAttr")
           reg.set_attr(attr_key, value, plevel);
         }
       }
+    });
+
+TVM_REGISTER_GLOBAL("aipu_compass.OpRegistry_SwapAttrMap")
+    .set_body_typed([](String attr_name_a, String attr_name_b) {
+      OpRegistry::Global()->SwapAttrMap(attr_name_a, attr_name_b);
     });
 
 TVM_REGISTER_GLOBAL("ir.RegisterOpLowerIntrinsic")

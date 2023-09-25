@@ -17,6 +17,9 @@
 # pylint: disable=invalid-name, unused-argument, too-many-lines
 # pylint: disable=import-outside-toplevel, use-list-literal
 """Tensorflow lite frontend."""
+#
+# This file has been modified by Arm China team.
+#
 import itertools
 import math
 
@@ -561,17 +564,18 @@ class OperatorConverter(object):
         # beyond the dtype range.
         qmin = float(tvm.tir.op.min_value(dtype).value)
         qmax = float(tvm.tir.op.max_value(dtype).value)
+        int64_max = 2**63 - 1
 
         # The input expr is a quantized tensor with its scale and zero point. We calculate the
         # suitable clip off points based on these scale and zero point.
         if fused_activation_fn == ActivationFunctionType.NONE:
             return expr
         if fused_activation_fn == ActivationFunctionType.RELU6:
-            return _op.clip(expr, a_min=max(qmin, quantize(0)), a_max=min(qmax, quantize(6.0)))
+            return _op.clip(expr, a_min=quantize(0), a_max=quantize(6.0))
         if fused_activation_fn == ActivationFunctionType.RELU_N1_TO_1:
             return _op.clip(expr, a_min=max(qmin, quantize(-1.0)), a_max=min(qmax, quantize(1.0)))
         if fused_activation_fn == ActivationFunctionType.RELU:
-            return _op.clip(expr, a_min=max(qmin, quantize(0.0)), a_max=qmax)
+            return _op.clip(expr, a_min=max(qmin, quantize(0.0)), a_max=int64_max)
 
         fused_activation_fn_str = self.activation_fn_type[fused_activation_fn]
         raise tvm.error.OpNotImplemented(
@@ -726,13 +730,16 @@ class OperatorConverter(object):
             half_pixel_centers = resize_options.HalfPixelCenters()
 
         # Use layout NHWC
-        coord_trans = "align_corners" if align_corners else "asymmetric"
-        coord_trans = "half_pixel" if half_pixel_centers else coord_trans
-
-        rounding_method = ""
-        if method == "nearest_neighbor":
-            if not align_corners and half_pixel_centers:
-                rounding_method = "round_prefer_ceil"
+        coord_trans = "asymmetric"
+        rounding_method = "floor"
+        if align_corners:
+            coord_trans = "align_corners"
+            rounding_method = "round_prefer_ceil"
+        if half_pixel_centers:
+            if method == "nearest_neighbor":
+                coord_trans = "tf_half_pixel_for_nn"
+            else:
+                coord_trans = "half_pixel"
 
         if bilinear_method and input_tensor.qnn_params:
             in_expr = self.dequantize(in_expr, input_tensor)
@@ -2708,18 +2715,17 @@ class OperatorConverter(object):
         except ImportError:
             raise ImportError("The tflite package must be installed")
 
-        # the quantized form MirrorPad is not yet implemented in TFLite.
-        if self.is_quantized(op):
-            raise tvm.error.OpNotImplemented(
-                "TFlite quantized MIRROR_PAD operator is not supported yet."
-            )
-
         input_tensors = self.get_input_tensors(op)
         assert len(input_tensors) == 2, "input tensors length should be 2"
+        output_tensors = self.get_output_tensors(op)
+        assert len(output_tensors) == 1, "output tensors length should be 1"
 
         # tensor
         input_tensor = input_tensors[0]
         in_expr = self.get_expr(input_tensor.tensor_idx)
+        output_tensor = output_tensors[0]
+        output_tensor_type = output_tensor.tensor.Type()
+        output_tensor_type_str = self.get_tensor_type_str(output_tensor_type)
 
         # paddings
         pad_list = self.get_tensor_value(input_tensors[1])
@@ -2734,6 +2740,16 @@ class OperatorConverter(object):
 
         mode = "REFLECT" if mode_byte == 0 else "SYMMETRIC"
         out = _op.nn.mirror_pad(in_expr, paddings, mode)
+
+        if input_tensor.qnn_params and output_tensor.qnn_params:
+            out = _qnn.op.requantize(
+                out,
+                input_scale=input_tensor.qnn_params["scale"],
+                input_zero_point=input_tensor.qnn_params["zero_point"],
+                output_scale=output_tensor.qnn_params["scale"],
+                output_zero_point=output_tensor.qnn_params["zero_point"],
+                out_dtype=output_tensor_type_str,
+            )
 
         return out
 
@@ -3210,7 +3226,27 @@ class OperatorConverter(object):
 
         alpha_expr = _op.broadcast_to(alpha_expr, data_shape)
         alpha_expr = _op.reshape(alpha_expr, [-1])
-        out = _op.nn.prelu(_op.reshape(in_expr, [-1]), alpha_expr, axis=0)
+        if input_tensor.qnn_params:
+            input_scale = input_tensor.qnn_params["scale"]
+            input_zp = input_tensor.qnn_params["zero_point"]
+            alpha_scale = alpha_tensor.qnn_params["scale"]
+            alpha_zp = alpha_tensor.qnn_params["zero_point"]
+            output_tensor = self.get_output_tensors(op)[0]
+            output_scale = output_tensor.qnn_params["scale"]
+            output_zp = output_tensor.qnn_params["zero_point"]
+            out = _qnn.op.prelu(
+                _op.reshape(in_expr, [-1]),
+                alpha_expr,
+                input_scale,
+                input_zp,
+                alpha_scale,
+                alpha_zp,
+                output_scale,
+                output_zp,
+                axis=0,
+            )
+        else:
+            out = _op.nn.prelu(_op.reshape(in_expr, [-1]), alpha_expr, axis=0)
         out = _op.reshape(out, data_shape)
         return out
 

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Relay functions for rewriting fake quantized ops."""
+#
+# This file has been modified by Arm China team.
+#
 import numpy as np
 import tvm
 from tvm import relay
@@ -404,7 +407,7 @@ def leaky_relu(expr, type_map):
     out_t = type_map[expr]
     alpha = expr.attrs.alpha
     output = relay.qnn.op.leaky_relu(
-        expr, alpha, x_t.scale, x_t.zero_point, out_t.scale, out_t.zero_point
+        arg, alpha, x_t.scale, x_t.zero_point, out_t.scale, out_t.zero_point
     )
     return [output, x_t]
 
@@ -446,10 +449,19 @@ def mean(expr, type_map):
     """Rewrite a mean op"""
     arg = expr.args[0]
     t = type_map[arg]
+    out_t = type_map[expr]
 
     arg = relay.op.cast(arg, "int32")
     out = relay.op.mean(arg, **expr.attrs)
-    out = relay.op.cast(out, t.dtype)
+    out = relay.qnn.op.requantize(
+        out,
+        t.scale,
+        t.zero_point,
+        out_t.scale,
+        out_t.zero_point,
+        out_dtype=out_t.dtype,
+        axis=t.axis,
+    )
     return [out, t]
 
 

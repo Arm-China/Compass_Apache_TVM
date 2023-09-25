@@ -29,6 +29,9 @@
 #
 # All configuration values have a default; values that are commented out
 # serve to show the default.
+#
+# This file has been modified by Arm China team.
+#
 from functools import partial
 import gc
 from importlib import import_module
@@ -294,6 +297,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx_gallery.gen_gallery",
     "autodocsumm",
+    "myst_parser",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -399,7 +403,10 @@ latex_documents = [
 ]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
+    "python": (
+        "https://docs.python.org/{.major}".format(sys.version_info),
+        ("../python.inv", None),
+    ),
     # "numpy": ("https://numpy.org/doc/stable", None),
     # "scipy": ("https://docs.scipy.org/doc/scipy", None),
     # "matplotlib": ("https://matplotlib.org/", None),

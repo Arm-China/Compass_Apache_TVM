@@ -20,6 +20,9 @@
 /*!
  * \file expr.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/runtime/registry.h>
 #include <tvm/tir/expr.h>
 #include <tvm/tir/op.h>
@@ -139,9 +142,14 @@ SizeVar::SizeVar(String name_hint, Type type_annotation, Span span) {
   data_ = std::move(n);
 }
 
-TVM_REGISTER_GLOBAL("tir.SizeVar").set_body_typed([](String s, DataType t, Span span) {
-  return SizeVar(s, t, span);
-});
+TVM_REGISTER_GLOBAL("tir.SizeVar")
+    .set_body_typed([](String name_hint, runtime::TVMArgValue type, Span span) {
+      if (type.IsObjectRef<Type>()) {
+        return SizeVar(name_hint, type.operator Type(), span);
+      } else {
+        return SizeVar(name_hint, type.operator DataType(), span);
+      }
+    });
 
 TVM_REGISTER_NODE_TYPE(SizeVarNode);
 
@@ -718,7 +726,10 @@ void BufferLoadNode::LegalizeDType() {
   this->dtype = buffer->dtype.with_lanes(index_lanes * buffer_lanes);
 }
 
-BufferLoad::BufferLoad(Buffer buffer, Array<PrimExpr> indices, Span span) {
+BufferLoad::BufferLoad(Buffer buffer, Array<PrimExpr> indices, Span span)
+    : BufferLoad(buffer, indices, PrimExpr(), span) {}
+
+BufferLoad::BufferLoad(Buffer buffer, Array<PrimExpr> indices, PrimExpr predicate, Span span) {
   ICHECK_EQ(buffer->shape.size(), indices.size())
       << "Buffer " << buffer->name << " is " << buffer->shape.size()
       << "-dimensional, cannot be indexed with the " << indices.size()
@@ -729,12 +740,14 @@ BufferLoad::BufferLoad(Buffer buffer, Array<PrimExpr> indices, Span span) {
   node->indices = std::move(indices);
   node->span = std::move(span);
   node->LegalizeDType();
+  if (!predicate.defined()) predicate = const_true(node->dtype.lanes());
+  node->predicate = std::move(predicate);
   data_ = std::move(node);
 }
 
 TVM_REGISTER_GLOBAL("tir.BufferLoad")
-    .set_body_typed([](Buffer buffer, Array<PrimExpr> indices, Span span) {
-      return BufferLoad(buffer, indices, span);
+    .set_body_typed([](Buffer buffer, Array<PrimExpr> indices, PrimExpr predicate, Span span) {
+      return BufferLoad(buffer, indices, predicate, span);
     });
 
 TVM_REGISTER_NODE_TYPE(BufferLoadNode);
@@ -755,6 +768,8 @@ TVM_REGISTER_GLOBAL("tir.ProducerLoad")
     });
 
 TVM_REGISTER_NODE_TYPE(ProducerLoadNode);
+
+TVM_REGISTER_GLOBAL("tir.ConvertToPrimExpr").set_body_typed([](PrimExpr expr) { return expr; });
 
 }  // namespace tir
 }  // namespace tvm

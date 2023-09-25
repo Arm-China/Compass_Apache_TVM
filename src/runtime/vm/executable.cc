@@ -21,6 +21,9 @@
  * \file tvm/runtime/vm/executable.cc
  * \brief The implementation of a virtual machine executable APIs.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <dmlc/memory_io.h>
 #include <tvm/runtime/c_runtime_api.h>
@@ -299,6 +302,9 @@ TVMByteArray Executable::Save() {
 
   // Code section.
   SaveCodeSection(&strm);
+
+  // Entry parameter data type section.
+  SaveEntryParamDataTypeSection(&strm);
 
   TVMByteArray arr;
   arr.data = code_.c_str();
@@ -714,6 +720,11 @@ void Executable::SaveCodeSection(dmlc::Stream* strm) {
   }
 }
 
+void Executable::SaveEntryParamDataTypeSection(dmlc::Stream* strm) {
+  strm->Write(entry_param_dtypes);
+  return;
+}
+
 void LoadHeader(dmlc::Stream* strm) {
   // Check header.
   uint64_t header;
@@ -777,6 +788,9 @@ runtime::Module Executable::Load(const std::string& code, const runtime::Module 
 
   // Code section.
   exec->LoadCodeSection(&strm);
+
+  // Entry parameter data type section.
+  exec->LoadEntryParamDataTypeSection(&strm);
 
   return runtime::Module(exec);
 }
@@ -1047,6 +1061,11 @@ void Executable::LoadCodeSection(dmlc::Stream* strm) {
     ICHECK_LE(it->second, this->global_map.size());
     this->functions[it->second] = vm_func;
   }
+}
+
+void Executable::LoadEntryParamDataTypeSection(dmlc::Stream* strm) {
+  STREAM_CHECK(strm->Read(&entry_param_dtypes), "entry_param_dtypes");
+  return;
 }
 
 void Executable::SaveToBinary(dmlc::Stream* stream) {

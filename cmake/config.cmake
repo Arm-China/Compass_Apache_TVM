@@ -35,6 +35,9 @@
 #
 #  $ make -j8
 #--------------------------------------------------------------------
+#
+# This file has been modified by Arm China team.
+#
 
 #---------------------------------------------
 # Backend runtimes.
@@ -102,7 +105,12 @@ set(USE_SPIRV_KHR_INTEGER_DOT_PRODUCT OFF)
 set(USE_OPENGL OFF)
 
 # Whether enable MicroTVM runtime
-set(USE_MICRO OFF)
+set(USE_MICRO ON)
+
+# Whether enable AIPU target
+set(USE_AIPU ON)
+set(AIPU_DRIVER_INCLUDE_DIR $ENV{ZHOUYI_LINUX_DRIVER_HOME}/driver/umd/include)
+set(AIPU_DRIVER_LIB $ENV{ZHOUYI_LINUX_DRIVER_HOME}/bin/sim/release/libaipudrv.so)
 
 # Whether enable RPC runtime
 set(USE_RPC ON)
@@ -126,7 +134,7 @@ set(USE_GRAPH_EXECUTOR ON)
 set(USE_GRAPH_EXECUTOR_CUDA_GRAPH OFF)
 
 # Whether enable pipeline executor.
-set(USE_PIPELINE_EXECUTOR OFF)
+set(USE_PIPELINE_EXECUTOR ON)
 
 # Whether to enable the profiler for the graph executor and vm
 set(USE_PROFILER ON)
@@ -142,7 +150,7 @@ set(USE_MICRO_STANDALONE_RUNTIME OFF)
 # - OFF: disable llvm, note this will disable CPU codegen
 #        which is needed for most cases
 # - /path/to/llvm-config: enable specific LLVM when multiple llvm-dev is available.
-set(USE_LLVM OFF)
+set(USE_LLVM ON)
 
 #---------------------------------------------
 # Contrib libraries
@@ -413,8 +421,14 @@ set(SUMMARIZE OFF)
 # OFF or /path/to/torch/
 set(USE_LIBTORCH OFF)
 
+# Hide private symbols to avoid symbol conflict.
+set(HIDE_PRIVATE_SYMBOLS ON)
+
 # Whether to use the Universal Modular Accelerator Interface
 set(USE_UMA OFF)
 
 # Set custom Alloc Alignment for device allocated memory ndarray points to
 set(USE_KALLOC_ALIGNMENT 64)
+
+# Use 'mold' or 'lld' if found when invoking compiler to link artifact.
+set(USE_ALTERNATIVE_LINKER OFF)

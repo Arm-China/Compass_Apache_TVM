@@ -15,9 +15,12 @@
 # specific language governing permissions and limitations
 # under the License.
 """Additional container data structures used across IR variants."""
+#
+# This file has been modified by Arm China team.
+#
 import tvm._ffi
 
-from tvm.runtime import Object
+from tvm.runtime import Object, convert_to_object
 from tvm.runtime.container import getitem_helper
 from tvm.runtime import _ffi_api
 
@@ -60,6 +63,11 @@ class Map(Object):
 
     def __getitem__(self, k):
         return _ffi_api.MapGetItem(self, k)
+
+    def __setitem__(self, k, v):
+        k = convert_to_object(k)
+        v = convert_to_object(v)
+        _ffi_api.MapSetItem(self, k, v)
 
     def __contains__(self, k):
         return _ffi_api.MapCount(self, k) != 0

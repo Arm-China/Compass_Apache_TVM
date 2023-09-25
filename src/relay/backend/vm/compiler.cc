@@ -21,6 +21,9 @@
  * \file src/relay/backend/vm/compiler.cc
  * \brief A compiler from relay::Module to the VM byte code.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include "compiler.h"
 
@@ -902,9 +905,26 @@ void VMCompiler::Setup(const Array<Target>& raw_targets) {
   context_.virtual_devices_.push_back(config_->host_virtual_device);
 }
 
+// Gather the data type list of all parameters of the entry point function.
+std::vector<std::string> GetEntryParamDataType(IRModule ir_mod) {
+  std::vector<std::string> ret;
+  auto entry_point = Downcast<Function>(ir_mod->Lookup("main"));
+  for (Var param : entry_point->params) {
+    if (const auto* ttype = param->checked_type().as<TensorTypeNode>()) {
+      ret.push_back(DLDataType2String(ttype->dtype));
+    } else {
+      ret.push_back("");
+    }
+  }
+  return ret;
+}
+
 void VMCompiler::LowerImpl(IRModule mod) {
   // Run the optimizations necessary to target the VM.
   context_.module = OptimizeModuleImpl(std::move(mod));
+
+  // Store the data type list of all parameters of the entry point function.
+  exec_->entry_param_dtypes = GetEntryParamDataType(context_.module);
 
   // Build the map from global variables bound to Functions to a global index in the
   // VMFunction table.
@@ -1197,7 +1217,12 @@ void VMCompiler::Codegen() {
     // There is no function handled by TVM. We create a virtual main module
     // to make sure a DSO module will be also available.
     LOG(INFO) << "All lowered functions have been build by BYOC -- generating an empty TVM module";
-    lib = codegen::CSourceModuleCreate(";", "", Array<String>{});
+    if (config_->host_target->kind->name == "llvm") {
+      const runtime::PackedFunc* pf = runtime::Registry::Get("codegen.LLVMModuleCreate");
+      lib = (*pf)(config_->host_target->str(), "empty_module");
+    } else {
+      lib = codegen::CSourceModuleCreate(";", "", Array<String>{});
+    }
   } else {
     lib = tvm::TIRToRuntime(per_tvm_target_modules, config_->host_target);
   }

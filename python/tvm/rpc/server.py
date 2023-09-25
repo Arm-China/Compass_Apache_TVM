@@ -25,6 +25,9 @@ Server is TCP based with the following protocol:
    - {server|client}:device-type[:random-key] [-timeout=timeout]
 """
 # pylint: disable=invalid-name
+#
+# This file has been modified by Arm China team.
+#
 import os
 import ctypes
 import socket
@@ -52,9 +55,7 @@ from .base import TrackerCode
 logger = logging.getLogger("RPCServer")
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(
-    logging.Formatter(
-        fmt="%(asctime)s.%(msecs)03d %(levelname)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-    )
+    logging.Formatter(fmt="[%(asctime)s|%(levelname)s] %(message)s", datefmt="%H:%M:%S")
 )
 logger.addHandler(console_handler)
 logger.setLevel(logging.INFO)
@@ -80,6 +81,23 @@ def _server_env(load_library, work_path=None):
         m = _load_module(path)
         logger.info("load_module %s", path)
         return m
+
+    @tvm._ffi.register_func("tvm.rpc.server.list_files", override=True)
+    def list_files(path):
+        """List files from remote folder recursively."""
+
+        def _raise(x):
+            raise x
+
+        file_paths = []
+        for dirpath, _, filenames in os.walk(temp.relpath(path), onerror=_raise):
+            for filename in filenames:
+                file_paths.append(os.path.join(dirpath, filename))
+
+        if not os.path.isabs(path):
+            file_paths = [os.path.relpath(x, temp.path) for x in file_paths]
+
+        return "\n".join(file_paths)
 
     @tvm._ffi.register_func("tvm.rpc.server.download_linked_module", override=True)
     def download_linked_module(file_name):
@@ -162,6 +180,8 @@ def _serving(sock, addr, opts, load_library):
             # package and maybe hard to be installed on some platforms.
             pass
         server_proc.terminate()
+        server_proc.join()
+        os.system("rmmod aipu && insmod /home/tvm/lib/aipu.ko")
 
     logger.info(f"finish serving {addr}")
     os.chdir(old_cwd)
@@ -275,8 +295,9 @@ def _listen_loop(sock, port, rpc_key, tracker_addr, load_library, custom_addr):
 def _connect_proxy_loop(addr, key, load_library):
     key = "server:" + key
     retry_count = 0
-    max_retry = 5
-    retry_period = 5
+    # Retry for one day.
+    max_retry = 8640
+    retry_period = 10
     while True:
         try:
             sock = socket.socket(base.get_addr_family(addr), socket.SOCK_STREAM)

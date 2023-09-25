@@ -20,6 +20,9 @@
 /*!
  * \file operation_inline.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "operation_inline.h"
 
 #include <tvm/tir/analysis.h>
@@ -49,7 +52,7 @@ class OperationInliner final : public StmtExprMutator {
 
     if (tensor->op.same_as(operation_)) {
       ICHECK_EQ(tensor->value_index, 0);
-      expr = body_;
+      PrimExpr new_expr = body_;
       ICHECK_EQ(args_.size(), op->indices.size());
 
       bool has_side_effect = false;
@@ -58,7 +61,7 @@ class OperationInliner final : public StmtExprMutator {
       }
       if (has_side_effect) {
         for (size_t i = 0; i < args_.size(); ++i) {
-          expr = Let(args_[i], op->indices[i], expr);
+          new_expr = Let(args_[i], op->indices[i], new_expr);
         }
       } else {
         Map<Var, PrimExpr> vmap;
@@ -66,9 +69,9 @@ class OperationInliner final : public StmtExprMutator {
           // cast indices to the type of the original indexing variable
           vmap.Set(args_[i], cast(args_[i].dtype(), op->indices[i]));
         }
-        expr = Substitute(Evaluate(expr), vmap).as<EvaluateNode>()->value;
+        new_expr = Substitute(Evaluate(new_expr), vmap).as<EvaluateNode>()->value;
       }
-      return expr;
+      return new_expr;
     } else {
       return expr;
     }

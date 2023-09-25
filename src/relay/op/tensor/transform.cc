@@ -17,6 +17,10 @@
  * under the License.
  */
 
+/*
+ * This file has been modified by Arm China team.
+ */
+
 /*!
  * \file transform.cc
  * \brief Transform operators.
@@ -2094,6 +2098,35 @@ Array<te::Tensor> ReverseCompute(const Attrs& attrs, const Array<te::Tensor>& in
   return {topi::reverse_sequence(inputs[0], te::Tensor(), param->axis.IntValue())};
 }
 
+InferCorrectLayoutOutput ReverseInferCorrectLayout(const Attrs& attrs,
+                                                   const Array<Layout>& new_in_layouts,
+                                                   const Array<Layout>& old_in_layouts,
+                                                   const Array<tvm::relay::Type>& old_in_types) {
+  const auto* attrs_ptr = attrs.as<ReverseAttrs>();
+  CHECK(attrs_ptr);
+  ObjectPtr<ReverseAttrs> params = make_object<ReverseAttrs>(*attrs_ptr);
+  Layout final_layout = old_in_layouts[0];
+
+  if (new_in_layouts.defined()) {
+    ICHECK_EQ(new_in_layouts.size(), 1);
+
+    Layout new_layout = new_in_layouts[0];
+    Layout old_layout = old_in_layouts[0];
+
+    size_t axis = static_cast<size_t>(params->axis->value);
+
+    if (!new_layout.Equals(old_layout) && new_layout->axes.size() == old_layout->axes.size()) {
+      // Follow input layout
+      const auto& bn_dim = old_layout[axis];
+      auto new_index = new_layout.IndexOf(bn_dim);
+      params->axis = new_index;
+      final_layout = new_layout;
+    }
+  }
+
+  return InferCorrectLayoutOutput({final_layout}, {final_layout}, Attrs(params));
+}
+
 Expr MakeReverse(Expr data, int axis) {
   auto attrs = make_object<ReverseAttrs>();
   attrs->axis = axis;
@@ -2115,6 +2148,7 @@ RELAY_REGISTER_OP("reverse")
     .set_support_level(3)
     .add_type_rel("Reverse", ReverseRel)
     .set_attr<FTVMCompute>("FTVMCompute", ReverseCompute)
+    .set_attr<FInferCorrectLayout>("FInferCorrectLayout", ReverseInferCorrectLayout)
     .set_attr<TOpPattern>("TOpPattern", kInjective);
 
 // reverse sequence operator

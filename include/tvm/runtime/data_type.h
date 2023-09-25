@@ -21,6 +21,9 @@
  * \brief Primitive runtime data type.
  */
 // Acknowledgement: DataType structure design originates from Halide.
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_DATA_TYPE_H_
 #define TVM_RUNTIME_DATA_TYPE_H_
 
@@ -396,11 +399,10 @@ inline DLDataType String2DLDataType(std::string s) {
     t.code = kTVMOpaqueHandle;
     t.bits = 64;  // handle uses 64 bit by default.
     scan = s.c_str() + 6;
-  } else if (s == "bool") {
+  } else if (s.substr(0, 4) == "bool") {
     t.code = kDLUInt;
     t.bits = 1;
-    t.lanes = 1;
-    return t;
+    scan = s.c_str() + 4;
   } else if (s.substr(0, 6) == "bfloat") {
     t.code = DataType::kBFloat;
     scan = s.c_str() + 6;

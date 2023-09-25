@@ -18,6 +18,9 @@
 # pylint: disable=invalid-name, unused-argument, too-many-lines, import-outside-toplevel
 # pylint: disable=no-else-return, no-else-continue, use-list-literal
 """Caffe frontend."""
+#
+# This file has been modified by Arm China team.
+#
 import numpy as np
 import tvm
 from tvm.ir import IRModule
@@ -68,6 +71,7 @@ class OperatorConverter(object):
             "Softmax": self.convert_softmax,
             "TanH": self.convert_tanh,
             "Reduction": self.convert_reduction,
+            "UpsampleDarknet": self.convert_upsample_darknet,
         }
 
     def convert_flatten(self, op):
@@ -393,7 +397,8 @@ class OperatorConverter(object):
 
         params["ceil_mode"] = True
         if hasattr(pool_params, "round_mode"):
-            params["ceil_mode"] = pool_params.round_mode == "CEIL"
+            # round_mode: 0:CEIL, 1:FLOOR.
+            params["ceil_mode"] = not pool_params.round_mode
 
         in_expr = self.exp_tab.get_expr(input_name)
 
@@ -717,6 +722,18 @@ class OperatorConverter(object):
         permute_param = op.permute_param
         axes = list(getattr(permute_param, "order", 0))
         out = _op.transpose(in_expr, axes)
+        return out
+
+    def convert_upsample_darknet(self, op):
+        """Convert Upsample Darknet"""
+        inputs = op.bottom
+        in_expr = self.exp_tab.get_expr(inputs[0])
+
+        # parse upsample_darknet params
+        upsample_darknet_param = op.upsample_darknet_param
+        scale_h = getattr(upsample_darknet_param, "stride", 1)
+        scale_w = getattr(upsample_darknet_param, "stride", 1)
+        out = _op.nn.upsampling(in_expr, scale_h, scale_w)
         return out
 
     def convert_embed(self, op):

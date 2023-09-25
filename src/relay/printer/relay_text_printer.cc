@@ -32,6 +32,9 @@
  *    - Var
  *  - Otherwise, inline if the node is at the end of a scope and is used at most once.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/ir/module.h>
 #include <tvm/ir/type_functor.h>
 #include <tvm/relay/attrs/annotation.h>
@@ -335,6 +338,7 @@ Doc RelayTextPrinter::PrintExpr(const Expr& expr, bool meta, bool try_inline, bo
     if (!var_memo_.insert(expr).second) {
       return memo_[expr];
     }
+    memo_index_[temp_var_counter_] = expr;
     Doc temp_var = AllocTemp();
     memo_[expr] = temp_var;
     doc_stack_.back() << temp_var << " = " << printed_expr << ";" << Doc::NewLine();

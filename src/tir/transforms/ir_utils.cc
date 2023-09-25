@@ -21,6 +21,9 @@
  * \file ir_utils.cc
  * \brief Helper functions to construct and compose IR nodes.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "ir_utils.h"
 
 #include <tvm/arith/analyzer.h>
@@ -473,6 +476,94 @@ Region ConvertRegion(const MatchBufferRegion& match_buffer, const Region& region
 Bool IsFromLegacyTESchedule(PrimFunc f) {
   Optional<Bool> from_legacy_te_schedule = f->GetAttr("from_legacy_te_schedule", Bool(false));
   return from_legacy_te_schedule.value();
+}
+
+std::string GetHexStr(const Array<Bool> pred) {
+  int pred_idx = 0;
+  std::ostringstream oss;
+  oss << "0x" << std::uppercase << std::hex;
+
+  // Process the bits that not align of 4, e.g. the heading "110" of
+  // "0b110_1010_0101".
+  if (int unalign_bit_cnt = (pred.size() % 4)) {
+    int one_hex_number = 0;
+    for (int i = 0; i < unalign_bit_cnt; ++i) {
+      if (pred[pred_idx]) {
+        one_hex_number |= 1 << (unalign_bit_cnt - 1 - i);
+      }
+      ++pred_idx;
+    }
+    oss << one_hex_number;
+  }
+
+  while (pred_idx < static_cast<int>(pred.size())) {
+    int one_hex_number = 0;
+    for (int i = 0; i < 4; ++i) {
+      if (pred[pred_idx]) {
+        one_hex_number |= 1 << (4 - 1 - i);
+      }
+      ++pred_idx;
+    }
+    oss << one_hex_number;
+  }
+  return oss.str();
+}
+
+int HexCharToInt(char c) {
+  switch (c) {
+    case 'a':
+    case 'A':
+      return 10;
+    case 'b':
+    case 'B':
+      return 11;
+    case 'c':
+    case 'C':
+      return 12;
+    case 'd':
+    case 'D':
+      return 13;
+    case 'e':
+    case 'E':
+      return 14;
+    case 'f':
+    case 'F':
+      return 15;
+    default:
+      return c - '0';
+  }
+}
+
+/*! \brief Return a copy of the string with all occurrences of substring "from"
+ *         replaced by "to".
+ */
+static inline std::string StrReplace(const std::string& str, const std::string& from,
+                                     const std::string& to) {
+  std::string ret = str;
+  auto pos = ret.find(from);
+  while (pos != std::string::npos) {
+    ret.replace(pos, from.size(), to);
+    pos = ret.find(from, pos + to.size());
+  }
+  return ret;
+}
+
+Array<Bool> StrToPred(const std::string& str) {
+  Array<Bool> ret;
+  auto pred = StrReplace(str, "0x", "");
+
+  for (auto& p : pred) {
+    auto digit = HexCharToInt(p);
+    for (int i = 8; i > 0; i >>= 1) {
+      if (digit >= i) {
+        ret.push_back(Bool(true));
+        digit -= i;
+      } else {
+        ret.push_back(Bool(false));
+      }
+    }
+  }
+  return ret;
 }
 
 Optional<arith::IntConstraints> ConditionalBoundsContext::TrySolveCondition() {

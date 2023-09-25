@@ -19,6 +19,9 @@
 /*!
  * \file expr_functor.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/tir/expr_functor.h>
 
 #include "functor_common.h"
@@ -35,6 +38,7 @@ void ExprVisitor::VisitExpr_(const SizeVarNode* op) {
 void ExprVisitor::VisitExpr_(const AnyNode* op) {}
 
 void ExprVisitor::VisitExpr_(const BufferLoadNode* op) {
+  this->VisitExpr(op->predicate);
   VisitArray(op->indices, [this](const PrimExpr& e) { this->VisitExpr(e); });
 }
 
@@ -123,11 +127,12 @@ PrimExpr ExprMutator::VisitExpr_(const AnyNode* op) { return GetRef<PrimExpr>(op
 
 PrimExpr ExprMutator::VisitExpr_(const BufferLoadNode* op) {
   auto fmutate = [this](const PrimExpr& e) { return this->VisitExpr(e); };
+  PrimExpr predicate = this->VisitExpr(op->predicate);
   Array<PrimExpr> indices = op->indices.Map(fmutate);
-  if (indices.same_as(op->indices)) {
+  if (indices.same_as(op->indices) && predicate.same_as(op->predicate)) {
     return GetRef<PrimExpr>(op);
   } else {
-    return BufferLoad(op->buffer, indices);
+    return BufferLoad(op->buffer, indices, predicate);
   }
 }
 
@@ -281,6 +286,53 @@ PrimExpr ExprMutator::VisitExpr_(const ShuffleNode* op) {
     return GetRef<PrimExpr>(op);
   } else {
     return Shuffle(vectors, op->indices);
+  }
+}
+
+// AIPU IR node.
+
+// XtlNode
+void ExprVisitor::VisitExpr_(const XtlNode* op) { this->VisitExpr(op->value); }
+
+PrimExpr ExprMutator::VisitExpr_(const XtlNode* op) {
+  PrimExpr value = this->VisitExpr(op->value);
+  if (value.same_as(op->value)) {
+    return GetRef<PrimExpr>(op);
+  } else {
+    return Xtl(value);
+  }
+}
+
+// AIPUMulNode
+DEFINE_BINOP_VISIT_(AIPUMulNode);
+
+DEFINE_BIOP_EXPR_MUTATE_(AIPUMul);
+
+// NSRsrNode
+void ExprVisitor::VisitExpr_(const NSRsrNode* op) {
+  this->VisitExpr(op->value);
+  this->VisitExpr(op->shift);
+}
+
+PrimExpr ExprMutator::VisitExpr_(const NSRsrNode* op) {
+  PrimExpr value = this->VisitExpr(op->value);
+  PrimExpr shift = this->VisitExpr(op->shift);
+  if (value.same_as(op->value) && shift.same_as(op->shift)) {
+    return GetRef<PrimExpr>(op);
+  } else {
+    return NSRsr(value.dtype(), value, shift, op->saturation, op->round);
+  }
+}
+
+// ComptNode
+void ExprVisitor::VisitExpr_(const ComptNode* op) { this->VisitExpr(op->value); }
+
+PrimExpr ExprMutator::VisitExpr_(const ComptNode* op) {
+  PrimExpr value = this->VisitExpr(op->value);
+  if (value.same_as(op->value)) {
+    return GetRef<PrimExpr>(op);
+  } else {
+    return Compt(value);
   }
 }
 

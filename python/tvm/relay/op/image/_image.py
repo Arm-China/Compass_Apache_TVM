@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=invalid-name, unused-argument
+#
+# This file has been modified by Arm China team.
+#
 """Backend compiler related feature registration"""
 from __future__ import absolute_import
 
@@ -26,7 +29,7 @@ from tvm.topi.utils import get_const_tuple
 from .. import op as reg
 from .. import strategy
 from ..op import OpPattern
-from .image import resize2d
+from .image import grid_sample, resize2d, crop_and_resize
 
 
 # resize
@@ -326,6 +329,15 @@ def crop_and_resize_func(attrs, inputs, _):
     ]
 
 
+@reg.register_convert_op_layout("image.crop_and_resize")
+def convert_image_crop_and_resize(attrs, inputs, tinfos, desired_layouts):
+    new_attrs = dict(attrs)
+    desired_layout = str(desired_layouts[0])
+    assert desired_layout != "default", "Layout cannot be default"
+    new_attrs["layout"] = desired_layout
+    return crop_and_resize(*inputs, **new_attrs)
+
+
 # dilation2d
 reg.register_strategy("image.dilation2d", strategy.dilation2d_strategy)
 reg.register_pattern("image.dilation2d", OpPattern.OUT_ELEMWISE_FUSABLE)
@@ -409,3 +421,12 @@ def grid_sample_func(attrs, inputs, _):
         msg = f"layout {attrs.layout} is not supported"
         raise ValueError(msg)
     return [script_func(inputs[0], inputs[1])]
+
+
+@reg.register_convert_op_layout("image.grid_sample")
+def convert_image_grid_sample(attrs, inputs, tinfos, desired_layouts):
+    new_attrs = dict(attrs)
+    desired_layout = str(desired_layouts[0])
+    assert desired_layout != "default", "Layout cannot be default"
+    new_attrs["layout"] = desired_layout
+    return grid_sample(*inputs, **new_attrs)

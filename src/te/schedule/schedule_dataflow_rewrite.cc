@@ -20,6 +20,9 @@
 /*!
  * \file schedule_dataflow_rewrite.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/te/operation.h>
 #include <tvm/te/schedule.h>
 #include <tvm/tir/op.h>
@@ -700,6 +703,11 @@ void LegalizeInvalidAttach(ScheduleNode* sch) {
           start_attach = true;
           break;
         }
+      }
+
+      if (spec.IsComputeInside() && (start_attach == false)) {
+        LOG(FATAL) << "The target iterator variable of primitive compute_inside"
+                   << " \"" << attach_ivar << "\" is split or fused.";
       }
 
       if (!start_attach) {

@@ -28,6 +28,9 @@
  * Each of these paritioned functions, a.k.a regions, will be viewed as
  * external functions, and they will use the provided compiler for codegen.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <tvm/ir/module.h>
 #include <tvm/relay/analysis.h>
@@ -466,7 +469,16 @@ IRModule FlattenTupleOutputs(IRModule module) {
 
           // Here each input of the tuple will be annotated with compiler_ends
           for (auto& tn_arg : tuple_node->fields) {
-            new_fields.push_back((*make_end_op)(tn_arg, target));
+            if (const auto* tn_arg_call = tn_arg.as<CallNode>()) {
+              if (tn_arg_call->op == CompilerBeginOp() &&
+                  tn_arg_call->attrs.as<CompilerAttrs>()->compiler == target) {
+                new_fields.push_back(tn_arg_call->args[0]);
+              } else {
+                new_fields.push_back((*make_end_op)(tn_arg, target));
+              }
+            } else {
+              new_fields.push_back((*make_end_op)(tn_arg, target));
+            }
           }
 
           // Return a tuple of compiler_ends in the place of the tuple that was

@@ -21,6 +21,9 @@
  * \file rpc_module.cc
  * \brief RPC runtime module.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/runtime/container/string.h>
 #include <tvm/runtime/device_api.h>
 #include <tvm/runtime/profiling.h>
@@ -300,6 +303,9 @@ void RPCWrappedFunc::WrapRemoteReturnToValue(TVMArgs args, TVMRetValue* rv) cons
     *rv = NDArrayFromRemoteOpaqueHandle(sess_, tensor->data, tensor,
                                         AddRPCSessionMask(tensor->device, sess_->table_index()),
                                         nd_handle);
+  } else if (tcode == kDLDevice) {
+    ICHECK_EQ(args.size(), 2);
+    *rv = AddRPCSessionMask(args[1], sess_->table_index());
   } else {
     ICHECK_EQ(args.size(), 2);
     *rv = args[1];

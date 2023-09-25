@@ -27,6 +27,9 @@ For example, you can use addexp.a to get the left operand of an Add node.
   assert(isinstance(y, tvm.tir.Add))
   assert(y.a == x)
 """
+#
+# This file has been modified by Arm China team.
+#
 from typing import Optional, Union
 
 import tvm._ffi
@@ -372,7 +375,7 @@ class SizeVar(Var):
     name : str
         The name
 
-    dtype : int
+    dtype : Union[str, tvm.irType]
         The data type
 
     span : Optional[Span]
@@ -380,7 +383,7 @@ class SizeVar(Var):
     """
 
     # pylint: disable=super-init-not-called
-    def __init__(self, name, dtype, span=None):
+    def __init__(self, name: str, dtype: Union[str, ir.Type], span: Optional[Span] = None):
         self.__init_handle_by_constructor__(_ffi_api.SizeVar, name, dtype, span)  # type: ignore
 
 
@@ -1025,13 +1028,16 @@ class BufferLoad(PrimExprWithOp):
     indices : List[PrimExpr]
         The buffer indices.
 
+    predicate : PrimExpr
+        The load predicate.
+
     span : Optional[Span]
         The location of this itervar in the source code.
     """
 
-    def __init__(self, buffer, indices, span=None):
+    def __init__(self, buffer, indices, predicate=None, span=None):
         self.__init_handle_by_constructor__(
-            _ffi_api.BufferLoad, buffer, indices, span  # type: ignore
+            _ffi_api.BufferLoad, buffer, indices, predicate, span  # type: ignore
         )
 
 
@@ -1203,3 +1209,7 @@ class Any(PrimExprWithOp):
 
     def __init__(self, span=None):
         self.__init_handle_by_constructor__(_ffi_api.Any, span)  # type: ignore
+
+
+def convert_to_prim_expr(value):
+    return _ffi_api.ConvertToPrimExpr(value)

@@ -16,7 +16,9 @@
 # under the License.
 # pylint: disable=invalid-name,unused-argument, not-context-manager
 """QNN dialect operators."""
-
+#
+# This file has been modified by Arm China team.
+#
 from __future__ import absolute_import as _abs
 
 import tvm
@@ -1317,4 +1319,55 @@ def avg_pool2d(
         count_include_pad,
         layout,
         out_layout,
+    )
+
+
+def prelu(
+    x,
+    alpha,
+    input_scale,
+    input_zero_point,
+    alpha_scale,
+    alpha_zero_point,
+    output_scale,
+    output_zero_point,
+    axis=0,
+):
+    """Quantized prelu.
+
+    Parameters
+    ----------
+    x : relay.Expr
+        The quantized input tensor.
+    alpha: double
+        The alpha value.
+    input_scale: relay.Expr
+        The scale of the input quantized expr.
+    input_zero_point: relay.Expr
+       The zero point of input quantized expr.
+    alpha_scale: relay.Expr
+        The scale of the alpha quantized expr.
+    alpha_zero_point: relay.Expr
+       The zero point of alpha quantized expr.
+    output_scale: relay.Expr
+        The scale of the output quantized expr.
+    output_zero_point: relay.Expr
+       The zero point of output quantized expr.
+    axis : int, optional
+        Specify which shape axis the channel is specified.
+    Returns
+    -------
+    result : relay.Expr
+        The computed result.
+    """
+    return _make.prelu(
+        x,
+        alpha,
+        input_scale,
+        input_zero_point,
+        alpha_scale,
+        alpha_zero_point,
+        output_scale,
+        output_zero_point,
+        axis,
     )

@@ -36,6 +36,9 @@
  *  - Add annotation of extern buffers using the buffer_map field
  *    in the PrimFunc type.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/runtime/registry.h>
 #include <tvm/te/operation.h>
 #include <tvm/tir/expr.h>
@@ -84,7 +87,8 @@ class TensorToBufferMapper : public StmtExprMutator {
       return AttrStmt(Array<ObjectRef>{tuple[0], GetOrAllocBuffer(tensor)}, op->attr_key, op->value,
                       op->body);
     } else if (op->attr_key == tir::attr::buffer_dim_align ||
-               op->attr_key == tir::attr::prefetch_scope) {
+               op->attr_key == tir::attr::prefetch_scope ||
+               op->attr_key == tir::attr::from_compute_inside) {
       Tensor tensor = Downcast<Tensor>(op->node);
       Buffer buffer = GetOrAllocBuffer(tensor);
       return AttrStmt(buffer, op->attr_key, op->value, op->body);

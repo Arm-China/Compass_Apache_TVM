@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=invalid-name, unused-import, redefined-outer-name
 """Runtime NDArray API"""
+#
+# This file has been modified by Arm China team.
+#
 import ctypes
 import warnings
 import numpy as np
@@ -587,6 +590,22 @@ def webgpu(dev_id=0):
         The created device
     """
     return Device(Device.kDLWebGPU, dev_id)
+
+
+def aipu_device(dev_id=0):
+    """Construct a AIPU device
+
+    Parameters
+    ----------
+    dev_id : int, optional
+        The integer device id
+
+    Returns
+    -------
+    dev : Device
+        The created device
+    """
+    return device("aipu", dev_id)
 
 
 cl = opencl

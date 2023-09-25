@@ -21,6 +21,9 @@
  * \file src/runtime/container.cc
  * \brief Implementations of common containers.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/runtime/container/adt.h>
 #include <tvm/runtime/container/array.h>
 #include <tvm/runtime/container/closure.h>
@@ -152,6 +155,18 @@ TVM_REGISTER_GLOBAL("runtime.MapGetItem").set_body([](TVMArgs args, TVMRetValue*
                                                     : args[1].operator ObjectRef());
   ICHECK(it != n->end()) << "cannot find the corresponding key in the Map";
   *ret = (*it).second;
+});
+
+TVM_REGISTER_GLOBAL("runtime.MapSetItem").set_body([](TVMArgs args, TVMRetValue* ret) {
+  ICHECK_EQ(args[0].type_code(), kTVMObjectHandle);
+  Object* ptr = static_cast<Object*>(args[0].value().v_handle);
+  ICHECK(ptr->IsInstance<MapNode>());
+
+  auto* n = static_cast<const MapNode*>(ptr);
+  auto it = n->find(String::CanConvertFrom(args[1]) ? args[1].operator String()
+                                                    : args[1].operator ObjectRef());
+  ICHECK(it != n->end()) << "cannot find the corresponding key in the Map";
+  it->second = args[2].operator ObjectRef();
 });
 
 TVM_REGISTER_GLOBAL("runtime.MapCount").set_body([](TVMArgs args, TVMRetValue* ret) {

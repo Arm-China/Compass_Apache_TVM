@@ -14,6 +14,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 import tvm.testing
 from tvm import te
@@ -42,6 +46,10 @@ def test_basic():
     m = tvm.arith.detect_linear_equation(b * 7, [])
     assert len(m) == 1
     tvm.testing.assert_prim_expr_equal(m[0], b * 7)
+
+    c = te.var("c", "uint32")
+    m = tvm.arith.detect_linear_equation(128 - c, [c])
+    assert m[0].value == -1
 
 
 def test_multivariate():

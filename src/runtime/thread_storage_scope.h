@@ -21,6 +21,9 @@
  * \file thread_storage_scope.h
  * \brief Extract launch parameters configuration from TVMArgs.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_THREAD_STORAGE_SCOPE_H_
 #define TVM_RUNTIME_THREAD_STORAGE_SCOPE_H_
 
@@ -64,6 +67,10 @@ enum class StorageRank {
   kTexture = 7,
   /*! \brief global scope amx tmm memory */
   kAMXTMM = 8,
+  /*! \brief lsram scope memory*/
+  kLsram = 35,
+  /*! \brief gsram scope memory*/
+  kGsram = 36,
   /*! \brief mma scope memory of matrix_a */
   kMMAMatrixA = 9,
   /*! \brief mma scope memory of matrix_b */
@@ -120,6 +127,10 @@ struct StorageScope {
         return "wmma.accumulator" + tag;
       case StorageRank::kTexture:
         return "texture" + tag;
+      case StorageRank::kLsram:
+        return "lsram" + tag;
+      case StorageRank::kGsram:
+        return "gsram" + tag;
       case StorageRank::kMMAMatrixA:
         return "m16n8k8.matrixA" + tag;
       case StorageRank::kMMAMatrixB:
@@ -163,6 +174,12 @@ struct StorageScope {
     } else if (s.compare(0, 7, "texture") == 0) {
       r.rank = StorageRank::kTexture;
       r.tag = s.substr(7, std::string::npos);
+    } else if (s.compare(0, 5, "lsram") == 0) {
+      r.rank = StorageRank::kLsram;
+      r.tag = s.substr(5, std::string::npos);
+    } else if (s.compare(0, 5, "gsram") == 0) {
+      r.rank = StorageRank::kGsram;
+      r.tag = s.substr(5, std::string::npos);
     } else if (s.compare(0, 7, "amx.tmm") == 0) {
       r.rank = StorageRank::kAMXTMM;
       r.tag = s.substr(7, std::string::npos);

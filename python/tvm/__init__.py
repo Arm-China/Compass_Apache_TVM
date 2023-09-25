@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=redefined-builtin, wildcard-import
 """TVM: Open Deep Learning Compiler Stack."""
+#
+# This file has been modified by Arm China team.
+#
 import multiprocessing
 import sys
 import os
@@ -32,7 +35,7 @@ from ._ffi import register_object, register_func, register_extension, get_global
 # tvm.runtime
 from .runtime.object import Object
 from .runtime.ndarray import device, cpu, cuda, gpu, opencl, cl, vulkan, metal, mtl
-from .runtime.ndarray import vpi, rocm, ext_dev, hexagon
+from .runtime.ndarray import vpi, rocm, ext_dev, hexagon, aipu_device
 from .runtime import ndarray as nd
 
 # tvm.error

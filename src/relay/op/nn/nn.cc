@@ -17,6 +17,10 @@
  * under the License.
  */
 
+/*
+ * This file has been modified by Arm China team.
+ */
+
 /*!
  * \file nn.cc
  * \brief Property def of nn operators.
@@ -1330,6 +1334,29 @@ Negative log likelihood loss for given prediction and target.
     .add_type_rel("NLLLoss", NLLLossRel)
     .set_attr<TOpPattern>("TOpPattern", kOutEWiseFusable);
 
+template <typename T>
+InferCorrectLayoutOutput InferCorrectLayout(const Attrs& attrs, const Array<Layout>& new_in_layouts,
+                                            const Array<Layout>& old_in_layouts,
+                                            const Array<tvm::relay::Type>& old_in_types) {
+  const auto* attrs_ptr = attrs.as<T>();
+  CHECK(attrs_ptr);
+  ObjectPtr<T> params = make_object<T>(*attrs_ptr);
+
+  if (new_in_layouts.defined()) {
+    ICHECK_EQ(new_in_layouts.size(), 1);
+
+    Layout raw_layout(params->layout);
+    Layout new_layout = new_in_layouts[0];
+    Layout old_layout = old_in_layouts[0];
+    if (!new_layout.Equals(old_layout) && raw_layout.Equals(old_layout)) {
+      // Follow input layout
+      params->layout = new_layout.name();
+    }
+  }
+
+  return InferCorrectLayoutOutput({params->layout}, {params->layout}, Attrs(params));
+}
+
 bool DepthToSpaceRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
                      const TypeReporter& reporter) {
   ICHECK_EQ(types.size(), 2);
@@ -1392,7 +1419,8 @@ RELAY_REGISTER_OP("nn.depth_to_space")
     .add_argument("data", "Tensor", "The input tensor")
     .set_support_level(5)
     .add_type_rel("DepthToSpace", DepthToSpaceRel)
-    .set_attr<TOpPattern>("TOpPattern", kInjective);
+    .set_attr<TOpPattern>("TOpPattern", kInjective)
+    .set_attr<FInferCorrectLayout>("FInferCorrectLayout", InferCorrectLayout<SubPixelAttrs>);
 
 bool SpaceToDepthRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
                      const TypeReporter& reporter) {
@@ -1455,7 +1483,8 @@ RELAY_REGISTER_OP("nn.space_to_depth")
     .add_argument("data", "Tensor", "The input tensor")
     .set_support_level(5)
     .add_type_rel("SpaceToDepth", SpaceToDepthRel)
-    .set_attr<TOpPattern>("TOpPattern", kInjective);
+    .set_attr<TOpPattern>("TOpPattern", kInjective)
+    .set_attr<FInferCorrectLayout>("FInferCorrectLayout", InferCorrectLayout<SubPixelAttrs>);
 
 // Positional relay function to create SpaceToBatchND operator
 // used by frontend FFI

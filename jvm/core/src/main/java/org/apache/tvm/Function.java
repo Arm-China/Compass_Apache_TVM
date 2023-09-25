@@ -14,6 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 package org.apache.tvm;
 
@@ -220,6 +223,16 @@ public class Function extends TVMValue {
   public Function pushArg(byte[] arg) {
     Base._LIB.tvmFuncPushArgBytes(arg);
     return this;
+  }
+
+  /**
+   * Push argument to the function.
+   * @param arg Device.
+   * @return this
+   */
+  public Function pushArg(Device arg) {
+      Base._LIB.tvmFuncPushArgDevice(arg.deviceType, arg.deviceId);
+      return this;
   }
 
   /**

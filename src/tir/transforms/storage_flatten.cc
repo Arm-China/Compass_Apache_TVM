@@ -21,6 +21,9 @@
  * \file storage_flatten.cc
  * \brief Flattens storage from multi-dimensional array to 1D buffer access
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 // The pass definition originates from Halide pipeline.
 
 #include <tvm/arith/analyzer.h>
@@ -52,6 +55,11 @@ using runtime::StorageRank;
 using runtime::StorageScope;
 using runtime::ThreadScope;
 
+Buffer BufferWithShape(Buffer b, Array<PrimExpr> shape) {
+  return Buffer(b->data, b->dtype, shape, b->strides, b->elem_offset, b->name, b->data_alignment,
+                b->offset_factor, b->buffer_type);
+}
+
 /* Make buffer realize extents and buffer shapes consistent
  *
  * For external buffers, verify that the extents of BufferRealize
@@ -62,13 +70,16 @@ using runtime::ThreadScope;
  */
 class BufferShapeLegalize : public StmtExprMutator {
  public:
-  static transform::Pass Pass() {
-    auto pass_func = [](PrimFunc func, IRModule m, transform::PassContext ctx) {
+  static transform::Pass Pass(
+      Map<Buffer, Array<PrimExpr>>&
+          compute_inside_buffer2origin_shape) {  // NOLINT(runtime/references)
+    auto pass_func = [&](PrimFunc func, IRModule m, transform::PassContext ctx) {
       IRVisitorWithAnalyzer bound_analyzer;
 
       bound_analyzer(func->body);
 
-      auto pass = BufferShapeLegalize(func->buffer_map, &bound_analyzer);
+      auto pass = BufferShapeLegalize(func->buffer_map, &bound_analyzer,
+                                      compute_inside_buffer2origin_shape);
 
       auto fptr = func.CopyOnWrite();
       fptr->body = pass(std::move(fptr->body));
@@ -80,9 +91,12 @@ class BufferShapeLegalize : public StmtExprMutator {
     return transform::CreatePrimFuncPass(pass_func, 0, "tir.BufferShapeLegalize", {});
   }
 
-  explicit BufferShapeLegalize(const Map<Var, Buffer>& extern_buffer_map,
-                               IRVisitorWithAnalyzer* bound_analyzer)
-      : bound_analyzer_(bound_analyzer) {
+  explicit BufferShapeLegalize(
+      const Map<Var, Buffer>& extern_buffer_map, IRVisitorWithAnalyzer* bound_analyzer,
+      Map<Buffer, Array<PrimExpr>>&
+          compute_inside_buffer2origin_shape)  // NOLINT(runtime/references)
+      : bound_analyzer_(bound_analyzer),
+        compute_inside_buffer2origin_shape_(compute_inside_buffer2origin_shape) {
     for (auto kv : extern_buffer_map) {
       Buffer buf = kv.second;
       extern_buffers_.insert(buf);
@@ -155,7 +169,9 @@ class BufferShapeLegalize : public StmtExprMutator {
       new_bounds.push_back({0, bound->extent});
     }
 
-    if (op->buffer->shape.size()) {
+    if (op->buffer->shape.size() && (compute_inside_buffers_.Contains(op->buffer) == false)) {
+      // For buffers that related to "compute_inside", skip this check, because
+      // its "realized shape" will be different with its original shape.
       ICHECK_EQ(op->buffer->shape.size(), realized_shape.size())
           << "Inconsistency between dimension of buffer " << op->buffer
           << " and dimension of its realized bounds.";
@@ -199,30 +215,31 @@ class BufferShapeLegalize : public StmtExprMutator {
       const BufferEntry& entry = it->second;
       ICHECK(entry.in_scope) << "Cannot access an out-of-scope buffer";
 
-      Array<PrimExpr> indices = node->indices;
-      if (entry.index_offsets.size()) {
-        ICHECK_GE(entry.index_offsets.size(), indices.size())
-            << "Cannot bind buffer to a shape of lower dimension.";
-
-        Array<PrimExpr> new_indices;
-
-        // Pad leading indices with zero, matching the "fuzzy_match"
-        // behavior from ArgBinder::BindBuffer.
-        size_t diff = entry.index_offsets.size() - indices.size();
-        for (size_t i = 0; i < diff; i++) {
-          new_indices.push_back(0);
-        }
-
-        // Offset indices used to access buffers of a reduced size.
-        for (size_t i = 0; i < indices.size(); i++) {
-          PrimExpr offset = entry.index_offsets[i + diff];
-          new_indices.push_back(indices[i] - offset);
-        }
-        indices = new_indices;
-      }
-
       auto write_ptr = node.CopyOnWrite();
-      write_ptr->indices = indices;
+      if (compute_inside_buffers_.Contains(node->buffer) == false) {
+        Array<PrimExpr> indices = node->indices;
+        if (entry.index_offsets.size()) {
+          ICHECK_GE(entry.index_offsets.size(), indices.size())
+              << "Cannot bind buffer to a shape of lower dimension.";
+
+          Array<PrimExpr> new_indices;
+
+          // Pad leading indices with zero, matching the "fuzzy_match"
+          // behavior from ArgBinder::BindBuffer.
+          size_t diff = entry.index_offsets.size() - indices.size();
+          for (size_t i = 0; i < diff; i++) {
+            new_indices.push_back(0);
+          }
+
+          // Offset indices used to access buffers of a reduced size.
+          for (size_t i = 0; i < indices.size(); i++) {
+            PrimExpr offset = entry.index_offsets[i + diff];
+            new_indices.push_back(indices[i] - offset);
+          }
+          indices = new_indices;
+        }
+        write_ptr->indices = indices;
+      }
       write_ptr->buffer = entry.remap_to;
     }
     return node;
@@ -230,17 +247,26 @@ class BufferShapeLegalize : public StmtExprMutator {
 
   Stmt VisitStmt_(const AttrStmtNode* op) final {
     if (op->node->IsInstance<tir::BufferNode>()) {
+      auto buffer = Downcast<tir::Buffer>(op->node);
+      if (op->attr_key == attr::from_compute_inside) {
+        compute_inside_buffers_.push_back(buffer);
+      }
       // Visit body before checking internal_buf_map_, because we
       // don't know if the BufferNode needs to be changed until we
       // look in the body for a BufferRealizeNode with different
       // extents.
       Stmt body = this->VisitStmt(op->body);
 
-      Buffer buffer = Downcast<tir::Buffer>(op->node);
       auto it = buf_map_.find(buffer);
       if (it != buf_map_.end()) {
-        buffer = it->second.remap_to;
-        return AttrStmt(it->second.remap_to, op->attr_key, op->value, body);
+        const auto& new_buf = it->second.remap_to;
+        if (op->attr_key == attr::from_compute_inside) {
+          // Record the original shape of buffers that related to
+          // "compute_inside", and remove the attribute node.
+          compute_inside_buffer2origin_shape_.Set(new_buf, buffer->shape);
+          return body;
+        }
+        return AttrStmt(new_buf, op->attr_key, op->value, body);
       }
       return AttrStmt(buffer, op->attr_key, op->value, body);
 
@@ -380,6 +406,12 @@ class BufferShapeLegalize : public StmtExprMutator {
   std::unordered_map<Buffer, BufferEntry, ObjectPtrHash, ObjectPtrEqual> buf_map_;
 
   IRVisitorWithAnalyzer* bound_analyzer_;
+  // Record all of buffers whose bounds inferred by the schedule primitive
+  // "compute_inside".
+  Array<Buffer> compute_inside_buffers_;
+  // Record original shape of all of buffers whose bounds inferred by the
+  // schedule primitive "compute_inside".
+  Map<Buffer, Array<PrimExpr>>& compute_inside_buffer2origin_shape_;
 };
 
 /* Apply dimension alignment restrictions
@@ -1331,14 +1363,18 @@ class ApplyLayoutTransforms : public StmtExprMutator {
 
 class StorageFlattener : public StmtExprMutator {
  public:
-  static transform::Pass Pass(int cache_line_size, bool create_bound_attributes) {
-    auto pass_func = [=](PrimFunc func, IRModule m, transform::PassContext ctx) {
+  static transform::Pass Pass(
+      int cache_line_size, bool create_bound_attributes,
+      Map<Buffer, Array<PrimExpr>>&
+          compute_inside_buffer2origin_shape) {  // NOLINT(runtime/references)
+    auto pass_func = [=, &compute_inside_buffer2origin_shape](PrimFunc func, IRModule m,
+                                                              transform::PassContext ctx) {
       IRVisitorWithAnalyzer bound_analyzer;
 
       bound_analyzer(func->body);
 
       auto pass = StorageFlattener(func->buffer_map, cache_line_size, create_bound_attributes,
-                                   &bound_analyzer);
+                                   &bound_analyzer, compute_inside_buffer2origin_shape);
 
       auto fptr = func.CopyOnWrite();
       fptr->body = pass(std::move(fptr->body));
@@ -1352,8 +1388,12 @@ class StorageFlattener : public StmtExprMutator {
   }
 
   explicit StorageFlattener(const Map<Var, Buffer>& extern_buffer_map, int cache_line_size,
-                            bool create_bound_attributes, IRVisitorWithAnalyzer* bound_analyzer)
-      : bound_analyzer_(bound_analyzer), create_bound_attributes_(create_bound_attributes) {
+                            bool create_bound_attributes, IRVisitorWithAnalyzer* bound_analyzer,
+                            Map<Buffer, Array<PrimExpr>>&
+                                compute_inside_buffer2origin_shape)  // NOLINT(runtime/references)
+      : bound_analyzer_(bound_analyzer),
+        create_bound_attributes_(create_bound_attributes),
+        compute_inside_buffer2origin_shape_(compute_inside_buffer2origin_shape) {
     for (auto kv : extern_buffer_map) {
       BufferEntry e;
       e.buffer = kv.second;
@@ -1416,7 +1456,17 @@ class StorageFlattener : public StmtExprMutator {
       value = tir::Cast(DataType::Int(8), value);
     }
 
-    auto flattened_indices = e.buffer->ElemOffset(op->indices);
+    Buffer correct_shape_buffer = e.buffer;
+    auto iter = compute_inside_buffer2origin_shape_.find(op->buffer);
+    if (iter != compute_inside_buffer2origin_shape_.end()) {
+      // The "op->indices" are generated according to the original shape, the
+      // shape of "e.buffer" comes from "compute_inside" and it maybe very
+      // different with the original shape, so the original shape should be used
+      // when transforming them into one dimension index.
+      correct_shape_buffer = BufferWithShape(e.buffer, (*iter).second);
+    }
+
+    auto flattened_indices = correct_shape_buffer->ElemOffset(op->indices);
 
     Stmt body = BufferStore(e.flattened_buffer, value, flattened_indices, op->span);
     if (create_bound_attributes_ && ShapeIsValid(e.buffer->shape)) {
@@ -1573,7 +1623,17 @@ class StorageFlattener : public StmtExprMutator {
       shape_collector_.push_back(std::make_pair(e.buffer->data, e.buffer->shape));
     }
 
-    auto flattened_indices = e.buffer->ElemOffset(op->indices);
+    Buffer correct_shape_buffer = e.buffer;
+    auto iter = compute_inside_buffer2origin_shape_.find(op->buffer);
+    if (iter != compute_inside_buffer2origin_shape_.end()) {
+      // The "op->indices" are generated according to the original shape, the
+      // shape of "e.buffer" comes from "compute_inside" and it maybe very
+      // different with the original shape, so the original shape should be used
+      // when transforming them into one dimension index.
+      correct_shape_buffer = BufferWithShape(e.buffer, (*iter).second);
+    }
+
+    auto flattened_indices = correct_shape_buffer->ElemOffset(op->indices);
     PrimExpr val = BufferLoad(e.flattened_buffer, flattened_indices, op->span);
 
     if (op->dtype == DataType::Bool()) {
@@ -1812,6 +1872,9 @@ class StorageFlattener : public StmtExprMutator {
   int cache_line_size_;
   // Whether to mark load/store with theirs bounds.
   bool create_bound_attributes_{false};
+  // Record original shape of all of buffers whose bounds inferred by the
+  // schedule primitive "compute_inside".
+  Map<Buffer, Array<PrimExpr>>& compute_inside_buffer2origin_shape_;
 };
 
 /*!
@@ -1895,14 +1958,18 @@ PrimFunc StorageFlatten(PrimFunc func, int cache_line_size, bool create_bound_at
   // entire module and apply the Sequential transform.
   Optional<Bool> from_legacy_te_schedule = func->GetAttr("from_legacy_te_schedule", Bool(false));
   if (from_legacy_te_schedule.value()) {
+    // Record original shape of all of buffers whose bounds inferred by the
+    // schedule primitive "compute_inside".
+    Map<Buffer, Array<PrimExpr>> compute_inside_buffer2origin_shape;
     auto seq = transform::Sequential(
         {
-            BufferShapeLegalize::Pass(),
+            BufferShapeLegalize::Pass(compute_inside_buffer2origin_shape),
             BufferStrideLegalize::Pass(),
             ThreadScopePropagate::Pass(),
             BufferBindUnwrapper::Pass(),
             ApplyLayoutTransforms::Pass(),
-            StorageFlattener::Pass(cache_line_size, create_bound_attributes),
+            StorageFlattener::Pass(cache_line_size, create_bound_attributes,
+                                   compute_inside_buffer2origin_shape),
             AssertSimplifier::Pass(),
         },
         "tir.StorageFlatten_impl");

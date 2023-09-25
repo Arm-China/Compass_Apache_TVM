@@ -19,6 +19,9 @@
 /*!
  * \file stmt_functor.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/ir/module.h>
 #include <tvm/runtime/registry.h>
 #include <tvm/tir/data_type_rewriter.h>
@@ -68,6 +71,7 @@ void StmtVisitor::VisitStmt_(const DeclBufferNode* op) { this->VisitStmt(op->bod
 
 void StmtVisitor::VisitStmt_(const BufferStoreNode* op) {
   this->VisitExpr(op->value);
+  this->VisitExpr(op->predicate);
   VisitArray(op->indices, [this](const PrimExpr& e) { this->VisitExpr(e); });
 }
 
@@ -391,14 +395,17 @@ Stmt StmtMutator::VisitStmt_(const IfThenElseNode* op) {
 
 Stmt StmtMutator::VisitStmt_(const BufferStoreNode* op) {
   PrimExpr value = this->VisitExpr(op->value);
+  PrimExpr predicate = this->VisitExpr(op->predicate);
   Array<PrimExpr> indices = Internal::Mutate(this, op->indices);
 
-  if (value.same_as(op->value) && indices.same_as(op->indices)) {
+  if (value.same_as(op->value) && indices.same_as(op->indices) &&
+      predicate.same_as(op->predicate)) {
     return GetRef<Stmt>(op);
   } else {
     auto n = CopyOnWrite(op);
     n->value = std::move(value);
     n->indices = std::move(indices);
+    n->predicate = std::move(predicate);
     return Stmt(n);
   }
 }

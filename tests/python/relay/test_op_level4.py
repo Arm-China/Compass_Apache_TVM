@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 import sys
 
 import numpy as np
@@ -324,7 +327,39 @@ class TestReduceFunctions:
         output,
     ):
         dtype = "bool" if ref_func in [np.all, np.any] else "float32"
-        out_type = "int32" if relay_func in [relay.argmin, relay.argmax] else dtype
+        out_type, out_type_func = dtype, lambda x: [xx for xx in x]
+        if relay_func == relay.argmin:
+            out_type = "int32"
+        elif relay_func == relay.argmax:
+
+            def get_out_dtype(input_shape, axis):
+                input_rank = len(input_shape)
+                if isinstance(axis, int):
+                    axis = [axis]
+                axis = list(range(input_rank)) if not axis else axis
+                axis = list(map(lambda ax: ax + input_rank if ax < 0 else ax, axis))
+                axis = list(set(axis))
+                axis.sort()
+
+                dim_reduced = 1
+                has_var = False
+                for ax in axis:
+                    s = input_shape[ax]
+                    if isinstance(axis, tvm.tir.expr.Var) or isinstance(s, tvm.tir.expr.Var):
+                        has_var = True
+                        break
+                    dim_reduced *= input_shape[ax]
+
+                out_dtype = "int32"
+                if has_var:
+                    pass
+                elif dim_reduced <= np.iinfo(np.uint16).max:
+                    out_dtype = "uint16"
+                elif dim_reduced <= np.iinfo(np.uint32).max:
+                    out_dtype = "uint32"
+                return out_dtype
+
+            out_type = get_out_dtype(data, axis)
 
         target = tvm.target.Target(target)
         if target.kind.name == "vulkan" and dtype == "bool":
@@ -342,7 +377,7 @@ class TestReduceFunctions:
             assert "keepdims=" in z.astext()
         if exclude:
             assert "exclude=" in z.astext()
-        assert zz.checked_type == relay.ty.TensorType(output, out_type)
+        assert zz.checked_type == relay.ty.TensorType(out_type_func(output), out_type)
 
         if all(isinstance(v, tvm.tir.Var) == 1 for v in data):
             return

@@ -21,6 +21,9 @@
  * \file ir_utils.h
  * \brief Helper functions to construct and compose IR nodes.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_TIR_TRANSFORMS_IR_UTILS_H_
 #define TVM_TIR_TRANSFORMS_IR_UTILS_H_
 
@@ -243,6 +246,10 @@ Array<PrimExpr> GetBufferAllocationShape(const Buffer& buffer);
  * \return Whether or not the PrimFunc was created from a te schedule
  */
 Bool IsFromLegacyTESchedule(PrimFunc f);
+
+std::string GetHexStr(const Array<Bool> pred);
+
+Array<Bool> StrToPred(const std::string& str);
 
 /*!
  * \brief Context helper to update domain map within conditional scope.

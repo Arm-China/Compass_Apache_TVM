@@ -20,7 +20,13 @@
 /*!
  * \file pipeline_executor.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "pipeline_executor.h"
+
+#include <chrono>
+#include <thread>
 namespace tvm {
 namespace runtime {
 /*!
@@ -80,6 +86,10 @@ PackedFunc PipelineExecutor::GetFunction(const String& name,
   } else if (name == "get_output") {
     return PackedFunc(
         [sptr_to_self, this](TVMArgs args, TVMRetValue* rv) { *rv = this->GetOutput(); });
+  } else if (name == "get_output_by_index") {
+    return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
+      *rv = this->GetOutputByIndex(args[0].operator int(), args[1].operator int());
+    });
   } else if (name == "run") {
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) { this->Run(); });
   } else if (name == "get_execute_count") {
@@ -147,6 +157,21 @@ void PipelineExecutor::Run() { pipeline_scheduler_.PipelineRun(runtimes_); }
  * \brief return A list of global output data.
  */
 Array<NDArray> PipelineExecutor::GetOutput(void) { return pipeline_scheduler_.PipelineGetOutput(); }
+/*!
+ * \brief return global output data by index.
+ */
+NDArray PipelineExecutor::GetOutputByIndex(int index, int interval_microseconds) {
+  if (interval_microseconds <= 0) {
+    return pipeline_scheduler_.PipelineGetOutputByIndex(index);
+  } else {
+    auto out = pipeline_scheduler_.PipelineGetOutputByIndex(index);
+    while (!out.get()) {
+      std::this_thread::sleep_for(std::chrono::microseconds(interval_microseconds));
+      out = pipeline_scheduler_.PipelineGetOutputByIndex(index);
+    }
+    return out;
+  }
+}
 /*!
  * \brief Use the mod_config information to create a graph runtime list.
  * \param mod_config The config information that generates by the export library function call.

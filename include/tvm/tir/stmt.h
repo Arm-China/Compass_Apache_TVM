@@ -20,6 +20,9 @@
  * \file tvm/tir/stmt.h
  * \brief TIR statements.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 // Acknowledgement: Many low-level stmts originate from Halide.
 #ifndef TVM_TIR_STMT_H_
 #define TVM_TIR_STMT_H_
@@ -231,23 +234,27 @@ class BufferStoreNode : public StmtNode {
   PrimExpr value;
   /*! \brief The indices location to be stored. */
   Array<PrimExpr> indices;
+  /*! \brief The predicate to mask which lanes would be stored. */
+  PrimExpr predicate;
 
   void VisitAttrs(AttrVisitor* v) {
     v->Visit("buffer", &buffer);
     v->Visit("value", &value);
     v->Visit("indices", &indices);
+    v->Visit("predicate", &predicate);
     v->Visit("span", &span);
   }
 
   bool SEqualReduce(const BufferStoreNode* other, SEqualReducer equal) const {
     return equal(buffer, other->buffer) && equal(value, other->value) &&
-           equal(indices, other->indices);
+           equal(indices, other->indices) && equal(predicate, other->predicate);
   }
 
   void SHashReduce(SHashReducer hash_reduce) const {
     hash_reduce(buffer);
     hash_reduce(value);
     hash_reduce(indices);
+    hash_reduce(predicate);
   }
 
   static constexpr const char* _type_key = "tir.BufferStore";
@@ -262,6 +269,8 @@ class BufferStore : public Stmt {
  public:
   TVM_DLL explicit BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices,
                                Span span = Span());
+  TVM_DLL explicit BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices,
+                               PrimExpr predicate, Span span = Span());
 
   TVM_DEFINE_OBJECT_REF_METHODS(BufferStore, Stmt, BufferStoreNode);
   TVM_DEFINE_OBJECT_REF_COW_METHOD(BufferStoreNode);
@@ -1288,6 +1297,7 @@ class BlockNode : public StmtNode {
     v->Visit("alloc_buffers", &alloc_buffers);
     v->Visit("match_buffers", &match_buffers);
     v->Visit("annotations", &annotations);
+    v->Visit("span", &span);
   }
 
   bool SEqualReduce(const BlockNode* other, SEqualReducer equal) const {
@@ -1351,6 +1361,7 @@ class BlockRealizeNode : public StmtNode {
     v->Visit("iter_values", &iter_values);
     v->Visit("predicate", &predicate);
     v->Visit("block", &block);
+    v->Visit("span", &span);
   }
 
   bool SEqualReduce(const BlockRealizeNode* other, SEqualReducer equal) const {
@@ -1485,6 +1496,10 @@ constexpr const char* buffer_bound = "buffer_bound";
  *  storage flattening phase.
  */
 constexpr const char* buffer_bind_scope = "buffer_bind_scope";
+/*! \brief Whether bounds of the buffer are inferred by the schedule primitive
+ *         "compute_inside" or not.
+ */
+constexpr const char* from_compute_inside = "from_compute_inside";
 // Pipeline related attributes
 /*! \brief channel read scope */
 constexpr const char* channel_read_scope = "channel_read_scope";

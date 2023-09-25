@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_PIPELINE_PIPELINE_SCHEDULER_H_
 #define TVM_RUNTIME_PIPELINE_PIPELINE_SCHEDULER_H_
 #include <tvm/runtime/module.h>
@@ -53,6 +56,10 @@ class PipelineScheduler {
    * \brief Get a list of outputs.
    */
   Array<NDArray> PipelineGetOutput();
+  /*!
+   * \brief Get output by index.
+   */
+  NDArray PipelineGetOutputByIndex(int index);
 
  private:
   /*!\brief The list of graph executors.*/

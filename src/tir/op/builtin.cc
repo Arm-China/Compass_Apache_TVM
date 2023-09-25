@@ -16,7 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+/*
+ * This file has been modified by Arm China team.
+ */
 /*!
  * \file tir/op/builtin.cc
  *
@@ -83,6 +85,11 @@ TIR_DEFINE_BUILTIN_FUNC(shift_right)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure))
     .set_attr<TVectorizable>("TVectorizable", true);
 
+TIR_DEFINE_BUILTIN_FUNC(narrow_shift_right)
+    .set_num_inputs(4)  // value, shift_value, saturation, round
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure))
+    .set_attr<TVectorizable>("TVectorizable", true);
+
 TIR_DEFINE_BUILTIN_FUNC(large_uint_imm)
     .set_num_inputs(2)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure));
@@ -120,6 +127,13 @@ TIR_DEFINE_BUILTIN_FUNC(fma)
     .set_num_inputs(3)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure))
     .set_attr<TVectorizable>("TVectorizable", true);
+
+TIR_DEFINE_BUILTIN_FUNC(low_true_pred)
+    .set_num_inputs(2)
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure));
+
+TIR_DEFINE_BUILTIN_FUNC(const_pred)
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure));
 
 TIR_DEFINE_BUILTIN_FUNC(call_extern)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kOpaque))

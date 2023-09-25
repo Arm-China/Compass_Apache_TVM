@@ -20,6 +20,9 @@ The Relay Virtual Machine runtime.
 
 Implements a Python interface to executing the compiled VM object.
 """
+#
+# This file has been modified by Arm China team.
+#
 import numpy as np
 
 import tvm
@@ -352,7 +355,7 @@ class VirtualMachine(object):
     NAIVE_ALLOCATOR = 1
     POOLED_ALLOCATOR = 2
 
-    def __init__(self, exe, device, memory_cfg=None):
+    def __init__(self, exe, device, memory_cfg=None, module=None):
         """
         Construct a VirtualMachine wrapper class which provides a simple
         interface over the raw C++ Module based API.
@@ -376,22 +379,32 @@ class VirtualMachine(object):
         memory_cfg: Optional[str]
             The allocator behavior to use for the VM.
 
+        module: Optional[Module]
+            The managed reference object to C++ class "tvm::runtime::vm::VirtualMachine", if it is
+            set, it will be used as the underlying member "module", otherwise the underlying member
+            "module" will be created from the given "tvm.runtime.vm.Executable" object.
+
         Returns
         -------
         vm: VirtualMachine
             A VM wrapper object.
         """
-        if not isinstance(exe, Executable) and not isinstance(exe, Module):
-            raise TypeError(
-                f"exe is expected to be the type of Executable, but received {type(exe)}"
-            )
+        if module:
+            self._exec = Executable(module["get_executable"]())
+            self.module = module
+        else:
+            if not isinstance(exe, Executable) and not isinstance(exe, Module):
+                raise TypeError(
+                    f"exe is expected to be the type of Executable, but received {type(exe)}"
+                )
 
-        if not isinstance(exe, Executable):
-            exe = Executable(exe)
+            if not isinstance(exe, Executable):
+                exe = Executable(exe)
 
-        self.module = exe.mod["vm_load_executable"]()
-        self._exec = exe
-        self._init = self.module["init"]
+            self._exec = exe
+            self.module = exe.mod["vm_load_executable"]()
+            self._setup_device(device, memory_cfg)
+
         self._invoke = self.module["invoke"]
         self._invoke_stateful = self.module["invoke_stateful"]
         self._get_output = self.module["get_output"]
@@ -400,7 +413,6 @@ class VirtualMachine(object):
         self._set_input = self.module["set_input"]
         self._set_one_input = self.module["set_one_input"]
         self._set_outputs = self.module["set_outputs"]
-        self._setup_device(device, memory_cfg)
 
     def _setup_device(self, dev, memory_cfg):
         """Init devices and allocators."""
@@ -432,7 +444,7 @@ class VirtualMachine(object):
             init_args.append(device.device_id)
             alloc_type = memory_cfg[device] if device in memory_cfg else default_alloc_type
             init_args.append(alloc_type)
-        self._init(*init_args)
+        self.module["init"](*init_args)
 
     def set_input(self, func_name, *args, **kwargs):
         """Set the input to a function.

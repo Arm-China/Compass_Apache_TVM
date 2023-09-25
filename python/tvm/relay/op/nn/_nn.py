@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=no-else-return, invalid-name, unused-argument, too-many-arguments, consider-using-in
 """Backend compiler related feature registration"""
+#
+# This file has been modified by Arm China team.
+#
 from __future__ import absolute_import
 import re
 
@@ -617,6 +620,31 @@ reg.register_schedule("nn.adaptive_max_pool1d", strategy.schedule_adaptive_pool)
 reg.register_schedule("nn.adaptive_avg_pool1d", strategy.schedule_adaptive_pool)
 
 
+@reg.register_convert_op_layout("nn.adaptive_avg_pool1d")
+def convert_adaptive_avg_pool1d(attrs, inputs, tinfos, desired_layouts):
+    """Convert Layout pass registration for adaptive_avg_pool1d op.
+    Parameters
+    ----------
+    attrs : tvm.ir.Attrs
+        Attributes of current pooling
+    inputs : list of tvm.relay.Expr
+        The args of the Relay expr to be legalized
+    tinfos : list of types
+        List of input and output types
+    desired_layouts : list of one layout string
+        layout string defining our desired layout for input and output.
+    Returns
+    -------
+    result : tvm.relay.Expr
+        The transformed expr
+    """
+    new_attrs = dict()
+    new_attrs["output_size"] = attrs.output_size
+    new_attrs["layout"] = str(desired_layouts[0])
+    new_attrs["out_layout"] = str(desired_layouts[0])
+    return relay.nn.adaptive_avg_pool1d(*inputs, **new_attrs)
+
+
 # global_max_pool2d
 reg.register_schedule("nn.global_max_pool2d", strategy.schedule_adaptive_pool)
 
@@ -724,6 +752,32 @@ def compute_upsampling(attrs, inputs, out_dtype):
 
 
 reg.register_injective_schedule("nn.upsampling")
+
+
+@reg.register_convert_op_layout("nn.upsampling")
+def convert_upsampling(attrs, inputs, tinfos, desired_layouts):
+    """Convert Layout pass registration for upsampling op.
+
+    Parameters
+    ----------
+    attrs : tvm.ir.Attrs
+        Attributes of current convolution
+    inputs : list of tvm.relay.Expr
+        The args of the Relay expr to be legalized
+    tinfos : list of types
+        List of input and output types
+    desired_layouts : list of layout strings
+        List of layouts defining our desired
+        layout for the input
+
+    Returns
+    -------
+    result : tvm.relay.Expr
+        The transformed expr
+    """
+    new_attrs = dict(attrs)
+    new_attrs["layout"] = str(desired_layouts[0])
+    return relay.nn.upsampling(*inputs, **new_attrs)
 
 
 # upsampling3d
@@ -1015,6 +1069,34 @@ def compute_depth_to_space(attrs, inputs, out_dtype):
     return [topi.nn.depth_to_space(inputs[0], block_size, layout=layout, mode=mode)]
 
 
+@reg.register_convert_op_layout("nn.depth_to_space")
+def convert_depth_to_space(attrs, inputs, tinfos, desired_layouts):
+    """Convert Layout pass registration for depth_to_space op.
+
+    Parameters
+    ----------
+    attrs : tvm.ir.Attrs
+        Attributes of current depth_to_space
+    inputs : list of tvm.relay.Expr
+        The args of the Relay expr to be legalized
+    tinfos : list of types
+        List of input and output types
+    desired_layouts : list of layout strings
+        List of layouts defining our desired
+        layout for the input
+
+    Returns
+    -------
+    result : tvm.relay.Expr
+        The transformed expr
+    """
+    new_attrs = dict(attrs)
+    desired_layout = str(desired_layouts[0])
+    assert desired_layout != "default", "Layout cannot be default"
+    new_attrs["layout"] = desired_layout
+    return relay.nn.depth_to_space(*inputs, **new_attrs)
+
+
 reg.register_injective_schedule("nn.depth_to_space")
 
 
@@ -1027,6 +1109,32 @@ def compute_space_to_depth(attrs, inputs, out_dtype):
 
 
 reg.register_injective_schedule("nn.space_to_depth")
+
+
+@reg.register_convert_op_layout("nn.space_to_depth")
+def convert_space_to_depth(attrs, inputs, tinfos, desired_layouts):
+    """Convert Layout pass registration for space_to_depth op.
+
+    Parameters
+    ----------
+    attrs : tvm.ir.Attrs
+        Attributes of current space_to_depth
+    inputs : list of tvm.relay.Expr
+        The args of the Relay expr to be legalized
+    tinfos : list of types
+        List of input and output types
+    desired_layouts : list of layout strings
+        List of layouts defining our desired
+        layout for the input
+
+    Returns
+    -------
+    result : tvm.relay.Expr
+        The transformed expr
+    """
+    block_size = attrs.block_size
+    layout = str(desired_layouts[0])
+    return relay.nn.space_to_depth(*inputs, block_size, layout=layout)
 
 
 # correlation

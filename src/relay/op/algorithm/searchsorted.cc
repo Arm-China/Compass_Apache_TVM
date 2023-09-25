@@ -21,6 +21,9 @@
  * \file searchsorted.cc
  * \brief SearchSorted operators
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/relay/attrs/algorithm.h>
 #include <tvm/relay/op.h>
 #include <tvm/tir/op.h>
@@ -36,8 +39,7 @@ bool SearchSortedRel(const Array<Type>& types, int num_inputs, const Attrs& attr
   ICHECK_EQ(types.size(), 3);
   const auto* sorted_sequence = types[0].as<TensorTypeNode>();
   const auto* values = types[1].as<TensorTypeNode>();
-  ICHECK(sorted_sequence) << "Expects TensorType in the first input";
-  ICHECK(values) << "Expects TensorType in the second input";
+  if (sorted_sequence == nullptr || values == nullptr) return false;
   ICHECK_GT(values->shape.size(), 0) << "The rank of `values` must be greater than one";
 
   if (sorted_sequence->shape.size() > 1) {

@@ -21,6 +21,9 @@
  * \file src/relay/transforms/fold_explicit_padding.cc
  * \brief A pass for folding explicit pads into other ops.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <tvm/relay/dataflow_matcher.h>
 #include <tvm/relay/expr.h>
@@ -239,7 +242,7 @@ class SimplifyExplicitPad {
       auto input_scale = node_map[input_scale_][0];
       auto kernel_scale = node_map[kernel_scale_][0];
       // Fold Padding and QNN Convolution only if pad value == input zero point.
-      if (IsEqualScalar(input_zero_point, pv)) {
+      if (IsEqualScalarValue(input_zero_point, pv)) {
         auto w = node_map[w_][0];
         return Call(call_node->op,
                     {x, w, input_zero_point, kernel_zero_point, input_scale, kernel_scale}, attrs,

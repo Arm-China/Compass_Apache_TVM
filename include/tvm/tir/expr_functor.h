@@ -22,10 +22,14 @@
  *
  * \brief Functors for tir expressions.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_TIR_EXPR_FUNCTOR_H_
 #define TVM_TIR_EXPR_FUNCTOR_H_
 
 #include <tvm/node/functor.h>
+#include <tvm/tir/aipuexpr.h>
 #include <tvm/tir/expr.h>
 
 #include <utility>
@@ -150,6 +154,13 @@ class ExprFunctor<R(const PrimExpr& n, Args...)> {
   virtual R VisitExpr_(const FloatImmNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
   virtual R VisitExpr_(const StringImmNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
   virtual R VisitExpr_(const AnyNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
+
+  // AIPU IR node.
+  virtual R VisitExpr_(const XtlNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
+  virtual R VisitExpr_(const AIPUMulNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
+  virtual R VisitExpr_(const NSRsrNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
+  virtual R VisitExpr_(const ComptNode* op, Args... args) EXPR_FUNCTOR_DEFAULT;
+
   virtual R VisitExprDefault_(const Object* op, Args...) {
     LOG(FATAL) << "Do not have a default for " << op->GetTypeKey();
   }
@@ -193,6 +204,13 @@ class ExprFunctor<R(const PrimExpr& n, Args...)> {
     IR_EXPR_FUNCTOR_DISPATCH(FloatImmNode);
     IR_EXPR_FUNCTOR_DISPATCH(StringImmNode);
     IR_EXPR_FUNCTOR_DISPATCH(AnyNode);
+
+    // AIPU IR node.
+    IR_EXPR_FUNCTOR_DISPATCH(XtlNode);
+    IR_EXPR_FUNCTOR_DISPATCH(AIPUMulNode);
+    IR_EXPR_FUNCTOR_DISPATCH(NSRsrNode);
+    IR_EXPR_FUNCTOR_DISPATCH(ComptNode);
+
     return vtable;
   }
 };
@@ -244,6 +262,12 @@ class TVM_DLL ExprVisitor : public ExprFunctor<void(const PrimExpr&)> {
   void VisitExpr_(const FloatImmNode* op) override;
   void VisitExpr_(const StringImmNode* op) override;
   void VisitExpr_(const AnyNode* op) override;
+
+  // AIPU IR node.
+  void VisitExpr_(const XtlNode* op) override;
+  void VisitExpr_(const AIPUMulNode* op) override;
+  void VisitExpr_(const NSRsrNode* op) override;
+  void VisitExpr_(const ComptNode* op) override;
 };
 
 /*!
@@ -290,6 +314,12 @@ class TVM_DLL ExprMutator : protected ExprFunctor<PrimExpr(const PrimExpr&)> {
   PrimExpr VisitExpr_(const FloatImmNode* op) override;
   PrimExpr VisitExpr_(const StringImmNode* op) override;
   PrimExpr VisitExpr_(const AnyNode* op) override;
+
+  // AIPU IR node.
+  PrimExpr VisitExpr_(const XtlNode* op) override;
+  PrimExpr VisitExpr_(const AIPUMulNode* op) override;
+  PrimExpr VisitExpr_(const NSRsrNode* op) override;
+  PrimExpr VisitExpr_(const ComptNode* op) override;
 };
 
 }  // namespace tir

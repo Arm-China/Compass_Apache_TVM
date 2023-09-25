@@ -20,6 +20,9 @@
 /*!
  * \file graph_executor.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "graph_executor.h"
 
 #include <tvm/runtime/container/map.h>
@@ -213,6 +216,8 @@ void GraphExecutor::SetInputZeroCopy(int index, DLTensor* data_ref) {
   CheckExternalDLTensor(data_ref, eid);
   // Update the data pointer for each argument of each op
   for (DLTensor* t : input_dltensors_[eid]) {
+    ICHECK_EQ(t->dtype.code, data_ref->dtype.code)
+        << "The " << index << "-th input datatype mismatch.";
     t->data = static_cast<char*>(data_ref->data) + data_ref->byte_offset;
   }
 }
@@ -669,6 +674,12 @@ PackedFunc GraphExecutor::GetFunction(const String& name, const ObjectPtr<Object
         *rv = this->GetInput(in_idx);
       }
     });
+  } else if (name == "get_input_device") {
+    return TypedPackedFunc<Device(int)>(
+        [sptr_to_self, this](int idx) { return this->GetInput(idx)->device; });
+  } else if (name == "get_entry_param_dtype") {
+    return TypedPackedFunc<std::string(int)>(
+        [sptr_to_self, this](int idx) { return DLDataType2String(this->GetInput(idx)->dtype); });
   } else if (name == "get_num_outputs") {
     return PackedFunc(
         [sptr_to_self, this](TVMArgs args, TVMRetValue* rv) { *rv = this->NumOutputs(); });

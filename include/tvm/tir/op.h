@@ -16,7 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+/*
+ * This file has been modified by Arm China team.
+ */
 /*!
  * \file tvm/tir/op.h
  * \brief Common operators defined for Expr.
@@ -199,6 +201,19 @@ TVM_DLL PrimExpr left_shift(PrimExpr a, PrimExpr b, Span span = Span());
  *       index types(int32, int64) when possible.
  */
 TVM_DLL PrimExpr right_shift(PrimExpr a, PrimExpr b, Span span = Span());
+/*!
+ * \brief narrow shift right operator
+ *
+ * \param value left operand
+ * \param t right operand
+ * \param shift the shift value
+ * \param s whether saturation
+ * \param r whether round
+ * \param span The location of this operation in the source.
+ * \return The result expression.
+ */
+TVM_DLL PrimExpr narrow_shift_right(PrimExpr value, DataType t, PrimExpr shift, PrimExpr s,
+                                    PrimExpr r, Span span = Span());
 /*!
  * \brief greater
  *
@@ -679,6 +694,26 @@ TVM_DLL PrimExpr q_multiply_shift(PrimExpr x, PrimExpr y, PrimExpr q, PrimExpr s
                                   Span span = Span());
 
 /*!
+ * \brief Construct a expression which represent a constant predicate.
+ *
+ * \param bool_arr The concrete values of the constant predicate.
+ * \param span The location of this operation in the source.
+ * \return The constructed expression.
+ */
+TVM_DLL PrimExpr const_pred(Array<Bool> bool_arr, Span span = Span());
+
+/*!
+ * \brief Construct a expression which will generate a predicate that the lowest
+ *        n items are True, and others are False.
+ *
+ * \param n The lowest item count will be set to True.
+ * \param lanes The total item count of the predicate.
+ * \param span The location of this operation in the source.
+ * \return The constructed expression.
+ */
+TVM_DLL PrimExpr low_true_pred(PrimExpr n, int lanes, Span span = Span());
+
+/*!
  * \brief Fast_erf_float expression from Eigen
  *
  * \param arg The input expression.
@@ -831,6 +866,13 @@ inline bool is_no_op(const tir::Stmt& stmt);
  * \return whether x is constant 1
  */
 inline bool is_one(const PrimExpr& x) { return is_const_int(x, 1); }
+
+/*!
+ * \brief Check whether all items of the predicate are true.
+ * \param pred The predicate that need to be checked.
+ * \return whether all items of the predicate are true.
+ */
+bool is_all_true_pred(PrimExpr pred);
 
 /*!
  * \brief Check whether x is a constant integer 0
@@ -1118,5 +1160,19 @@ inline PrimExpr operator%(const PrimExpr& a, const TB& b) {
   DivAmbiguityError(a);
   return a;
 }
+
+/*!
+ * \brief Check whether all bit of the predicate mask are true.
+ * \param pred The input argument.
+ * \return whether predicate mask is full enabled.
+ */
+inline bool is_one(const Array<Bool> pred) {
+  for (const auto& p : pred) {
+    if (!p) return false;
+  }
+  // Treat the empty predicate as all enabled.
+  return true;
+}
+
 }  // namespace tvm
 #endif  // TVM_TIR_OP_H_

@@ -20,6 +20,9 @@
 /*!
  * \file schedule_lang.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <dmlc/thread_local.h>
 #include <tvm/arith/analyzer.h>
 #include <tvm/ir/transform.h>
@@ -126,6 +129,13 @@ Stage Stage::GetAttachSpec() const {
   return attach_spec;
 }
 
+bool Stage::IsComputeInside() const {
+  if ((*this)->attach_bound_map.empty()) {
+    return false;
+  }
+  return true;
+}
+
 Stage& Stage::set_scope(std::string scope) {  // NOLINT(*)
   With<ScheduleContext> ctx(operator->()->attach_sch, __func__);
   (*this)->scope = scope;
@@ -158,6 +168,158 @@ Stage& Stage::compute_at(Stage parent, IterVar scope) {  // NOLINT(*)
   ICHECK(found) << "Cannot find the axis " << scope << " in parent's leaf_iter_vars"
                 << " parent=" << parent;
   return *this;
+}
+
+Array<IterVarRelation> CollectIterVarRelations(Stage attached_stage, IterVar attached_iv) {
+  const auto& attached_root_ivs = attached_stage->op->root_iter_vars();
+  // The iteration variable relations which generates any of iteration variables
+  // in this container should be collected.
+  Array<IterVar> ivs;
+  // All of leaf iteration variables before the target iteration variable should
+  // be considered, so that finally the current stage can get the identical
+  // structure with the target stage.
+  for (const auto& leaf_iv : attached_stage->leaf_iter_vars) {
+    if (attached_root_ivs.Contains(leaf_iv) == false) {
+      // Record the iteration variables only if they aren't original root
+      // iteration variable.
+      ivs.push_back(leaf_iv);
+    }
+    // Because the function "Stage::compute_at" had ensured that the target
+    // iteration variable must be contained by the leaf iteration variables of
+    // the target stage, so here is safe.
+    if (leaf_iv == attached_iv) break;
+  }
+
+  Array<IterVarRelation> iv_rels;
+  for (int i = (attached_stage->relations.size() - 1); i >= 0; --i) {
+    const IterVarRelation& rel = attached_stage->relations[i];
+    if (const SplitNode* n = rel.as<SplitNode>()) {
+      auto inner_iter = std::find(ivs.begin(), ivs.end(), n->inner);
+      auto outer_iter = std::find(ivs.begin(), ivs.end(), n->outer);
+      if ((inner_iter != ivs.end()) || (outer_iter != ivs.end())) {
+        iv_rels.push_back(rel);
+
+        if (inner_iter != ivs.end()) {
+          ivs.erase(inner_iter);
+        }
+        if (outer_iter != ivs.end()) {
+          ivs.erase(outer_iter);
+        }
+        // Record the source iteration variables only if they aren't original
+        // root iteration variable.
+        if (attached_root_ivs.Contains(n->parent) == false) {
+          ivs.push_back(n->parent);
+        }
+      }
+    } else if (const FuseNode* n = rel.as<FuseNode>()) {
+      auto iter = std::find(ivs.begin(), ivs.end(), n->fused);
+      if (iter != ivs.end()) {
+        iv_rels.push_back(rel);
+        ivs.erase(iter);
+        if (attached_root_ivs.Contains(n->inner) == false) {
+          ivs.push_back(n->inner);
+        }
+        if (attached_root_ivs.Contains(n->outer) == false) {
+          ivs.push_back(n->outer);
+        }
+      }
+    } else {
+      LOG(FATAL) << "[ComputeInside.CollectIterVarRelations] Unknown "
+                 << "IterVarRelation type \"" << rel << "\".";
+    }
+    if (ivs.empty()) break;
+  }
+  ICHECK(ivs.empty());
+
+  // Return the reverse version to make applying these transformations easier.
+  Array<IterVarRelation> ret;
+  for (auto iter = iv_rels.rbegin(); iter != iv_rels.rend(); ++iter) {
+    ret.push_back(*iter);
+  }
+  return ret;
+}
+
+void ApplyIterVarRelations(Stage self, Array<IterVarRelation> iv_rels) {
+  // Construct a map to record the corresponding relationship of iteration
+  // variables of target and current stage, the key is iteration variables of
+  // the target stage.
+  Map<IterVar, IterVar> iv_map;
+  const auto& attached_root_ivs = self->attach_stage->op->root_iter_vars();
+  const auto& self_root_ivs = self->op->root_iter_vars();
+  for (size_t i = 0; i < self_root_ivs.size(); ++i) {
+    iv_map.Set(attached_root_ivs[i], self_root_ivs[i]);
+  }
+
+  for (const auto& rel : iv_rels) {
+    if (const FuseNode* n = rel.as<FuseNode>()) {
+      IterVar fused;
+      self.fuse(iv_map[n->outer], iv_map[n->inner], &fused);
+      iv_map.Set(n->fused, fused);
+    } else if (const SplitNode* n = rel.as<SplitNode>()) {
+      IterVar outer, inner;
+      SplitHelper(self.operator->(), iv_map[n->parent], n->factor, n->nparts, &outer, &inner);
+      iv_map.Set(n->outer, outer);
+      iv_map.Set(n->inner, inner);
+    } else {
+      LOG(FATAL) << "[ComputeInside.ApplyIterVarRelations] Unknown "
+                 << "IterVarRelation type \"" << rel << "\".";
+    }
+  }
+
+  // Swap the key and its value to construct the needed bound map.
+  for (const auto& kv : iv_map) {
+    const IterVar& ref_iv = kv.first;
+    const IterVar& iv = kv.second;
+    // Ensure the key is unique.
+    ICHECK(self->attach_bound_map.count(iv) == 0);
+    self->attach_bound_map.Set(iv, ref_iv);
+  }
+  return;
+}
+
+IterVar Stage::ComputeInside(Stage attached_stage, IterVar attached_iv) {
+  auto& self = *this;
+  ICHECK_EQ(self->attach_type, kGroupRoot) << "Only stage that locating in root can apply "
+                                           << "primitive \"compute_inside\".";
+  ICHECK(self->attach_bound_map.empty()) << "The primitive \"compute_inside\" "
+                                         << "can't be applied multiple times.";
+  ICHECK(self->relations.empty())
+      << "Before applying primitive \"compute_inside\" the stage can't do any "
+      << "transformations.";
+  // Through restricting the target stage must be a output one to ensure we
+  // needn't process the complicated nested attach situation.
+  ICHECK(attached_stage->is_output) << "Only output stage can be the target stage of primitive \""
+                                    << "compute_inside\".";
+  ICHECK_EQ(attached_stage->op->root_iter_vars().size(), self->op->root_iter_vars().size())
+      << "The count of the original root iteration variables of target and "
+      << "current stage must be same.";
+
+  compute_at(attached_stage, attached_iv);
+
+  // Collect the iteration variable relations that generate the target iteration
+  // variable, and then the current stage should apply all of them too.
+  Array<IterVarRelation> iv_rels = CollectIterVarRelations(attached_stage, attached_iv);
+  ICHECK(std::find_if(iv_rels.begin(), iv_rels.end(),
+                      [](const IterVarRelation& rel) {
+                        return (rel.as<SplitNode>() != nullptr);
+                      }) != iv_rels.end())
+      << "There isn't \"split\" transformation, please "
+      << "prefer to use primitive \"compute_at\".";
+
+  ApplyIterVarRelations(self, iv_rels);
+
+  // Return the remain axis for further scheduling, it should be the axis inside
+  // the attached axis, in words of iteration variable, it should be the
+  // iteration variable behind the corresponding one of the target iteration
+  // variable.
+  IterVar last_leaf_iv = self->leaf_iter_vars.back();
+  // Just return an empty instance when there isn't remain axis.
+  if (self->attach_bound_map[last_leaf_iv] == attached_iv) return IterVar();
+  // Currently we can ensure that the remain axis is presented by the last leaf
+  // iteration variable, and the last but one leaf iteration variable is the
+  // corresponding one of the target iteration variable.
+  ICHECK_EQ(self->attach_bound_map[*(self->leaf_iter_vars.end() - 2)], attached_iv);
+  return last_leaf_iv;
 }
 
 Stage& Stage::compute_inline() {  // NOLINT(*)
@@ -993,6 +1155,8 @@ TVM_REGISTER_GLOBAL("te.StageFuse").set_body_typed([](Stage stage, Array<IterVar
 });
 
 TVM_REGISTER_GLOBAL("te.StageComputeAt").set_body_method(&Stage::compute_at);
+
+TVM_REGISTER_GLOBAL("te.StageComputeInside").set_body_method(&Stage::ComputeInside);
 
 TVM_REGISTER_GLOBAL("te.StageComputeInline").set_body_method(&Stage::compute_inline);
 

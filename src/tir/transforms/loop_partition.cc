@@ -20,6 +20,9 @@
 /*!
  * \file loop_partition.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/arith/analyzer.h>
 #include <tvm/arith/bound.h>
 #include <tvm/runtime/registry.h>
@@ -448,9 +451,12 @@ class LoopPartitioner : public StmtMutator {
 
   inline Stmt MakeFor(const Object* op, PrimExpr extent, Stmt body);
 
+  Stmt AddVectorPgAttr(const Stmt s);
+
   /* Candidate IRs that may be partitioned potentially */
   std::unordered_map<const VarNode*, IntSet> hint_map_;
   std::unordered_map<const VarNode*, IntSet> relax_map_;
+  std::unordered_map<Stmt, PrimExpr, ObjectPtrHash, ObjectPtrEqual> origin_extent_;
   arith::Analyzer analyzer_;
   CandidateSelector selector;
   bool no_unroll_loop_with_extent_one_;
@@ -692,6 +698,9 @@ Stmt LoopPartitioner::TryPartition(const Stmt& stmt, Var var, PrimExpr min, Prim
     s = ThreadPartitionInserter(cond_set, cond)(stmt);
   }
   s = ConvertSSA(s);
+  if (s.defined()) {
+    return AddVectorPgAttr(s);
+  }
   return s;
 }
 
@@ -704,9 +713,54 @@ inline Stmt LoopPartitioner::MakeFor(const Object* node, PrimExpr extent, Stmt b
     return Substitute(body, {{Var{for_node->loop_var}, make_const(DataType::Int(32), 0)}});
   } else {
     ICHECK(for_node->kind != ForKind::kThreadBinding);
-    return For(for_node->loop_var, IntImm(for_node->min.dtype(), 0), extent, for_node->kind, body,
-               for_node->thread_binding, for_node->annotations);
+    Stmt ret = For(for_node->loop_var, IntImm(for_node->min.dtype(), 0), extent, for_node->kind,
+                   body, for_node->thread_binding, for_node->annotations);
+    if (for_node->kind == ForKind::kVectorized) {
+      origin_extent_[ret] = for_node->extent;
+    }
+    return ret;
   }
+}
+
+Stmt LoopPartitioner::AddVectorPgAttr(Stmt stmt) {
+  auto op_for = stmt.as<ForNode>();
+  if (op_for != nullptr && op_for->kind == ForKind::kVectorized) {
+    auto extent = origin_extent_.find(stmt);
+    if (extent != origin_extent_.end()) {
+      Var new_itervar = op_for->loop_var.copy_with_suffix("");
+      Stmt new_body = Substitute(op_for->body, {{op_for->loop_var, new_itervar}});
+      Stmt new_for = For(new_itervar, IntImm(op_for->min.dtype(), 0), op_for->extent, op_for->kind,
+                         new_body, op_for->thread_binding, op_for->annotations);
+      Stmt ret = AttrStmt(new_itervar, "origin_vectorize_extent", extent->second, new_for);
+      return ret;
+    }
+  }
+
+  auto op_seq = stmt.as<SeqStmtNode>();
+  if (op_seq != nullptr) {
+    const ForNode* for_node;
+    auto fmutate = [&](const Stmt& s) {
+      for_node = s.as<ForNode>();
+      if (for_node == nullptr || for_node->kind != ForKind::kVectorized) {
+        return s;
+      } else {
+        Var new_itervar = for_node->loop_var.copy_with_suffix("");
+        Stmt new_body = Substitute(for_node->body, {{for_node->loop_var, new_itervar}});
+        Stmt new_for =
+            For(new_itervar, IntImm(for_node->min.dtype(), 0), for_node->extent, for_node->kind,
+                new_body, for_node->thread_binding, for_node->annotations);
+        auto extent = origin_extent_.find(s);
+        if (extent != origin_extent_.end()) {
+          Stmt ret = AttrStmt(new_itervar, "origin_vectorize_extent", extent->second, new_for);
+          return ret;
+        }
+        return s;
+      }
+    };
+    Stmt ret = StmtMutator::VisitSeqStmt_(op_seq, true, fmutate);
+    return ret;
+  }
+  return stmt;
 }
 
 class RemoveLikelyTagsAndHints : public StmtExprMutator {

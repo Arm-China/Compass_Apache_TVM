@@ -21,6 +21,9 @@
  * \file grid_sample.cc
  * \brief affine_grid and grid_sample operator
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/relay/attrs/image.h>
 #include <tvm/relay/op.h>
 #include <tvm/tir/data_layout.h>
@@ -106,15 +109,27 @@ bool GridSampleRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
   const Layout in_layout(param->layout);
 
   if (data->shape.size() == 4) {
-    static const Layout kNCHW("NCHW");
-    auto layout_converter = tir::BijectiveLayout(in_layout, kNCHW);
-    auto oshape = layout_converter.ForwardShape(data->shape);
-    oshape.Set(2, grid->shape[2]);
-    oshape.Set(3, grid->shape[3]);
+    if (param->layout == "NCHW") {
+      static const Layout kNCHW("NCHW");
+      auto layout_converter = tir::BijectiveLayout(in_layout, kNCHW);
+      auto oshape = layout_converter.ForwardShape(data->shape);
+      oshape.Set(2, grid->shape[2]);
+      oshape.Set(3, grid->shape[3]);
 
-    // assign output type
-    reporter->Assign(types[2], TensorType(layout_converter.BackwardShape(oshape), data->dtype));
-    return true;
+      // assign output type
+      reporter->Assign(types[2], TensorType(layout_converter.BackwardShape(oshape), data->dtype));
+      return true;
+    } else {
+      static const Layout kNHWC("NHWC");
+      auto layout_converter = tir::BijectiveLayout(in_layout, kNHWC);
+      auto oshape = layout_converter.ForwardShape(data->shape);
+      oshape.Set(1, grid->shape[1]);
+      oshape.Set(2, grid->shape[2]);
+
+      // assign output type
+      reporter->Assign(types[2], TensorType(layout_converter.BackwardShape(oshape), data->dtype));
+      return true;
+    }
   } else if (data->shape.size() == 5) {
     static const Layout kNDCHW("NCDHW");
     auto layout_converter = tir::BijectiveLayout(in_layout, kNDCHW);
@@ -129,6 +144,31 @@ bool GridSampleRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
   }
 
   return false;
+}
+
+InferCorrectLayoutOutput GridSampleInferCorrectLayout(const Attrs& attrs,
+                                                      const Array<Layout>& new_in_layouts,
+                                                      const Array<Layout>& old_in_layouts,
+                                                      const Array<tvm::relay::Type>& old_in_types) {
+  const auto* attrs_ptr = attrs.as<GridSampleAttrs>();
+  CHECK(attrs_ptr);
+  ObjectPtr<GridSampleAttrs> params = make_object<GridSampleAttrs>(*attrs_ptr);
+
+  if (new_in_layouts.defined()) {
+    ICHECK_EQ(new_in_layouts.size(), 2);
+
+    Layout raw_layout(params->layout);
+    Layout new_layout = new_in_layouts[0];
+    Layout old_layout = old_in_layouts[0];
+    if (!new_layout.Equals(old_layout) && raw_layout.Equals(old_layout) &&
+        new_layout->axes.size() == old_layout->axes.size()) {
+      // Follow input layout
+      params->layout = new_layout.name();
+    }
+  }
+
+  return InferCorrectLayoutOutput({params->layout, params->layout}, {params->layout},
+                                  Attrs(params));
 }
 
 // Positional relay function to create affine_grid operator
@@ -206,6 +246,7 @@ grid_sample often cooperates with affine_grid which generates sampling grids for
     .add_argument("grid", "Tensor", "The grid tensor.")
     .set_support_level(5)
     .add_type_rel("GridSample", GridSampleRel)
+    .set_attr<FInferCorrectLayout>("FInferCorrectLayout", GridSampleInferCorrectLayout)
     .set_attr<TOpPattern>("TOpPattern", kInjective);
 
 }  // namespace relay

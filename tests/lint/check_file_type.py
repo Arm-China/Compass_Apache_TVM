@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Helper tool to check file types that are allowed to checkin."""
+#
+# This file has been modified by Arm China team.
+#
 import os
 import sys
 import subprocess
@@ -81,6 +84,8 @@ ALLOW_EXTENSION = {
     "idl",
     # opencl file
     "cl",
+    # aipu buildtool config file
+    "cfg",
     # zephyr config file
     "conf",
     # arduino sketch file
@@ -166,6 +171,12 @@ ALLOW_SPECIFIC_FILE = {
     # Hexagon
     "src/runtime/hexagon/rpc/android_bash.sh.template",
     "src/runtime/hexagon/profiler/lwp_handler.S",
+    # Zhouyi NPU documentation related files
+    "aipu/docs/images/rpc_server_arch.svg",
+    "aipu/docs/images/multi_task.png",
+    "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/input0.bin",
+    "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/output.bin",
+    "aipu/samples/tf_mobilenet_v1_bare_metal/bsp/lib/libbm_bsp.a",
 }
 
 

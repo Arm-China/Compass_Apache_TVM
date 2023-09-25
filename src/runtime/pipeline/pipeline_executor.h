@@ -21,6 +21,9 @@
  * \brief pipeline executor
  * \file pipeline_executor.h
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_PIPELINE_PIPELINE_EXECUTOR_H_
 #define TVM_RUNTIME_PIPELINE_PIPELINE_EXECUTOR_H_
 
@@ -121,6 +124,14 @@ class TVM_DLL PipelineExecutor : public ModuleNode {
    * \return A list of output data.
    */
   Array<NDArray> GetOutput();
+  /*!
+   * \brief Get an output data by index.
+   * \param index The index of the output user want to get
+   * \param interval_microseconds the interval microseconds num if failed to get output.
+   *        if this value < 0, which means return immediately.
+   * \return An output data.
+   */
+  NDArray GetOutputByIndex(int index, int interval_microseconds);
   /*!
    * \brief A pipeline params with a specific name correspond with the params of a specific
    *  backend module, this function return the module index for the params name.

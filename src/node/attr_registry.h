@@ -21,6 +21,9 @@
  * \file tvm/node/attr_registry.h
  * \brief Common global registry for objects that also have additional attrs.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_NODE_ATTR_REGISTRY_H_
 #define TVM_NODE_ATTR_REGISTRY_H_
 
@@ -156,6 +159,19 @@ class AttrRegistry {
   bool HasAttrMap(const String& attr_name) {
     std::lock_guard<std::mutex> lock(mutex_);
     return attrs_.count(attr_name);
+  }
+
+  /*!
+   * \brief Swap two attribute maps.
+   * \param attr_name_a The name of the fist attribute.
+   * \param attr_name_b The name of the another attribute.
+   */
+  void SwapAttrMap(const String& attr_name_a, const String& attr_name_b) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_ptr<AttrRegistryMapContainerMap<KeyType>> tmp = std::move(attrs_[attr_name_a]);
+    attrs_[attr_name_a] = std::move(attrs_[attr_name_b]);
+    attrs_[attr_name_b] = std::move(tmp);
+    return;
   }
 
   /*!

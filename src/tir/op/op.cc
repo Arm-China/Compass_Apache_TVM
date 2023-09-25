@@ -16,7 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+/*
+ * This file has been modified by Arm China team.
+ */
 /*!
  * \file tir/op/op.cc
  *
@@ -120,6 +122,23 @@ PrimExpr LargeUIntImm(DataType t, int64_t low, int64_t high, Span span) {
 PrimExpr q_multiply_shift(PrimExpr x, PrimExpr y, PrimExpr q, PrimExpr s, Span span) {
   return tir::Call(DataType::Int(32, x.dtype().lanes()), tir::builtin::q_multiply_shift(),
                    {x, y, q, s}, span);
+}
+
+PrimExpr const_pred(Array<Bool> bool_arr, Span span) {
+  ICHECK_GT(bool_arr.size(), 0) << "The predicate that length < 1 is meaningless.";
+  Array<PrimExpr> args(bool_arr.begin(), bool_arr.end());
+  return tir::Call(DataType::Bool(args.size()), tir::builtin::const_pred(), args, span);
+}
+
+PrimExpr low_true_pred(PrimExpr n, int lanes, Span span) {
+  if (const IntImmNode* low_true_cnt = n.as<IntImmNode>()) {
+    auto bool_arr = Array<Bool>(low_true_cnt->value, Bool(true));
+    for (int i = 0; i < (lanes - low_true_cnt->value); ++i) {
+      bool_arr.push_back(Bool(false));
+    }
+    return const_pred(bool_arr, span);
+  }
+  return tir::Call(DataType::Bool(lanes), tir::builtin::low_true_pred(), {n, lanes}, span);
 }
 
 // The public function with a quick checking path.
@@ -322,7 +341,14 @@ PrimExpr cast(const DataType& t, PrimExpr value, Span span) {
     } else if (const FloatImmNode* op = value.as<FloatImmNode>()) {
       return make_const(t, op->value, op->span);
     }
-    ICHECK(!value.dtype().is_handle()) << "Can't cast a handle to other types.";
+    if (value.dtype().is_handle()) {
+      const CallNode* call = value.as<CallNode>();
+      if (call != nullptr && call->op.same_as(builtin::address_of())) {
+        ;  // Don't error out, because a address can be cast to "uint32".
+      } else {
+        ICHECK(false) << "Can't cast a handle to other types.";
+      }
+    }
     return tir::Cast(t, value, span);
   } else {
     DataType vtype = t.element_of();
@@ -615,6 +641,27 @@ PrimExpr right_shift(PrimExpr a, PrimExpr b, Span span) {
   });
 
   return tir::Call(a.dtype(), tir::builtin::shift_right(), {a, b}, span);
+}
+
+PrimExpr narrow_shift_right(PrimExpr a, DataType t, PrimExpr b, PrimExpr s, PrimExpr r, Span span) {
+  ICHECK(a.dtype().is_int() || a.dtype().is_uint());
+  ICHECK(b.dtype().is_int() || b.dtype().is_uint());
+  BinaryOpMatchTypes(a, b, span);
+  TVM_INDEX_CONST_PROPAGATION({
+    const DataType& rtype = a.dtype();
+    if (pb)
+      ICHECK(pb->value >= 0 && pb->value < rtype.bits())
+          << "Shift amount must be non-negative and less than " << rtype.bits() << " for type "
+          << rtype;
+    if (pa && pb) {
+      return IntImm(rtype, (pa->value >> pb->value), span);
+    }
+    if (pb) {
+      if (pb->value == 0) return a;
+    }
+  });
+
+  return tir::Call(t, tir::builtin::narrow_shift_right(), {a, b, s, r}, span);
 }
 
 // shift left
@@ -1051,6 +1098,10 @@ REGISTER_MAKE_BIT_OP(bitwise_or, bitwise_or);
 REGISTER_MAKE_BIT_OP(bitwise_xor, bitwise_xor);
 REGISTER_MAKE_BIT_OP(left_shift, left_shift);  // NOLINT(*)
 REGISTER_MAKE_BIT_OP(right_shift, right_shift);
+
+TVM_REGISTER_GLOBAL("tir.narrow_shift_right")
+    .set_body_typed([](PrimExpr value, const DataType& t, PrimExpr shift, PrimExpr s, PrimExpr r,
+                       Span span) { return narrow_shift_right(value, t, shift, s, r, span); });
 
 TVM_REGISTER_GLOBAL("tir._OpIfThenElse")
     .set_body_typed([](PrimExpr cond, PrimExpr true_value, PrimExpr false_value, Span span) {

@@ -21,6 +21,9 @@
  * \file simplify.cc
  * \brief Statement simplifier based on analyzer
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/arith/analyzer.h>
 #include <tvm/runtime/registry.h>
 #include <tvm/tir/analysis.h>
@@ -46,6 +49,7 @@ struct SimplifyConfigNode : public tvm::AttrsNode<SimplifyConfigNode> {
   bool propagate_knowns_to_simplify_expressions;
   bool convert_boolean_to_and_of_ors;
   bool apply_constraints_to_boolean_branches;
+  bool disable_var_inline;
 
   TVM_DECLARE_ATTRS(SimplifyConfigNode, "tir.transform.SimplifyConfig") {
     TVM_ATTR_FIELD(transitively_prove_inequalities)
@@ -72,6 +76,10 @@ struct SimplifyConfigNode : public tvm::AttrsNode<SimplifyConfigNode> {
         .describe(
             "If true, simplify each branch of AND/OR "
             "under a constraints provided by the other branch")
+        .set_default(false);
+
+    TVM_ATTR_FIELD(disable_var_inline)
+        .describe("If true, disable all var inline")
         .set_default(false);
   }
 
@@ -213,6 +221,9 @@ class StmtSimplifier : public IRMutatorWithAnalyzer {
   Stmt VisitStmt_(const LetStmtNode* op) override {
     PrimExpr value = this->VisitExpr(op->value);
     bool can_inline = CanInlineLetStmt(op);
+    if (config_->disable_var_inline) {
+      can_inline = false;
+    }
     if (can_inline) {
       // It is usually fine to discard the let binding because the
       // call to simplify will always inline the var.

@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=unused-import, redefined-builtin
 """Namespace for Tensor-level IR"""
+#
+# This file has been modified by Arm China team.
+#
 from tvm.ir import PrimExpr
 from tvm.runtime import const
 
@@ -26,6 +29,7 @@ from .expr import Add, Sub, Mul, Div, Mod, FloorDiv, FloorMod
 from .expr import Min, Max, EQ, NE, LT, LE, GT, GE, And, Or, Not
 from .expr import Select, BufferLoad, ProducerLoad, Ramp, Broadcast, Shuffle
 from .expr import Call, CallEffectKind, Let, IterVar, CommReducer, Any
+from .expr import convert_to_prim_expr
 
 from .stmt import Stmt, LetStmt, AssertStmt, ForKind, For, While
 from .stmt import (
@@ -69,14 +73,26 @@ from .op import cos, cosh, acos, acosh
 from .op import tan, tanh, atan, atan2, atanh
 from .op import bitwise_and, bitwise_not, bitwise_or, bitwise_xor
 from .op import erf, sigmoid, sqrt, rsqrt, floor, ceil, hypot
-from .op import trunc, abs, round, nextafter, nearbyint, power, pow, popcount, fmod, if_then_else
+from .op import (
+    trunc,
+    abs,
+    round,
+    nextafter,
+    nearbyint,
+    power,
+    pow,
+    popcount,
+    fmod,
+    if_then_else,
+    narrow_shift_right,
+)
 from .op import likely, isnan, isnullptr, isfinite, isinf, copysign
 from .op import div, indexdiv, indexmod, truncdiv, truncmod, floordiv, floormod, ceildiv
 from .op import comm_reducer, min, max, sum
 from .op import q_multiply_shift, q_multiply_shift_per_axis, shift_left, shift_right
 from .op import TVMBackendAllocWorkspace, TVMBackendFreeWorkspace
 from .op import start_profile_intrinsic, end_profile_intrinsic
-from .generic import add, subtract, multiply
+from .generic import add, subtract, multiply, cast
 
 from .schedule import StmtSRef, BlockScope, ScheduleState, Schedule, ScheduleError
 from .block_dependence_info import BlockDependenceInfo
@@ -87,3 +103,6 @@ from . import transform
 from . import analysis
 from . import stmt_functor
 from . import usmp
+
+from .expr_functor import ExprVisitor, ExprMutator
+from .stmt_functor import StmtVisitor, StmtMutator, StmtExprVisitor, StmtExprMutator

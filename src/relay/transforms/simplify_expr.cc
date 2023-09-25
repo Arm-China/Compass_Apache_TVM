@@ -21,7 +21,9 @@
  * \file src/relay/transforms/simplify_expr.cc
  * \brief A pass for simplifying the Relay expression.
  */
-
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "simplify_expr.h"
 
 #include <tvm/relay/dataflow_matcher.h>
@@ -932,9 +934,11 @@ class SimplifyAdd : public DFPatternRewrite {
     auto data_type = Downcast<TensorType>(x->checked_type());
 
     if (x == y) {
-      Expr value;
+      Expr value, ret;
       value = MakeConstantScalar(dtype, 2);
-      return InferType(Call(Op::Get("multiply"), {x, value}));
+      ret = Call(Op::Get("multiply"), {x, value});
+      ret->checked_type_ = data_type;
+      return ret;
     }
     return post;
   }

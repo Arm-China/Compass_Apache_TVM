@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 from tvm import relay
 from tvm.relay import transform
@@ -274,7 +277,8 @@ def test_fold_pad_qconv2d():
         x = relay.var("x", shape=(1, 56, 56, 64), dtype="int8")
         weight = relay.var("weight", shape=(3, 3, 64, 64), dtype="int8")
         input_zero_point = 10
-        pad = relay.nn.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], pad_value=input_zero_point)
+        pad_value = 10.0
+        pad = relay.nn.pad(x, [[0, 0], [1, 1], [1, 1], [0, 0]], pad_value=pad_value)
         return relay.qnn.op.conv2d(
             pad,
             weight,

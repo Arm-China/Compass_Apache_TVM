@@ -17,6 +17,10 @@
  * under the License.
  */
 
+/*
+ * This file has been modified by Arm China team.
+ */
+
 /*!
  *
  * \file util.cc
@@ -32,6 +36,7 @@
 #include <tvm/relay/pattern_functor.h>
 
 #include "../transforms/pass_utils.h"
+#include "dependency_graph.h"
 
 namespace tvm {
 namespace relay {
@@ -508,5 +513,36 @@ bool IsDataDependent(const CallNode* call) {
   }
   return false;
 }
+
+tvm::Array<Expr> FindConsumers(const Expr& expr, const Expr& base) {
+  support::Arena arena;
+  DependencyGraph dg = DependencyGraph::Create(&arena, base);
+  std::unordered_map<DependencyGraph::Node*, Expr> node_to_expr;
+  for (auto expr_node : dg.expr_node) {
+    node_to_expr[expr_node.second] = expr_node.first;
+  }
+  tvm::Array<Expr> ret;
+  if (dg.expr_node.find(expr) != dg.expr_node.end()) {
+    auto parents = dg.expr_node[expr]->parents;
+    auto cur = parents.head;
+    while (cur != nullptr) {
+      ret.push_back(node_to_expr[cur->value]);
+      cur = cur->next;
+    }
+  }
+  return ret;
+}
+
+TVM_REGISTER_GLOBAL("relay.analysis.consumers").set_body([](TVMArgs args, TVMRetValue* ret) {
+  ObjectRef x = args[0];
+  ObjectRef base = args[1];
+
+  if (x.as<ExprNode>() && base.as<ExprNode>()) {
+    *ret = FindConsumers(Downcast<Expr>(x), Downcast<Expr>(base));
+  } else {
+    *ret = tvm::Array<Expr>();
+  }
+});
+
 }  // namespace relay
 }  // namespace tvm

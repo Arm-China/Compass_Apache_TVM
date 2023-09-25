@@ -17,6 +17,9 @@
 # pylint: disable=invalid-name, unused-variable, too-many-locals
 # pylint: disable=unused-argument, redefined-builtin
 """Conv2D operators"""
+#
+# This file has been modified by Arm China team.
+#
 from __future__ import absolute_import as _abs
 
 import re
@@ -384,7 +387,6 @@ def conv2d_NCHWc(data, kernel, stride, padding, dilation, layout, out_layout, ou
 
     n, ic_chunk, ih, iw, ic_bn = get_const_tuple(data.shape)
     in_channel = ic_chunk * ic_bn
-    target = tvm.target.Target.current(allow_none=False)
     oc_chunk, ic_chunk_group, kernel_height, kernel_width, kernel_ic_bn, oc_bn = get_const_tuple(
         kernel.shape
     )

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Abstraction for array data structures."""
+#
+# This file has been modified by Arm China team.
+#
 from numbers import Integral
 
 import tvm._ffi
@@ -184,9 +187,12 @@ class Buffer(Object, Scriptable):
 
         if not isinstance(indices, (tuple, list)):
             indices = [indices]
-        has_slice = any(isinstance(i, slice) for i in indices)
-        has_step = any(isinstance(i, slice) and i.step is not None for i in indices)
         analyzer = Analyzer()
+        has_slice = any(isinstance(i, slice) for i in indices)
+        has_step = any(
+            isinstance(i, slice) and i.step is not None and analyzer.simplify(i.step) != 1
+            for i in indices
+        )
         if has_slice and not has_step:
             region = []
             for i, index in enumerate(indices):

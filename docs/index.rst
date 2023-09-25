@@ -15,6 +15,8 @@
     specific language governing permissions and limitations
     under the License.
 
+..  This file has been modified by Arm China team.
+
 Apache TVM Documentation
 ========================
 
@@ -48,6 +50,7 @@ driving its costs down.
 
    dev/tutorial/index
    dev/how_to/how_to.rst
+   dev/aipu/index
 
 .. toctree::
    :maxdepth: 1

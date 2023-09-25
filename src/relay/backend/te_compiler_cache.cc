@@ -17,6 +17,9 @@
  * under the License.
  */
 
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "./te_compiler_cache.h"
 
 #include <tvm/arith/analyzer.h>
@@ -1150,6 +1153,10 @@ TVM_REGISTER_GLOBAL("relay.backend.LowerToTE").set_body_typed([](Function prim_f
   return CachedFunc(tgt, GlobalVar(lower_te_compute.candidate_name_), lower_te_compute.fn_inputs_,
                     outputs, te::Schedule(), tir::PrimFunc(), {},
                     IRModule(Map<GlobalVar, BaseFunc>({})), lower_te_compute.constant_tensors_);
+});
+
+TVM_REGISTER_GLOBAL("relay.backend.PrimFuncFor").set_body_typed([](Function func, Target target) {
+  return PrimFuncFor(func, target);
 });
 
 }  // namespace tec

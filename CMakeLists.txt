@@ -1,3 +1,6 @@
+#
+# This file has been modified by Arm China team.
+#
 cmake_minimum_required(VERSION 3.18)
 project(tvm C CXX)
 
@@ -269,7 +272,7 @@ else(MSVC)
 endif(MSVC)
 
 # Hexagon has dlopen built into QuRT (no need for static library).
-if(NOT BUILD_FOR_HEXAGON)
+if ((NOT BUILD_FOR_HEXAGON) AND (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "QNX"))
   list(APPEND TVM_RUNTIME_LINKER_LIBS ${CMAKE_DL_LIBS})
 endif()
 
@@ -364,6 +367,9 @@ if(USE_RPC)
   message(STATUS "Build with RPC support...")
   tvm_file_glob(GLOB RUNTIME_RPC_SRCS src/runtime/rpc/*.cc)
   list(APPEND RUNTIME_SRCS ${RUNTIME_RPC_SRCS})
+  if (${CMAKE_SYSTEM_NAME} STREQUAL "QNX")
+    list(APPEND TVM_RUNTIME_LINKER_LIBS socket)
+  endif()
 endif(USE_RPC)
 
 tvm_file_glob(GLOB STACKVM_RUNTIME_SRCS src/runtime/stackvm/*.cc)
@@ -536,6 +542,7 @@ include(cmake/modules/contrib/UMA.cmake)
 include(cmake/modules/Git.cmake)
 include(cmake/modules/LibInfo.cmake)
 include(cmake/modules/RustExt.cmake)
+include(aipu/cmake/AIPU.cmake)
 
 set(LIBINFO_FILE ${CMAKE_CURRENT_LIST_DIR}/src/support/libinfo.cc)
 add_lib_info(${LIBINFO_FILE})

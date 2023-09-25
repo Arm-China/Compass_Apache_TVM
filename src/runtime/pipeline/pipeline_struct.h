@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_PIPELINE_PIPELINE_STRUCT_H_
 #define TVM_RUNTIME_PIPELINE_PIPELINE_STRUCT_H_
 #include <assert.h>
@@ -671,7 +674,7 @@ using ForwardQueueMap =
     std::unordered_map<ModuleInterfaceID, std::shared_ptr<ForwardQueue>, ModuleIDHash>;
 /*!\brief The basic class for runtime.*/
 class BasicRuntime {
-  using ModuleInputPairList = std::vector<std::pair<std::shared_ptr<BasicRuntime>, int>>;
+  using ModuleInputPairList = std::vector<std::pair<std::weak_ptr<BasicRuntime>, int>>;
 
  public:
   explicit BasicRuntime(int runtime_idx) : runtime_idx_(runtime_idx) {}
@@ -916,7 +919,7 @@ class BackendRuntime : public BasicRuntime {
       auto forward_queue_map = forward_queue_[output_idx];
       // Notifying the 'children runtime' that the forwarding data are ready.
       for (auto module_pair : child.second) {
-        auto child_runtime = module_pair.first;
+        auto child_runtime = module_pair.first.lock();
         auto child_input_index = module_pair.second;
         auto output_data = const_cast<DLTensor*>(output.operator->());
         if (!ForwardData(&forward_queue_map, child_runtime, child_input_index, output_data)) {
@@ -1117,7 +1120,7 @@ class GlobalRuntime : public BasicRuntime {
     auto forward_queue_map = forward_queue_[input_index];
     // Notifying the 'children runtime' that the forwarding data are ready.
     for (auto module_pair : child_iter->second) {
-      auto child_runtime = module_pair.first;
+      auto child_runtime = module_pair.first.lock();
       auto child_input_index = module_pair.second;
       // No need to go through the forward queue when the runtime is the first one.
       if (child_runtime->GetModuleIndex() == 0) {
@@ -1159,6 +1162,26 @@ class GlobalRuntime : public BasicRuntime {
       }
     }
     return true;
+  }
+  /*!\brief Get the output data by index.*/
+  bool GetOutputByIndex(Array<NDArray>* outputs, int index) {
+    for (auto queue_pair : input_queue_) {
+      auto output_index = queue_pair.first;
+
+      if (output_index == index) {
+        auto queue = queue_pair.second;
+        if (queue->Empty()) {
+          return false;
+        } else {
+          QueueData data(const_cast<DLTensor*>(((*outputs)[output_index]).operator->()));
+          if (!queue->Poll<QueueData>(&data)) {
+            LOG(FATAL) << "There is no data in the data queue, it should not happen!";
+          }
+          return true;
+        }
+      }
+    }
+    return false;
   }
   /*!\brief Initialized the data structures for pipeline.*/
   void InitializePipeline(InputConnectionConfig input_config,
@@ -1206,7 +1229,7 @@ struct GraphModuleLoadInfo {
   std::string dev;
 };
 /*! The Module information of each module.The 'int' is module index. */
-using ModuleConfig = std::unordered_map<int, GraphModuleLoadInfo>;
+using ModuleConfig = std::map<int, GraphModuleLoadInfo>;
 };      // namespace runtime
 };      // namespace tvm
 #endif  //  TVM_RUNTIME_PIPELINE_PIPELINE_STRUCT_H_

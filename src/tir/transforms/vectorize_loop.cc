@@ -20,6 +20,9 @@
 /*!
  * \file vectorize_loop.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 // Loop vectorizer as in Halide pipeline.
 #include <tvm/arith/analyzer.h>
 #include <tvm/runtime/registry.h>
@@ -149,7 +152,8 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
   using ExprFunctor::VisitExpr;
   using StmtMutator::operator();
 
-  Vectorizer(Var var, int var_lanes) : var_(var), var_lanes_(var_lanes) {
+  Vectorizer(Var var, int var_lanes, PrimExpr predicate)
+      : var_(var), var_lanes_(var_lanes), predicate_(predicate) {
     ramp_ = Ramp(IntImm(var->dtype, 0), IntImm(var->dtype, 1), var_lanes);
   }
 
@@ -369,6 +373,7 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
     if (!indices.same_as(op->indices)) {
       auto writer = load.CopyOnWrite();
       writer->indices = indices;
+      writer->predicate = predicate_;
       writer->LegalizeDType();
     }
 
@@ -438,6 +443,7 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
 
       auto writer = store.CopyOnWrite();
       writer->indices = indices;
+      writer->predicate = predicate_;
       writer->value = BroadcastTo(value, total_lanes);
     }
 
@@ -570,6 +576,8 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
   std::unordered_map<Var, PrimExpr, ObjectPtrHash, ObjectPtrEqual> let_binding_;
   // vectorizable property
   OpAttrMap<TVectorizable> op_vectorizable_ = Op::GetAttrMap<TVectorizable>("TVectorizable");
+  // The predicate will be used to construct the new load/store node.
+  PrimExpr predicate_;
 
   // mutate array, with given lane requirement
   // when finished, p_lane updates the lane requirement.
@@ -636,16 +644,59 @@ class LoopVectorizer : public StmtMutator {
   Stmt VisitStmt_(const ForNode* op) final {
     if (op->kind == ForKind::kVectorized) {
       ICHECK(is_zero(op->min));
-      auto* extent_as_int = op->extent.as<IntImmNode>();
-      if (!extent_as_int || extent_as_int->value < 1) {
-        LOG(FATAL) << "Failed to vectorize loop with extent " << op->extent;
+      int lanes = 0;
+      PrimExpr pred;
+      if (const IntImmNode* extent_as_int = op->extent.as<IntImmNode>()) {
+        int extent = extent_as_int->value;
+        if (extent < 1) LOG(FATAL) << "Failed to vectorize loop with extent " << op->extent;
+        if (origin_vectorize_extents_.count(op->loop_var.get()) != 0) {
+          // For the vectorize for loop that split by the pass
+          // "tir.LoopPartition", the vectorize lanes should be the origin
+          // extent not the current extent, and the predicate bool array size
+          // should equals to the vectorize lanes.
+          lanes = origin_vectorize_extents_[op->loop_var.get()];
+          pred = low_true_pred(extent, lanes);
+        } else {
+          // Indicate it is a normal regular for loop, only need a all true predicate.
+          lanes = extent;
+          pred = const_pred(Array<Bool>(lanes, Bool(true)));
+        }
+      } else {
+        // Indicate the extent of the for loop isn't a compile-time known value.
+        if (origin_vectorize_extents_.count(op->loop_var.get()) == 0) {
+          LOG(FATAL) << "Can't vectorize a for loop whose extent \"" << op->extent
+                     << "\" is a non-constant value.";
+        }
+        lanes = origin_vectorize_extents_[op->loop_var.get()];
+        pred = low_true_pred(op->extent, lanes);
       }
-      return Vectorizer(op->loop_var, static_cast<int>(extent_as_int->value))(op->body);
+      return Vectorizer(op->loop_var, lanes, pred)(op->body);
     } else {
       return StmtMutator::VisitStmt_(op);
     }
   }
+
+  // Override methods that inherited from StmtMutator.
+ private:
+  Stmt VisitStmt_(const AttrStmtNode* op) final;
+
+  // Methods of current class.
+  // Internal supporting.
+ private:
+  // The vectorized for loop that split by the pass "tir.LoopPartition", can
+  // find its origin vectorize extent from the attribute node whose "attr_key"
+  // equals to "origin_vectorize_extent".
+  std::unordered_map<const Object*, int> origin_vectorize_extents_;
 };
+
+Stmt LoopVectorizer::VisitStmt_(const AttrStmtNode* op) {
+  if (op->attr_key == "origin_vectorize_extent") {
+    ICHECK_EQ(origin_vectorize_extents_.count(op->node.get()), 0);
+    origin_vectorize_extents_[op->node.get()] = Downcast<IntImm>(op->value)->value;
+    return this->VisitStmt(op->body);
+  }
+  return StmtMutator::VisitStmt_(op);
+}
 
 Stmt VectorizeLoop(Stmt stmt) { return LoopVectorizer()(std::move(stmt)); }
 

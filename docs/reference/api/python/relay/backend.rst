@@ -15,6 +15,8 @@
     specific language governing permissions and limitations
     under the License.
 
+..  This file has been modified by Arm China team.
+
 tvm.relay.backend
 -----------------
 
@@ -31,3 +33,22 @@ tvm.relay.backend
 
 .. automodule:: tvm.relay.backend.vm
     :members:
+
+.. automodule:: tvm.relay.backend.contrib.aipu_compass.aipu_compass
+    :members:
+
+.. automodule:: tvm.relay.backend.contrib.aipu_compass.config
+    :members:
+
+.. automodule:: tvm.relay.backend.contrib.aipu_compass.deployable
+    :members:
+
+.. automodule:: tvm.relay.backend.contrib.aipu_compass.execution_engine
+    :members:
+
+tvm.relay.backend.transform
+---------------------------
+.. automodule:: tvm.relay.backend.contrib.aipu_compass.transform
+    :members:
+    :imported-members:
+    :autosummary:

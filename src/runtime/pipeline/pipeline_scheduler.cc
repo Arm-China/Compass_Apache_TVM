@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "pipeline_scheduler.h"
 
 #include <unordered_map>
@@ -73,5 +76,14 @@ Array<NDArray> PipelineScheduler::PipelineGetOutput() {
   bool ret = global_runtime_->GetOutput(&output_arrays_);
   return ret ? output_arrays_ : Array<NDArray>{};
 }
+
+/*!
+ * \brief Get an output by index.
+ */
+NDArray PipelineScheduler::PipelineGetOutputByIndex(int index) {
+  bool ret = global_runtime_->GetOutputByIndex(&output_arrays_, index);
+  return ret ? output_arrays_[index] : NDArray();
+}
+
 }  // namespace runtime
 }  // namespace tvm

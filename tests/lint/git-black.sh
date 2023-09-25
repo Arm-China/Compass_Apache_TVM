@@ -15,7 +15,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 set -euo pipefail
+
+unset PYTHONPATH
+source ${AIPU_TVM_DEV_DIR}/venvs/aipu_tvm_lint_2023_07/bin/activate
 
 INPLACE_FORMAT=${INPLACE_FORMAT:=false}
 LINT_ALL_FILES=true
@@ -46,8 +52,8 @@ while (( $# )); do
 done
 
 # required to make black's dep click to work
-export LC_ALL=C.UTF-8
-export LANG=C.UTF-8
+export LC_ALL=en_US.UTF-8
+export LANG=en_US.UTF-8
 
 if [ ! -x "$(command -v black)" ]; then
     echo "Cannot find black"

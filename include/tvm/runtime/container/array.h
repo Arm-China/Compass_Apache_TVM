@@ -21,6 +21,9 @@
  * \file tvm/runtime/container/array.h
  * \brief Runtime Array container types.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_CONTAINER_ARRAY_H_
 #define TVM_RUNTIME_CONTAINER_ARRAY_H_
 
@@ -706,6 +709,9 @@ class Array : public ObjectRef {
     }
     return static_cast<ArrayNode*>(data_.get());
   }
+
+  /*! \brief Checks if the given value is in the container. */
+  bool Contains(const T& value) const { return (std::find(begin(), end(), value) != end()); }
 
   /*! \brief specify container node */
   using ContainerType = ArrayNode;

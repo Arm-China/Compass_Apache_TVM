@@ -333,7 +333,6 @@ class Call(ExprWithOp):
         self.__init_handle_by_constructor__(_ffi_api.Call, op, args, attrs, type_args, span)
 
 
-@tvm._ffi.register_func("relay.CallWithFields")
 def CallWithFields(
     call, op=None, args=None, attrs=None, type_args=None, virtual_device=None, span=None
 ):

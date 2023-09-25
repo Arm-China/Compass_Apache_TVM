@@ -15,6 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=missing-function-docstring,missing-module-docstring
+
+#
+# This file has been modified by Arm China team.
+#
 import numpy as np
 import tvm
 import tvm.testing
@@ -639,11 +643,12 @@ def test_reshape():
 @T.prim_func
 def argmax_expected(
     p0: T.Buffer((T.int64(1), T.int64(64), T.int64(56), T.int64(56)), "uint8"),
-    p0_red: T.Buffer((T.int64(1), T.int64(56), T.int64(56)), "int32"),
+    T_cast: T.Buffer((T.int64(1), T.int64(56), T.int64(56)), "uint16"),
 ):
     T.func_attr({"global_symbol": "main", "tir.noalias": True})
     p0_red_temp_v0 = T.alloc_buffer([T.int64(1), T.int64(56), T.int64(56)], dtype="int32")
     p0_red_temp_v1 = T.alloc_buffer([T.int64(1), T.int64(56), T.int64(56)], dtype="uint8")
+    p0_red = T.alloc_buffer([T.int64(1), T.int64(56), T.int64(56)], dtype="int32")
     for ax0, ax1, ax2, k1 in T.grid(T.int64(1), T.int64(56), T.int64(56), T.int64(64)):
         with T.block("p0_red_temp"):
             v_ax0, v_ax1, v_ax2, v_k1 = T.axis.remap("SSSR", [ax0, ax1, ax2, k1])
@@ -674,6 +679,12 @@ def argmax_expected(
             T.reads(p0_red_temp_v0[v_ax0, v_ax1, v_ax2])
             T.writes(p0_red[v_ax0, v_ax1, v_ax2])
             p0_red[v_ax0, v_ax1, v_ax2] = p0_red_temp_v0[v_ax0, v_ax1, v_ax2]
+    for ax0, ax1, ax2 in T.grid(T.int64(1), T.int64(56), T.int64(56)):
+        with T.block("T_cast"):
+            v_ax0, v_ax1, v_ax2 = T.axis.remap("SSS", [ax0, ax1, ax2])
+            T.reads(p0_red[v_ax0, v_ax1, v_ax2])
+            T.writes(T_cast[v_ax0, v_ax1, v_ax2])
+            T_cast[v_ax0, v_ax1, v_ax2] = T.Cast("uint16", p0_red[v_ax0, v_ax1, v_ax2])
 
 
 def test_argmax():

@@ -22,6 +22,9 @@
  * \brief A pass for taking fake quantized graphs and converting them
  * to actual integer operations.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include "fake_quantization_to_integer.h"
 
@@ -575,7 +578,7 @@ Pass FakeQuantizationToInteger(bool hard_fail, bool use_qat,
         return Downcast<Function>(
             FakeQuantizationToInteger(f, m, hard_fail, use_qat, optional_qnn_ops));
       };
-  return CreateFunctionPass(pass_func, 0, "FakeQuantizationToInteger", {"InferType", "DivToMul"});
+  return CreateFunctionPass(pass_func, 0, "FakeQuantizationToInteger", {"InferType"});
 }
 
 TVM_REGISTER_GLOBAL("relay._transform.FakeQuantizationToInteger")

@@ -17,6 +17,10 @@
  * under the License.
  */
 
+/*
+ * This file has been modified by Arm China team.
+ */
+
 /*!
  * \file fold_scale_axis.cc
  *
@@ -377,7 +381,8 @@ Expr ReluForwardRewrite(const Call& ref_call, const Array<Expr>& new_args, const
   if (input == nullptr) return Expr(nullptr);
   // return transformed conv2d
   auto rnode = make_object<ScaledExprNode>();
-  rnode->value = Call(ref_call->op, {input->value}, ref_call->attrs, ref_call->type_args);
+  rnode->value =
+      Call(ref_call->op, {input->value}, ref_call->attrs, ref_call->type_args, ref_call->span);
   rnode->scale = input->scale;
   rnode->axes = input->axes;
   return Expr(rnode);
@@ -425,7 +430,8 @@ Expr AddSubForwardRewrite(const Call& ref_call, const Array<Expr>& new_args,
       return Expr();
     }
     Expr rhs = Divide(new_args[1], scale);
-    rnode->value = Call(ref_call->op, {slhs->value, rhs}, ref_call->attrs, ref_call->type_args);
+    rnode->value = Call(ref_call->op, {slhs->value, rhs}, ref_call->attrs, ref_call->type_args,
+                        ref_call->span);
     rnode->scale = slhs->scale;
     rnode->axes = slhs->axes;
   } else {
@@ -436,7 +442,8 @@ Expr AddSubForwardRewrite(const Call& ref_call, const Array<Expr>& new_args,
       return Expr();
     }
     Expr lhs = Divide(new_args[0], scale);
-    rnode->value = Call(ref_call->op, {lhs, srhs->value}, ref_call->attrs, ref_call->type_args);
+    rnode->value = Call(ref_call->op, {lhs, srhs->value}, ref_call->attrs, ref_call->type_args,
+                        ref_call->span);
     rnode->scale = srhs->scale;
     rnode->axes = srhs->axes;
   }
@@ -582,7 +589,8 @@ Expr ConvForwardRewrite(const Call& ref_call, const ATTRS* param, const Array<Ex
     }
   }
   // return transformed conv
-  return Call(ref_call->op, {sdata->value, weight}, ref_call->attrs, ref_call->type_args);
+  return Call(ref_call->op, {sdata->value, weight}, ref_call->attrs, ref_call->type_args,
+              ref_call->span);
 }
 
 Array<Message> PreConvForwardPrep(const Call& call, const Message& out_message) {
@@ -845,7 +853,7 @@ Expr ReluBackwardTransform(const Call& call, const Message& message, const Expr&
     return transformer->NormalCallTransform(call.operator->());
   }
   Expr input = transformer->Transform(call->args[0], message, scale);
-  return Call(call->op, {input}, call->attrs, call->type_args);
+  return Call(call->op, {input}, call->attrs, call->type_args, call->span);
 }
 
 RELAY_REGISTER_OP("nn.relu").set_attr<FBackwardPrep>("FScaleAxisBackwardPrep", ReluBackwardPrep);
@@ -896,7 +904,7 @@ Expr AddSubBackwardTransform(const Call& call, const Message& message, const Exp
     ICHECK(equal(message->axes, lhs_message->axes));
     Expr lhs = transformer->Transform(call->args[0], message, scale);
     Expr rhs = transformer->Transform(call->args[1], message, scale);
-    return Call(call->op, {lhs, rhs}, call->attrs, call->type_args);
+    return Call(call->op, {lhs, rhs}, call->attrs, call->type_args, call->span);
   } else if (lhs_message.defined()) {
     ICHECK(equal(message->axes, lhs_message->axes));
     Expr lhs = transformer->Transform(call->args[0], message, scale);
@@ -906,7 +914,7 @@ Expr AddSubBackwardTransform(const Call& call, const Message& message, const Exp
       return transformer->NormalCallTransform(call.operator->());
     }
     rhs = Multiply(rhs, rhs_scale);
-    return Call(call->op, {lhs, rhs}, call->attrs, call->type_args);
+    return Call(call->op, {lhs, rhs}, call->attrs, call->type_args, call->span);
   } else if (rhs_message.defined()) {
     ICHECK(equal(message->axes, rhs_message->axes));
     Expr lhs = transformer->Transform(call->args[0], NullValue<Message>(), NullValue<Expr>());
@@ -916,7 +924,7 @@ Expr AddSubBackwardTransform(const Call& call, const Message& message, const Exp
       return transformer->NormalCallTransform(call.operator->());
     }
     lhs = Multiply(lhs, lhs_scale);
-    return Call(call->op, {lhs, rhs}, call->attrs, call->type_args);
+    return Call(call->op, {lhs, rhs}, call->attrs, call->type_args, call->span);
   } else {
     LOG(FATAL) << "outstanding scale";
   }
@@ -1037,7 +1045,7 @@ Expr ConvBackwardTransform(const Call& call, const ATTRS* param, const Message& 
     }
   }
   weight = Multiply(weight, wscale);
-  return Call(call->op, {data, weight}, call->attrs, call->type_args);
+  return Call(call->op, {data, weight}, call->attrs, call->type_args, call->span);
 }
 
 Message PreConvBackwardPrep(const Call& call, const Array<Message>& in_messages) {

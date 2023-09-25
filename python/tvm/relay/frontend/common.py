@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=broad-except
 """Common utilities"""
+#
+# This file has been modified by Arm China team.
+#
 from __future__ import absolute_import as _abs
 import logging
 import numpy as np
@@ -1057,7 +1060,7 @@ def try_resolve_var_to_const(x, graph_params):
 class _SpanFiller(ExprMutator):
     """SpanFiller"""
 
-    def __init__(self, span):
+    def __init__(self, span, propagation=False):
         ExprMutator.__init__(self)
         if isinstance(span, tvm.relay.Span):
             self._span = span
@@ -1067,6 +1070,7 @@ class _SpanFiller(ExprMutator):
             self._span = tvm.relay.Span(tvm.relay.SourceName(span.decode("utf-8")), 0, 0, 0, 0)
         else:
             assert False, f"unsupported span type: {type(span)}"
+        self.propagation = propagation
 
     def visit(self, expr):
         if hasattr(expr, "span") and expr.span:
@@ -1075,6 +1079,17 @@ class _SpanFiller(ExprMutator):
         return super().visit(expr)
 
     def visit_function(self, fn):
+        if not self.propagation:
+            return _function.FunctionWithFields(
+                fn,
+                list(fn.params),
+                fn.body,
+                fn.ret_type,
+                fn.type_params,
+                fn.attrs,
+                None,
+                self._span,
+            )
         new_params = [self.visit(x) for x in fn.params]
         new_body = self.visit(fn.body)
         return _function.FunctionWithFields(
@@ -1082,12 +1097,18 @@ class _SpanFiller(ExprMutator):
         )
 
     def visit_let(self, let):
+        if not self.propagation:
+            return _expr.LetWithFields(let, let.var, let.value, let.body, None, self._span)
         new_variable = self.visit(let.var)
         new_value = self.visit(let.value)
         new_body = self.visit(let.body)
         return _expr.LetWithFields(let, new_variable, new_value, new_body, None, self._span)
 
     def visit_call(self, call):
+        if not self.propagation:
+            return _expr.CallWithFields(
+                call, call.op, list(call.args), call.attrs, call.type_args, None, self._span
+            )
         new_args = [self.visit(arg) for arg in call.args]
         # call.op might be RelayExpr or Op type
         # ExprMutator will return directly if subject belongs to Op type
@@ -1100,6 +1121,15 @@ class _SpanFiller(ExprMutator):
         return _expr.VarWithFields(var, var.vid, var.type_annotation, None, self._span)
 
     def visit_if(self, ite):
+        if not self.propagation:
+            return _expr.IfWithFields(
+                ite,
+                ite.cond,
+                ite.true_branch,
+                ite.false_branch,
+                None,
+                self._span,
+            )
         return _expr.IfWithFields(
             ite,
             self.visit(ite.cond),
@@ -1110,11 +1140,15 @@ class _SpanFiller(ExprMutator):
         )
 
     def visit_tuple(self, tup):
+        if not self.propagation:
+            return _expr.TupleWithFields(tup, list(tup.fields), None, self._span)
         return _expr.TupleWithFields(
             tup, [self.visit(field) for field in tup.fields], None, self._span
         )
 
     def visit_tuple_getitem(self, op):
+        if not self.propagation:
+            return _expr.TupleGetItemWithFields(op, op.tuple_value, op.index, None, self._span)
         return _expr.TupleGetItemWithFields(
             op, self.visit(op.tuple_value), op.index, None, self._span
         )
@@ -1207,11 +1241,19 @@ def set_span(sym, span):
       )
       print(relay.Function([x], y))
 
+      # if propagation is True the relay would show as following
       #fn (%x: Tensor[(1, 64, 56, 56), float32] /* span=x_var:0:0 */) {
       #  nn.conv2d(%x, meta[relay.Constant][0] /* span=conv2d:0:0 */, ...) /* span=conv2d:0:0 */
+      #}
+      #otherise the relay expression would show as
+      #fn (%x: Tensor[(1, 64, 56, 56), float32] /* span=x_var:0:0 */) {
+      #  nn.conv2d(%x, meta[relay.Constant][0], ...) /* span=conv2d:0:0 */
       #}
     """
 
     if tvm.transform.PassContext.current().config.get("relay.frontend.fill_span", True):
-        return _SpanFiller(span).fill(sym)
+        propagation = tvm.transform.PassContext.current().config.get(
+            "relay.frontend.span_propagation", False
+        )
+        return _SpanFiller(span, propagation).fill(sym)
     return sym

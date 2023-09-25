@@ -17,6 +17,10 @@
  * under the License.
  */
 
+/*
+ * This file has been modified by Arm China team.
+ */
+
 /*!
  * \file src/tvm/relay/dataflow_matcher.cc
  * \brief The dataflow pattern matcher for Relay.
@@ -710,6 +714,8 @@ void PatternGrouper::CreateGroup(const Expr& expr) {
   // because they exist more globally outside of the fusion.
   // Similiarly, if interior nodes in a group are used outside of the group fusing to a single
   // output would create an invalid graph tranformation, so we block the creation of such groups.
+
+  // Also ignore global_var and constructor as similar with Ops
   auto memo = extractor.GetMemo();
   for (auto kv : memo) {
     VLOG(1) << "matched index " << matcher_->expr_to_node(kv.first)->index_;
@@ -718,7 +724,8 @@ void PatternGrouper::CreateGroup(const Expr& expr) {
   for (auto kv : memo) {
     // Check to ensure that this node isn't an input or a global
     if (inputs.count(kv.first) == 0 && kv.first.as<OpNode>() == nullptr &&
-        kv.first.as<FunctionNode>() == nullptr && kv.first.as<ConstantNode>() == nullptr) {
+        kv.first.as<FunctionNode>() == nullptr && kv.first.as<ConstantNode>() == nullptr &&
+        kv.first.as<GlobalVarNode>() == nullptr && kv.first.as<ConstructorNode>() == nullptr) {
       if (gid_assignments_.count(kv.first) != 0) {
         // check to see if the node is use in other groups
         // Exit due to overlapping partitions

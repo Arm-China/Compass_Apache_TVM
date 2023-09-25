@@ -18,11 +18,24 @@
 """Namespace for Tensor Expression Language
 """
 # expose all operators in tvm tir.op
+#
+# This file has been modified by Arm China team.
+#
 from tvm.tir import any, all, min_value, max_value, trace
 from tvm.tir import exp, erf, tanh, sigmoid, log, tan, cos, sin, sqrt, rsqrt, floor, ceil
 from tvm.tir import sinh, cosh, log2, log10
 from tvm.tir import asin, asinh, acos, acosh, atan, atanh
-from tvm.tir import trunc, abs, round, nearbyint, power, popcount, fmod, if_then_else
+from tvm.tir import (
+    trunc,
+    abs,
+    round,
+    nearbyint,
+    power,
+    popcount,
+    fmod,
+    if_then_else,
+    narrow_shift_right,
+)
 from tvm.tir import isnan, isfinite, isinf
 from tvm.tir import div, indexdiv, indexmod, truncdiv, truncmod, floordiv, floormod
 from tvm.tir import comm_reducer, min, max, sum

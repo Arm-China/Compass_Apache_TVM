@@ -17,6 +17,9 @@
 # pylint: disable=import-self, invalid-name, unused-argument, too-many-lines, len-as-condition, broad-except
 # pylint: disable=import-outside-toplevel, redefined-builtin
 """TF: Tensorflow frontend."""
+#
+# This file has been modified by Arm China team.
+#
 import warnings
 from collections import deque
 
@@ -58,6 +61,15 @@ def _get_pad_pair(input1d, kernel1d, stride1d):
         pad = max(kernel1d - stride1d, 0)
     else:
         pad = max(kernel1d - (input1d % stride1d), 0)
+
+    pad_before = pad // 2
+    pad_after = pad - pad_before
+
+    return [pad_before, pad_after]
+
+
+def _get_conv_transpose_pad_pair(input1d, output1d, kernel1d, stride1d):
+    pad = max((input1d - 1) * stride1d + kernel1d - output1d, 0)
 
     pad_before = pad // 2
     pad_after = pad - pad_before
@@ -458,8 +470,16 @@ def _conv(opname):
             dilation_w = attr["dilations"][1]
             dilated_kernel_h = (kernel_h - 1) * dilation_h + 1
             dilated_kernel_w = (kernel_w - 1) * dilation_w + 1
-            pad_v = _get_pad_pair(in_h, dilated_kernel_h, stride_h)
-            pad_h = _get_pad_pair(in_w, dilated_kernel_w, stride_w)
+            # when op is conv_transpose, the pad is calculated by output shape.
+            if opname == "conv_transpose":
+                out_shape = _infer_value(inputs[0], params, mod).numpy()
+                out_h = out_shape[1]
+                out_w = out_shape[2]
+                pad_v = _get_conv_transpose_pad_pair(in_h, out_h, dilated_kernel_h, stride_h)
+                pad_h = _get_conv_transpose_pad_pair(in_w, out_w, dilated_kernel_w, stride_w)
+            else:
+                pad_v = _get_pad_pair(in_h, dilated_kernel_h, stride_h)
+                pad_h = _get_pad_pair(in_w, dilated_kernel_w, stride_w)
 
             attr["padding"] = [pad_v[0], pad_h[0], pad_v[1], pad_h[1]]
         elif attr["padding"] == "EXPLICIT":
@@ -2897,6 +2917,19 @@ def _unique(return_counts=True):
     return _impl
 
 
+def _ctc_greedy_decoder():
+    def _impl(inputs, attr, params, mod):
+        data = inputs[0]
+        seq_len = inputs[1]
+        merge_repeated = attr["merge_repeated"]
+
+        # for compass only support [batch_size, max_time, num_classes]
+        transpose = _op.transpose(data, [1, 0, 2])
+        return _op.contrib.aipu_compass.ctc_greedy_decoder(transpose, seq_len, merge_repeated)
+
+    return _impl
+
+
 def _bincount():
     def _impl(inputs, attr, params, mod):
         input = inputs[0]  # arr: int32 Tensor
@@ -2931,6 +2964,36 @@ def _bincount():
         counts = _op.zeros(counts_shape, out_dtype)
         out = _op.scatter_elements(counts, input, updates, axis=0, reduction="add")
         return out
+
+    return _impl
+
+
+def _matrix_band_part():
+    def _impl(inputs, attr, params, mod):
+        lower = inputs[1]
+        upper = inputs[2]
+        if not isinstance(lower, tvm.relay.Constant) or not isinstance(upper, tvm.relay.Constant):
+            raise tvm.error.OpAttributeInvalid(
+                "Only support matrix_band_part lower_num and upper_num constant value"
+            )
+        lower = int(inputs[1].data.numpy())
+        upper = int(inputs[2].data.numpy())
+        return _op.contrib.aipu_compass.matrix_band_part(inputs[0], lower, upper)
+
+    return _impl
+
+
+def _fake_quant_with_min_max_vars():
+    def _impl(inputs, attr, params, mod):
+        data = inputs[0]
+        minimum = _infer_value(inputs[1], params, mod).numpy()
+        maximum = _infer_value(inputs[2], params, mod).numpy()
+        narrow_range = attr["narrow_range"]
+        num_bits = attr["num_bits"]
+
+        return _op.contrib.aipu_compass.fake_quant_with_min_max_vars(
+            data, float(minimum), float(maximum), narrow_range, num_bits
+        )
 
     return _impl
 
@@ -3173,4 +3236,7 @@ _convert_map = {
     "UnravelIndex": _unravel_index(),
     "Where": _where_v2(),
     "ZerosLike": AttrCvt("zeros_like"),
+    "CTCGreedyDecoder": _ctc_greedy_decoder(),
+    "MatrixBandPart": _matrix_band_part(),
+    "FakeQuantWithMinMaxVars": _fake_quant_with_min_max_vars(),
 }

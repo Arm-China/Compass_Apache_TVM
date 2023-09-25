@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 import inspect
 import re
 
@@ -205,7 +208,7 @@ def test_duplicate_block_axes():
                 vi, vi = T.axis.remap("SS", [i, j])  # error
                 T.evaluate(1.0)
 
-    check_error(duplicate_block_axes, 5)
+    # check_error(duplicate_block_axes, 5) #[AIPU] enable var-reassign in parser
     check_error(duplicate_block_axes_remap, 4)
 
 
@@ -251,7 +254,7 @@ def test_duplicate_buffer():
         A = T.alloc_buffer((128, 128), "float32")
         A = T.alloc_buffer((128, 128), "float32")  # error
 
-    check_error(duplicate_buffer, 3)
+    # check_error(duplicate_buffer, 3) #[AIPU] enable var-reassign in parser
 
 
 def test_duplicate_block_signature():
@@ -308,7 +311,7 @@ def test_duplicate_block_signature():
     check_error(duplicate_predicate, 6)
     check_error(duplicate_annotations, 6)
     check_error(duplicate_init, 7)
-    check_error(duplicate_axes, 5)
+    # check_error(duplicate_axes, 5) ##[AIPU] enable var-reassign in parser
 
 
 def test_opaque_access_during_complete():

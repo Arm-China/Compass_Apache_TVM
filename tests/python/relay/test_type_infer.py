@@ -17,6 +17,9 @@
 """Test that type checker correcly computes types
    for expressions.
 """
+#
+# This file has been modified by Arm China team.
+#
 import pytest
 import tvm
 from tvm import IRModule, parser, relay, te
@@ -560,19 +563,38 @@ def test_argreduce_infer_return_type():
     shape_dtypes = [("int32", lambda x: np.int32(x)), ("int64", lambda x: np.int64(x))]
 
     # Testing with argmax
-    for (sdtype, conv) in shape_dtypes:
-        x = relay.var("data", relay.TensorType(x_shape, "float32"))
-        broadcast_to = relay.op.broadcast_to(x, relay.const(broadcast_shape, dtype=sdtype))
-        argmax = relay.op.argmax(broadcast_to, axis=[1])
+    def get_out_dtype(input_shape, axis):
+        input_rank = len(input_shape)
+        axis = list(range(input_rank)) if axis else axis
+        axis = list(map(lambda ax: ax + input_rank if ax < 0 else ax, axis))
+        axis = list(set(axis))
+        axis.sort()
 
-        f = relay.Function([x], argmax)
-        assert_has_type(
-            f,
-            relay.FuncType(
-                [relay.TensorType(broadcast_shape, "float32")],
-                relay.TensorType([conv(1)], dtype=sdtype),
-            ),
-        )
+        dim_reduced = 1
+        for ax in axis:
+            dim_reduced *= input_shape[ax]
+
+        out_dtype = "int32"
+        if dim_reduced <= np.iinfo(np.uint16).max:
+            out_dtype = "uint16"
+        elif dim_reduced <= np.iinfo(np.uint32).max:
+            out_dtype = "uint32"
+        return out_dtype
+
+    axis = [1]
+    sdtype = get_out_dtype(x_shape, axis)
+    x = relay.var("data", relay.TensorType(x_shape, "float32"))
+    broadcast_to = relay.op.broadcast_to(x, relay.const(broadcast_shape, dtype=sdtype))
+    argmax = relay.op.argmax(broadcast_to, axis=axis)
+
+    f = relay.Function([x], argmax)
+    assert_has_type(
+        f,
+        relay.FuncType(
+            [relay.TensorType(broadcast_shape, "float32")],
+            relay.TensorType([1], dtype=sdtype),
+        ),
+    )
 
     # Testing with argmin
     for (sdtype, conv) in shape_dtypes:

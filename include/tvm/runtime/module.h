@@ -23,6 +23,9 @@
  *  This is used to support dynamically link, load and save
  *  functions from different convention under unified API.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_MODULE_H_
 #define TVM_RUNTIME_MODULE_H_
 
@@ -187,7 +190,11 @@ class TVM_DLL ModuleNode : public Object {
    */
   virtual String GetSource(const String& format = "");
   /*!
-   * \brief Get the format of the module, when available.
+   * \brief Get the source code of module, when available.
+   * \return Binary format program compiled from source code when available.
+   */
+  virtual std::string GetProgram();
+  /* \brief Get the format of the module, when available.
    * \return Possible format when available.
    */
   virtual String GetFormat();

@@ -21,6 +21,9 @@
  * \file tvm/runtime/ndarray.h
  * \brief A device-independent managed NDArray abstraction.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_NDARRAY_H_
 #define TVM_RUNTIME_NDARRAY_H_
 
@@ -516,7 +519,7 @@ inline bool NDArray::Load(dmlc::Stream* strm) {
   ICHECK(data_byte_size == num_elems * elem_bytes) << "Invalid DLTensor file format";
   auto read_ret = strm->Read(ret->data, data_byte_size);
   // Only check non-empty data
-  if (ndim > 0 && shape[0] != 0) {
+  if (ndim > 0 && shape[0] != 0 && static_cast<int64_t>(read_ret) != data_byte_size) {
     ICHECK(read_ret) << "Invalid DLTensor file format";
   }
   if (!DMLC_IO_NO_ENDIAN_SWAP) {

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=invalid-name
+#
+# This file has been modified by Arm China team.
+#
 """Statement AST Node in TVM.
 
 Each statement node have subfields that can be visited from python side.
@@ -205,13 +208,16 @@ class BufferStore(Stmt):
     indices : List[PrimExpr]
         The indices location to be stored.
 
+    predicate : PrimExpr
+        The store predicate.
+
     span : Optional[Span]
         The location of this itervar in the source code.
     """
 
-    def __init__(self, buffer, value, indices, span=None):
+    def __init__(self, buffer, value, indices, predicate=None, span=None):
         self.__init_handle_by_constructor__(
-            _ffi_api.BufferStore, buffer, value, indices, span  # type: ignore
+            _ffi_api.BufferStore, buffer, value, indices, predicate, span  # type: ignore
         )
 
 

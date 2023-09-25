@@ -22,6 +22,9 @@
  * \brief Wraps an expr with compiler_begin and compiler_end to indicate that
  * this expr should be handled by the external compiler.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <tvm/relay/attrs/annotation.h>
 #include <tvm/relay/expr_functor.h>
@@ -39,6 +42,7 @@ static const PackedFunc* make_begin_op =
 static const PackedFunc* make_end_op =
     runtime::Registry::Get("relay.op.annotation._make.compiler_end");
 static const char default_target[] = "default";
+static const char compass_target[] = "aipu_compass";
 // A helper class to insert annotation boundaries for all the ops of a program
 // region that will be handled by a specific compiler.
 class AnnotateTargetRewriter : public ExprRewriter {
@@ -50,6 +54,8 @@ class AnnotateTargetRewriter : public ExprRewriter {
   Array<runtime::String> targets_;
   /*! \brief Maintain the decision of the target for each op expr. */
   std::unordered_map<Expr, std::string, ObjectPtrHash, ObjectPtrEqual> op_expr_to_target_;
+  /*! \brief Maintain the decision of the target for each constant expr. */
+  std::unordered_map<Expr, std::string, ObjectPtrHash, ObjectPtrEqual> const_expr_to_target_;
 
   /*!
    * \brief This function annotates a compiler end and a compiler begin to all arguments.
@@ -101,14 +107,32 @@ class AnnotateTargetRewriter : public ExprRewriter {
         compiler_ends.push_back(arg);
       }
 
+      // mark constant arg target
+      // if constant arg target is "", means it could be arranged to any target
+      // so arrange it to ref_target
+      if (arg.as<ConstantNode>()) {
+        if (const_expr_to_target_.find(arg) != const_expr_to_target_.end()) {
+          if (const_expr_to_target_[arg] == "") {
+            arg_target = ref_target;
+            const_expr_to_target_[arg] = ref_target;
+          } else {
+            arg_target = const_expr_to_target_[arg];
+          }
+        }
+      }
+
       // Maintain reference target in case the target of the current node is unassigned.
-      if (ref_target == "") {
+      // make compass target in priority.
+      if (ref_target == "" || arg_target == compass_target) {
         ref_target = arg_target;
-      } else if (ref_target != arg_target) {
-        ref_target = default_target;
       }
     }
 
+    if (!std::any_of(args.begin(), args.end(), [](Expr arg) { return !arg.as<ConstantNode>(); })) {
+      if (ref_target == "") {
+        ref_target = default_target;
+      }
+    }
     // Determine compiler begin target.
     std::string op_target = (target == "") ? ref_target : target;
 
@@ -274,6 +298,14 @@ class AnnotateTargetRewriter : public ExprRewriter {
     auto new_expr = WithFields(tuple, std::get<1>(target_n_args));
     op_expr_to_target_[new_expr] = std::get<0>(target_n_args);
     return std::move(new_expr);
+  }
+
+  Expr Rewrite_(const ConstantNode* op, const Expr& post) override {
+    auto expr = Downcast<Constant>(post);
+    if (const_expr_to_target_.find(expr) == const_expr_to_target_.end()) {
+      const_expr_to_target_[expr] = "";
+    }
+    return post;
   }
 
   Expr Rewrite_(const TupleGetItemNode* op, const Expr& post) override {

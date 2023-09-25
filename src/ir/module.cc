@@ -20,6 +20,9 @@
  * \file  module.cc
  * \brief The global module in TVM.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/ir/global_var_supply.h>
 #include <tvm/ir/module.h>
 #include <tvm/ir/type_functor.h>
@@ -474,5 +477,8 @@ TVM_REGISTER_GLOBAL("ir.Module_WithAttr")
 TVM_REGISTER_GLOBAL("ir.Module_GetAttr").set_body_typed([](IRModule mod, String key) -> ObjectRef {
   return mod->GetAttr<ObjectRef>(key);
 });
+
+TVM_REGISTER_GLOBAL("ir.Module_ShallowCopy").set_body_method<IRModule>(&IRModuleNode::ShallowCopy);
+TVM_REGISTER_GLOBAL("ir.Module_Remove").set_body_method<IRModule>(&IRModuleNode::Remove);
 
 }  // namespace tvm

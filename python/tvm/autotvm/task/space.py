@@ -24,6 +24,9 @@ The space is declared when we invoke the template function with ConfigSpace.
 During evaluation, we pass in a ConfigEntity, which contains a specific
 entity in the space. This entity contains deterministic parameters.
 """
+#
+# This file has been modified by Arm China team.
+#
 from __future__ import absolute_import as _abs
 
 import itertools
@@ -242,7 +245,8 @@ class SplitSpace(TransformSpace):
             if prod > self.product:
                 return
             if self.product % prod == 0 or (not enforce_no_tail and prod < self.product):
-                self.entities.append(SplitEntity([-1] + tmp_stack[::-1]))
+                entity = SplitEntity([math.ceil(self.product / prod)] + tmp_stack[::-1])
+                self.entities.append(entity)
         else:
             for factor in self.factors:
                 tmp_stack[now] = factor

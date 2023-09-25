@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """IRModule that holds the functions and type definitions."""
+#
+# This file has been modified by Arm China team.
+#
 import tvm._ffi
 from tvm._ffi.base import string_types
 from tvm.runtime import Scriptable
@@ -295,6 +298,28 @@ class IRModule(Node, Scriptable):
         """
 
         return _ffi_api.Module_WithAttr(self, attr_key, attr_value)
+
+    def shallow_copy(self):
+        """Create a shallow copy of this IRModule.
+
+        Returns
+        -------
+        mod : tvm.IRModule
+            The shallow copy of the IRModule.
+        """
+        return _ffi_api.Module_ShallowCopy(self)
+
+    def remove(self, var):
+        """Remove a function by the bound global variable or its name.
+
+        Parameters
+        ----------
+        var: Union[str, tvm.ir.GlobalVar]
+            The global variable or its name that binds to the function that will be removed.
+        """
+        if isinstance(var, string_types):
+            var = self.get_global_var(var)
+        return _ffi_api.Module_Remove(self, var)
 
     def astext(self, show_meta_data=True, annotate=None):
         """Get the text format of the expression.

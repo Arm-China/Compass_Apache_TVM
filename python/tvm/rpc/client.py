@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=used-before-assignment
+#
+# This file has been modified by Arm China team.
+#
 """RPC client tools"""
 import os
 import socket
@@ -196,6 +199,25 @@ class RPCSession(object):
                 "tvm.rpc.server.download_linked_module"
             )
         return self._remote_funcs["download_linked_module"](path)
+
+    def list_files(self, path):
+        """List files from remote folder recursively.
+
+        Parameters
+        ----------
+        path: str
+            The relative directory to remote temp folder, or the absolute directory on the remote
+        device.
+
+        Returns
+        -------
+        ret : list of str
+            The list of found file absolute paths.
+        """
+        if "list_files" not in self._remote_funcs:
+            self._remote_funcs["list_files"] = self.get_function("tvm.rpc.server.list_files")
+        ret_str = self._remote_funcs["list_files"](path)
+        return [x.strip() for x in ret_str.split("\n") if x.strip() != ""]
 
     def cpu(self, dev_id=0):
         """Construct CPU device."""

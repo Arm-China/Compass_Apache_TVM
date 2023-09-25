@@ -15,7 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=missing-function-docstring, missing-module-docstring
-
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 from tvm.script import tir as T
 from tvm.tir.schedule.testing import assert_structural_equal_ignore_global_symbol
@@ -239,7 +241,8 @@ def test_specialize_recursive_load():
 
 def test_specialize_with_const_folding():
     b = param_in_arith_exprs.params[1]
-    func = param_in_arith_exprs.specialize({b: tvm.tir.decl_buffer([16])})
+    # Simply support specialize dtype, so need to speific the dtype.
+    func = param_in_arith_exprs.specialize({b: tvm.tir.decl_buffer([16], "int32")})
     assert_structural_equal_ignore_global_symbol(func, param_in_arith_exprs_n_16)
 
 

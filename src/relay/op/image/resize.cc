@@ -21,6 +21,9 @@
  * \file resize.cc
  * \brief Image resize operators
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/relay/attrs/image.h>
 #include <tvm/relay/op.h>
 #include <tvm/tir/data_layout.h>
@@ -339,6 +342,32 @@ Expr MakeCropAndResize(Expr data, Expr boxes, Expr box_indices, Array<IndexExpr>
   return Call(op, {data, boxes, box_indices}, Attrs(attrs), {});
 }
 
+template <typename T>
+InferCorrectLayoutOutput CropAndResizeInferCorrectLayout(
+    const Attrs& attrs, const Array<Layout>& new_in_layouts, const Array<Layout>& old_in_layouts,
+    const Array<tvm::relay::Type>& old_in_types) {
+  const auto* attrs_ptr = attrs.as<T>();
+  CHECK(attrs_ptr);
+  ObjectPtr<T> params = make_object<T>(*attrs_ptr);
+
+  if (new_in_layouts.defined()) {
+    ICHECK_EQ(new_in_layouts.size(), 3);
+
+    Layout raw_layout(params->layout);
+    Layout new_layout = new_in_layouts[0];
+    Layout old_layout = old_in_layouts[0];
+    if (!new_layout.Equals(old_layout) && raw_layout.Equals(old_layout) &&
+        new_layout->axes.size() == old_layout->axes.size()) {
+      // Follow input layout
+      params->layout = new_layout.name();
+    }
+  }
+
+  // set tmp layout "NC" "N" to boxes and box_indices
+  return InferCorrectLayoutOutput({params->layout, Layout("NC"), Layout("N")}, {params->layout},
+                                  Attrs(params));
+}
+
 TVM_REGISTER_GLOBAL("relay.op.image._make.crop_and_resize").set_body_typed(MakeCropAndResize);
 
 RELAY_REGISTER_OP("image.crop_and_resize")
@@ -363,6 +392,8 @@ RELAY_REGISTER_OP("image.crop_and_resize")
     .set_attrs_type<CropAndResizeAttrs>()
     .set_support_level(5)
     .add_type_rel("CropAndResize", CropAndResizeRel)
+    .set_attr<FInferCorrectLayout>("FInferCorrectLayout",
+                                   CropAndResizeInferCorrectLayout<CropAndResizeAttrs>)
     .set_attr<TOpPattern>("TOpPattern", kInjective);
 
 }  // namespace relay

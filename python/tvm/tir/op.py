@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=redefined-builtin, invalid-name
 """Operators used in TIR expression."""
+#
+# This file has been modified by Arm China team.
+#
 import warnings
 from typing import Any, Optional
 
@@ -1468,6 +1471,8 @@ def ret(val):
         The return expression
     """
 
+    if val is None:
+        return call_intrin(None, "tir.ret")
     val = convert(val)
     return call_intrin(val.dtype, "tir.ret", val)
 
@@ -2251,6 +2256,37 @@ def round(x, span=None):
         The result.
     """
     return _ffi_api.round(x, span)  # type: ignore
+
+
+def narrow_shift_right(x, dtype, shift, s, r, span=None):
+    """Narrow shift right with optional saturation and round.
+
+    Parameters
+    ----------
+    x : PrimExpr
+        Input argument.
+
+    dtype : str
+            The final dtype will be cast to.
+
+    shift : int
+            The shift value.
+
+    s : int
+        Whether saturation.
+
+    r : int
+        Whether round.
+
+    span : Optional[Span]
+        The location of this operator in the source code.
+
+    Returns
+    -------
+    y : PrimExpr
+        The result.
+    """
+    return _ffi_api.narrow_shift_right(x, dtype, shift, s, r, span)
 
 
 def nearbyint(x, span=None):

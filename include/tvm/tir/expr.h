@@ -21,6 +21,9 @@
  * \file tvm/tir/expr.h
  * \brief TIR expressions.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 // Acknowledgement: Many low-level IR nodes originate from Halide.
 #ifndef TVM_TIR_EXPR_H_
 #define TVM_TIR_EXPR_H_
@@ -630,23 +633,27 @@ class BufferLoadNode : public PrimExprNode {
   Buffer buffer;
   /*! \brief The indices location to be loaded. */
   Array<PrimExpr> indices;
+  /*! \brief The predicate to mask which lanes would be loaded. */
+  PrimExpr predicate;
 
   void VisitAttrs(AttrVisitor* v) {
     v->Visit("dtype", &(this->dtype));
     v->Visit("buffer", &buffer);
     v->Visit("indices", &indices);
+    v->Visit("predicate", &predicate);
     v->Visit("span", &span);
   }
 
   bool SEqualReduce(const BufferLoadNode* other, SEqualReducer equal) const {
     return equal(dtype, other->dtype) && equal(buffer, other->buffer) &&
-           equal(indices, other->indices);
+           equal(indices, other->indices) && equal(predicate, other->predicate);
   }
 
   void SHashReduce(SHashReducer hash_reduce) const {
     hash_reduce(dtype);
     hash_reduce(buffer);
     hash_reduce(indices);
+    hash_reduce(predicate);
   }
 
   static constexpr const char* _type_key = "tir.BufferLoad";
@@ -676,6 +683,8 @@ class BufferLoadNode : public PrimExprNode {
 class BufferLoad : public PrimExpr {
  public:
   TVM_DLL explicit BufferLoad(Buffer buffer, Array<PrimExpr> indices, Span span = Span());
+  TVM_DLL explicit BufferLoad(Buffer buffer, Array<PrimExpr> indices, PrimExpr predicate,
+                              Span span = Span());
   TVM_DEFINE_OBJECT_REF_METHODS(BufferLoad, PrimExpr, BufferLoadNode);
   TVM_DEFINE_OBJECT_REF_COW_METHOD(BufferLoadNode);
 };

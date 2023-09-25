@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/arith/analyzer.h>
 #include <tvm/script/ir_builder/tir/ir.h>
 
@@ -223,9 +226,9 @@ Buffer AllocBuffer(Array<PrimExpr> shape, DataType dtype, Optional<Var> data,
   Buffer buffer = BufferDecl(shape, dtype, "", data, strides, elem_offset, storage_scope, align,
                              offset_factor, buffer_type_str, axis_separators);
   IRBuilder builder = IRBuilder::Current();
-  if (Optional<BlockFrame> frame = builder->GetLastFrame<BlockFrame>()) {
+  if (Optional<BlockFrame> frame = builder->FindFrame<BlockFrame>()) {
     frame.value()->alloc_buffers.push_back(buffer);
-  } else if (Optional<PrimFuncFrame> frame = builder->GetLastFrame<PrimFuncFrame>()) {
+  } else if (Optional<PrimFuncFrame> frame = builder->FindFrame<PrimFuncFrame>()) {
     frame.value()->root_alloc_buffers.push_back(buffer);
   } else {
     LOG(FATAL) << "ValueError: Block frame or PrimFunc frame not find. Please ensure "
@@ -319,7 +322,7 @@ Array<Var> Remap(String kinds, Array<PrimExpr> bindings, DataType dtype) {
     PrimExpr extent = arith::Analyzer().Simplify(stop - start);                                   \
     ObjectPtr<ForFrameNode> n = make_object<ForFrameNode>();                                      \
     int bits = std::max(min.dtype().bits(), extent.dtype().bits());                               \
-    n->vars = {Var("v", DataType::Int(bits))};                                                    \
+    n->vars = {Var("v", DataType(min.dtype().code(), bits, 1))};                                  \
     n->doms = {Range::FromMinExtent(min, extent)};                                                \
     n->f_make_for_loop = [annotations](Array<Var> vars, Array<Range> doms, tvm::tir::Stmt body) { \
       ICHECK_EQ(vars.size(), 1);                                                                  \
@@ -344,7 +347,7 @@ ForFrame ThreadBinding(PrimExpr start, PrimExpr stop, String thread,
   PrimExpr extent = arith::Analyzer().Simplify(stop - start);
   ObjectPtr<ForFrameNode> n = make_object<ForFrameNode>();
   int bits = std::max(min.dtype().bits(), extent.dtype().bits());
-  n->vars = {Var("v", DataType::Int(bits))};
+  n->vars = {Var("v", DataType(min.dtype().code(), bits, 1))};
   n->doms = {Range::FromMinExtent(min, extent)};
   n->f_make_for_loop = [annotations, thread](Array<Var> vars, Array<Range> doms, Stmt body) -> For {
     ICHECK_EQ(vars.size(), 1);

@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=unused-import
 """The computation schedule api of TVM."""
+#
+# This file has been modified by Arm China team.
+#
 import collections
 import inspect
 from typing import Callable, List
@@ -312,6 +315,26 @@ class Stage(Object):
             The loop scope t be attached to.
         """
         _ffi_api.StageComputeAt(self, parent, scope)
+
+    def compute_inside(self, attached_stage, attached_iv):
+        """Modified version of "compute_at" only for providing a restricted
+        workaround of the "fuse-split-compute_at" issue.
+
+        Parameters
+        ----------
+        attached_stage : tvm.te.Stage
+            The target stage in which the current stage will be placed.
+
+        attached_iv : tvm.tir.IterVar
+            The axis of the target stage inside which the current stage will be
+            placed.
+
+        Returns
+        -------
+        axis : tvm.tir.IterVar
+            The remain axis that can be scheduled further.
+        """
+        return _ffi_api.StageComputeInside(self, attached_stage, attached_iv)
 
     def compute_inline(self):
         """Mark stage as inline

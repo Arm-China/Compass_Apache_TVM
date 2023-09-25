@@ -15,6 +15,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 # NOTE: allow unbound variable here
 set +u
@@ -27,7 +30,7 @@ fi
 set -ux
 
 export TVM_PATH=`pwd`
-export PYTHONPATH="${TVM_PATH}/python"
+export PYTHONPATH="${TVM_PATH}/python:${PYTHONPATH}"
 
 export TVM_PYTEST_RESULT_DIR="${TVM_PATH}/build/pytest-results"
 mkdir -p "${TVM_PYTEST_RESULT_DIR}"

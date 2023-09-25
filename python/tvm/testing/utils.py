@@ -16,6 +16,9 @@
 # under the License.
 
 # pylint: disable=invalid-name,unnecessary-comprehension
+#
+# This file has been modified by Arm China team.
+#
 """TVM testing utilities
 
 Organization
@@ -2119,7 +2122,12 @@ class CompareBeforeAfter:
 class _control_span_filling:
     def __init__(self, on=True):
         self._on = on
-        self._pass_ctx = tvm.transform.PassContext(config={"relay.frontend.fill_span": self._on})
+        self._pass_ctx = tvm.transform.PassContext(
+            config={
+                "relay.frontend.fill_span": self._on,
+                "relay.frontend.span_propagation": self._on,
+            }
+        )
 
     def __enter__(self):
         self._pass_ctx.__enter__()

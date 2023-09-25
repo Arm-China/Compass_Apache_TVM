@@ -21,8 +21,12 @@
  * \file lower_device_storage_access.cc
  * \brief Lower the special device storage access.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/arith/analyzer.h>
 #include <tvm/runtime/registry.h>
+#include <tvm/target/target.h>
 #include <tvm/target/target_info.h>
 #include <tvm/tir/buffer.h>
 #include <tvm/tir/builtin.h>
@@ -37,6 +41,10 @@ namespace tir {
 
 using runtime::StorageRank;
 using runtime::StorageScope;
+
+// Special process on AllocateNode if target is aipu,
+// here we add a flag.
+bool IsAipu = false;
 
 class StorageAccessInfoLower : public StmtExprMutator {
  public:
@@ -55,6 +63,8 @@ class StorageAccessInfoLower : public StmtExprMutator {
       if (info->head_address.defined()) {
         return LetStmt(op->buffer_var, info->head_address, op->body);
       } else {
+        // For aipu target, there exist lsram & gsram, which need allocatenode.
+        if (IsAipu) return stmt;
         return op->body;
       }
     } else {
@@ -123,7 +133,9 @@ namespace transform {
 
 Pass LowerDeviceStorageAccessInfo() {
   auto pass_func = [](PrimFunc f, IRModule m, PassContext ctx) {
+    auto target = f->GetAttr<Target>(tvm::attr::kTarget);
     auto* n = f.CopyOnWrite();
+    IsAipu = ((target != nullptr) && (target.value()->kind->name == "aipu"));
     n->body = StorageAccessInfoLower()(std::move(n->body));
     return f;
   };

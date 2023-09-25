@@ -21,6 +21,9 @@
  * \file module.cc
  * \brief TVM module system
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/runtime/module.h>
 #include <tvm/runtime/packed_func.h>
 #include <tvm/runtime/registry.h>
@@ -105,6 +108,11 @@ String ModuleNode::GetSource(const String& format) {
   LOG(FATAL) << "Module[" << type_key() << "] does not support GetSource";
 }
 
+std::string ModuleNode::GetProgram() {
+  LOG(FATAL) << "Module[" << type_key() << "] does not support GetProgram";
+  return "";
+}
+
 const PackedFunc* ModuleNode::GetFuncFromEnv(const String& name) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto it = import_cache_.find(name);
@@ -175,6 +183,13 @@ TVM_REGISTER_GLOBAL("runtime.RuntimeEnabled").set_body_typed(RuntimeEnabled);
 
 TVM_REGISTER_GLOBAL("runtime.ModuleGetSource").set_body_typed([](Module mod, std::string fmt) {
   return mod->GetSource(fmt);
+});
+
+TVM_REGISTER_GLOBAL("runtime.ModuleGetProgram").set_body([](TVMArgs args, TVMRetValue* rv) {
+  Module mod = args[0];
+  std::string program = mod->GetProgram();
+  *rv = TVMByteArray{program.data(), program.size()};
+  return;
 });
 
 TVM_REGISTER_GLOBAL("runtime.ModuleImportsSize").set_body_typed([](Module mod) {

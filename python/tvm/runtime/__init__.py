@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """TVM runtime namespace."""
+#
+# This file has been modified by Arm China team.
+#
 
 # class exposures
 from .packed_func import PackedFunc
@@ -29,7 +32,7 @@ from .profiling import Report
 # function exposures
 from .object_generic import convert_to_object, convert, const
 from .ndarray import device, cpu, cuda, gpu, opencl, cl, vulkan, metal, mtl
-from .ndarray import vpi, rocm, ext_dev
+from .ndarray import vpi, rocm, ext_dev, aipu_device
 from .module import load_module, enabled, system_lib, load_static_library
 from .container import String, ShapeTuple
 from .params import (

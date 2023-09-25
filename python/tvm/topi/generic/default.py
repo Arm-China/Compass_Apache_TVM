@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=invalid-name,unused-argument
 """The default schedule used by various operators"""
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 from tvm import te
 
@@ -24,7 +27,7 @@ def default_schedule(outs, auto_inline):
     """Default schedule for llvm."""
     target = tvm.target.Target.current(allow_none=False)
     outs = [outs] if isinstance(outs, te.tensor.Tensor) else outs
-    if target.kind.name not in ("llvm", "c"):
+    if target.kind.name not in ("llvm", "c", "aipu"):
         raise RuntimeError(f"schedule not registered for '{target}'")
     s = te.create_schedule([x.op for x in outs])
     if auto_inline:

@@ -21,6 +21,9 @@
  * \file src/target/target_kind.cc
  * \brief Target kind registry
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/ir/expr.h>
 #include <tvm/runtime/device_api.h>
 #include <tvm/runtime/registry.h>
@@ -178,7 +181,9 @@ TargetJSON UpdateCUDAAttrs(TargetJSON target) {
     // Use the compute version of the first CUDA GPU instead
     TVMRetValue version;
     if (!DetectDeviceFlag({kDLCUDA, 0}, runtime::kComputeVersion, &version)) {
-      LOG(WARNING) << "Unable to detect CUDA version, default to \"-arch=sm_50\" instead";
+      if (getenv("CI_DISABLE_CUDA_DETECT_LOG") == nullptr) {
+        LOG(WARNING) << "Unable to detect CUDA version, default to \"-arch=sm_50\" instead";
+      }
       archInt = 50;
     } else {
       archInt = std::stod(version.operator std::string()) * 10 + 0.1;

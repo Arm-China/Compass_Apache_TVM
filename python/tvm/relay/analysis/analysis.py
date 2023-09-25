@@ -16,6 +16,11 @@
 # under the License.
 # pylint: disable=no-else-return
 # pylint: disable=unidiomatic-typecheck
+
+#
+# This file has been modified by Arm China team.
+#
+
 """
 This file contains the set of passes for Relay, which exposes an interface for
 configuring the passes and scripting them in Python.
@@ -431,6 +436,25 @@ def get_calibration_data(mod, data):
         calib_data[gvar] = value
 
     return calib_data
+
+
+def consumers(expr, base_expr):
+    """Get the consumers of the expr in the scope base_expr
+
+    Parameters
+    ----------
+    expr : tvm.relay.Expr
+        The expression who would be consumed by the return expression
+
+    base_expr : tvm.relay.Expr
+        The expression in which we would search as root expr
+
+    Returns
+    -------
+    free : List[tvm.relay.Expr]
+        The list of expression who consume the expr
+    """
+    return _ffi_api.consumers(expr, base_expr)
 
 
 def extract_intermdeiate_expr(mod, expr_id):

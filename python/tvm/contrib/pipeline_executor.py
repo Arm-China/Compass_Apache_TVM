@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 """Pipeline executor that executes a series of modules in a pipeline fashion."""
 import json
 import os
@@ -55,6 +58,7 @@ class PipelineModule(object):
         self._set_input = self.module["set_input"]
         self._get_input = self.module["get_input"]
         self._get_output = self.module["get_output"]
+        self._get_output_by_index = self.module["get_output_by_index"]
         self._get_num_outputs = self.module["get_num_outputs"]
         self._get_num_inputs = self.module["get_num_inputs"]
         self._get_input_pipeline_map = self.module["get_input_pipeline_map"]
@@ -150,6 +154,26 @@ class PipelineModule(object):
             while not outputs:
                 outputs = self._get_output()
                 time.sleep(sleep_interval)
+
+        return outputs
+
+    def get_output_by_index(self, index, interval_microseconds=1000):
+        """Get the output.
+        Returns
+        -------
+        data : NDArray
+            Output data.
+        index : int
+            The output index
+        interval_microseconds : int
+            When doing the synchronize loop poll,
+            how many micro seconds the loop should sleep for yield.
+            If interval_microseconds <= 0, which means not synchronize and return immediately.
+        """
+        out_num = self._get_num_outputs()
+        if index >= out_num:
+            raise RuntimeError(f"index is out of range as pipeline only has {out_num} outputs")
+        outputs = self._get_output_by_index(index, interval_microseconds)
 
         return outputs
 

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Common runtime ctypes."""
+#
+# This file has been modified by Arm China team.
+#
 # pylint: disable=invalid-name
 import ctypes
 import json
@@ -117,6 +120,12 @@ class DataType(ctypes.Structure):
 
     def __init__(self, type_str):
         super(DataType, self).__init__()
+        if isinstance(type_str, DataType):
+            self.type_code = type_str.type_code
+            self.bits = type_str.bits
+            self.lanes = type_str.lanes
+            return
+
         numpy_str_map = DataType.NUMPY2STR
         if type_str in numpy_str_map:
             type_str = numpy_str_map[type_str]
@@ -144,6 +153,10 @@ class DataType(ctypes.Structure):
         elif head.startswith("uint"):
             self.type_code = DataTypeCode.UINT
             head = head[4:]
+        elif head.startswith("bool"):
+            self.type_code = DataTypeCode.UINT
+            head = head[4:]
+            bits = 1
         elif head.startswith("float"):
             self.type_code = DataTypeCode.FLOAT
             head = head[5:]
@@ -202,6 +215,69 @@ class DataType(ctypes.Structure):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @property
+    def bytes(self):
+        return (self.bits + 7) // 8
+
+    @property
+    def is_int(self):
+        return self.type_code == DataTypeCode.INT
+
+    @property
+    def is_uint(self):
+        return self.type_code == DataTypeCode.UINT
+
+    @property
+    def is_integer(self):
+        return self.is_int or self.is_uint
+
+    @property
+    def is_float(self):
+        return self.type_code == DataTypeCode.FLOAT
+
+    @property
+    def is_float16(self):
+        return self.is_float and self.bits == 16
+
+    @property
+    def is_scalar(self):
+        return self.lanes == 1
+
+    @property
+    def is_vector(self):
+        return self.lanes > 1
+
+    def with_lanes(self, lanes):
+        self_lanes = self.lanes
+        self.lanes = lanes
+        new_dtype = DataType(repr(self))
+        self.lanes = self_lanes
+        return new_dtype
+
+    def with_bits(self, bits):
+        self_bits = self.bits
+        self.bits = bits
+        new_dtype = DataType(repr(self))
+        self.bits = self_bits
+        return new_dtype
+
+    def with_type_code(self, type_code):
+        self_type_code = self.type_code
+        self.type_code = type_code
+        new_dtype = DataType(repr(self))
+        self.type_code = self_type_code
+        return new_dtype
+
+    def with_uint(self):
+        return self.with_type_code(DataTypeCode.UINT)
+
+    def with_int(self):
+        return self.with_type_code(DataTypeCode.INT)
+
+    @property
+    def element_of(self):
+        return str(self.with_lanes(1))
+
 
 if ml_dtypes is not None:
     DataType.NUMPY2STR[np.dtype(ml_dtypes.bfloat16)] = "bfloat16"
@@ -243,6 +319,7 @@ class Device(ctypes.Structure):
     kDLSDAccel = 33
     kOpenGL = 34
     kDLMicroDev = 35
+    kDLAIPU = 60
 
     _fields_ = [("device_type", ctypes.c_int), ("device_id", ctypes.c_int)]
     MASK2STR = {
@@ -264,6 +341,7 @@ class Device(ctypes.Structure):
         kDLSDAccel: "sdaccel",
         kOpenGL: "opengl",
         kDLMicroDev: "microdev",
+        kDLAIPU: "aipu",
     }
 
     STR2MASK = {
@@ -288,6 +366,7 @@ class Device(ctypes.Structure):
         "ext_dev": kDLExtDev,
         "hexagon": kDLHexagon,
         "webgpu": kDLWebGPU,
+        "aipu": kDLAIPU,
     }
 
     def __init__(self, device_type, device_id):

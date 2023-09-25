@@ -23,6 +23,9 @@
  * \brief Header of internal operator functions
  *  These can be used for writing passes.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RELAY_TRANSFORMS_PATTERN_UTILS_H_
 #define TVM_RELAY_TRANSFORMS_PATTERN_UTILS_H_
 
@@ -521,6 +524,21 @@ static inline long double ToScalar(const runtime::NDArray& array, size_t i = 0) 
   auto try_value = TryToScalar(array, i);
   ICHECK(try_value) << "Unknown data type: " << tvm::runtime::DLDataType2String(array->dtype);
   return try_value.value();
+}
+
+/*!
+ * \brief Check if two expressions are scalars with equal value.
+ * \param a The expression to be checked.
+ * \param b The expression to be checked
+ * \return Whether two expressions are scalars with equal value.
+ */
+inline bool IsEqualScalarValue(const Expr& a, const Expr& b) {
+  const auto* constant_a = a.as<ConstantNode>();
+  const auto* constant_b = b.as<ConstantNode>();
+  if (!constant_a || !constant_b || !constant_a->is_scalar() || !constant_b->is_scalar()) {
+    return false;
+  }
+  return ToScalar(constant_a->data) == ToScalar(constant_b->data);
 }
 
 /*!

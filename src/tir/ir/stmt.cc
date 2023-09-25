@@ -20,6 +20,9 @@
 /*!
  * \file tvm/tir/stmt.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/arith/analyzer.h>
 #include <tvm/runtime/registry.h>
 #include <tvm/tir/op.h>
@@ -458,7 +461,11 @@ TVM_REGISTER_GLOBAL("tir.Evaluate").set_body_typed([](PrimExpr value, Span span)
 TVM_REGISTER_NODE_TYPE(EvaluateNode);
 
 // BufferStore
-BufferStore::BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices, Span span) {
+BufferStore::BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices, Span span)
+    : BufferStore(buffer, value, indices, PrimExpr(), span) {}
+
+BufferStore::BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices, PrimExpr predicate,
+                         Span span) {
   ICHECK_EQ(buffer->shape.size(), indices.size())
       << "Buffer " << buffer->name << " is " << buffer->shape.size()
       << "-dimensional, cannot be indexed with the " << indices.size()
@@ -483,18 +490,20 @@ BufferStore::BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices,
                << "`, but RHS's dtype is `" << value.dtype() << "`";
   }
 
+  if (!predicate.defined()) predicate = const_true(value->dtype.lanes());
+
   ObjectPtr<BufferStoreNode> node = make_object<BufferStoreNode>();
   node->buffer = std::move(buffer);
   node->value = std::move(value);
   node->indices = std::move(indices);
+  node->predicate = std::move(predicate);
   node->span = std::move(span);
   data_ = std::move(node);
 }
 
 TVM_REGISTER_GLOBAL("tir.BufferStore")
-    .set_body_typed([](Buffer buffer, PrimExpr value, Array<PrimExpr> indices, Span span) {
-      return BufferStore(buffer, value, indices, span);
-    });
+    .set_body_typed([](Buffer buffer, PrimExpr value, Array<PrimExpr> indices, PrimExpr predicate,
+                       Span span) { return BufferStore(buffer, value, indices, predicate, span); });
 
 TVM_REGISTER_NODE_TYPE(BufferStoreNode);
 

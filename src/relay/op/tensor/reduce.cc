@@ -21,6 +21,10 @@
  * \file reduce.cc
  * \brief Reduction operators.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
+
 #include <tvm/relay/attrs/reduce.h>
 #include <tvm/relay/expr.h>
 #include <tvm/relay/op.h>
@@ -262,7 +266,16 @@ Array<te::Tensor> ArgReduceCompute(const Attrs& attrs, const Array<te::Tensor>& 
     }
   }
 
-  return {f(inputs[0], axes, param->keepdims, false, param->select_last_index)};
+  te::Tensor out = f(inputs[0], axes, param->keepdims, false, param->select_last_index);
+
+  // Compare DataType between out_type from input function args and
+  // output of compute function f, and add cast when difference met.
+  const auto* out_t = out_type.as<TensorTypeNode>();
+  DataType out_dt = out_t->dtype;
+  if (out_dt != out->dtype) {
+    out = topi::cast(out, out_dt);
+  }
+  return {out};
 }
 
 /*!
@@ -338,7 +351,53 @@ bool GenericReduceRel(const Array<Type>& types, int num_inputs, const Attrs& att
 
   // assign output type and shape
   auto oshape = ReduceShapeImpl(in_shape, param, reporter);
-  reporter->Assign(types[1], TensorType(oshape, data->shape[0].dtype()));
+  auto out_dtype = data->shape[0].dtype();
+
+  reporter->Assign(types[1], TensorType(oshape, out_dtype));
+  return true;
+}
+
+template <class T>
+bool ArgMaxRel(const Array<Type>& types, int num_inputs, const Attrs& attrs,
+               const TypeReporter& reporter) {
+  ICHECK_EQ(types.size(), 2);
+  const auto* data = types[0].as<TensorTypeNode>();
+  if (data == nullptr) return false;
+  ICHECK(static_cast<int>(data->shape.size()) != 0);
+  std::vector<IndexExpr> in_shape(data->shape.begin(), data->shape.end());
+
+  const T* param = attrs.as<T>();
+  ICHECK(param != nullptr);
+
+  // assign output type and shape
+  auto oshape = ReduceShapeImpl(in_shape, param, reporter);
+  auto out_dtype = data->shape[0].dtype();
+
+  // Make output type as most possible's from reduced dimension
+  // and unsigned type such as u16 or u32.
+  auto r_axes = GetReduceAxes(in_shape.size(), param->axis, param->exclude);
+  bool is_dynamic_input = false;
+  int64_t dim_reduced = 1;
+  if (r_axes.size()) {
+    for (int64_t axis : r_axes) {
+      if (in_shape[axis].as<IntImmNode>()) {
+        dim_reduced *= *tir::as_const_int(in_shape[axis]);
+      } else {
+        is_dynamic_input = true;
+        break;
+      }
+    }
+  }
+  if (!is_dynamic_input) {
+    if (dim_reduced <= UINT16_MAX) {
+      out_dtype = DataType::UInt(16);
+    } else if (dim_reduced <= UINT32_MAX) {
+      out_dtype = DataType::UInt(32);
+    }
+  }
+
+  auto tt = TensorType(oshape, out_dtype);
+  reporter->Assign(types[1], tt);
   return true;
 }
 /*!
@@ -421,7 +480,7 @@ values over a given axis.
 )code" TVM_ADD_FILELINE)
     .set_attrs_type<ArgReduceAttrs>()
     .set_support_level(4)
-    .add_type_rel("ArgReduce", GenericReduceRel<ArgReduceAttrs>)
+    .add_type_rel("ArgMaxReduce", ArgMaxRel<ArgReduceAttrs>)
     .set_attr<FTVMCompute>("FTVMCompute", ArgMaxCompute)
     .set_attr<FInferCorrectLayout>("FInferCorrectLayout", ReduceInferCorrectLayout<ArgReduceAttrs>)
     .set_attr<TOpPattern>("TOpPattern", kCommReduce);

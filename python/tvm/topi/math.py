@@ -16,6 +16,9 @@
 # under the License.
 """Elementwise operators"""
 # pylint: disable=redefined-builtin,unused-argument
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 from tvm import te
 from tvm.tir import PrimExpr
@@ -473,6 +476,37 @@ def round(x):
     return te.compute(x.shape, lambda *i: te.round(x(*i)))
 
 
+# pylint: disable=invalid-name
+def narrow_shift_right(x, dtype, shift, s, r):
+    """Narrow shift right with optional saturation and round.
+
+    Parameters
+    ----------
+    x : PrimExpr
+        Input argument.
+
+    dtype : str
+            The final dtype will be cast to.
+
+    shift : int
+            The shift value.
+
+    s : bool
+        whether saturation.
+
+    r : bool
+        whether round.
+
+    Returns
+    -------
+    y : PrimExpr
+        The result.
+    """
+    return te.compute(
+        x.shape, lambda *i: te.narrow_shift_right(x(*i), dtype, shift, int(s), int(r))
+    )
+
+
 @tvm.te.tag_scope(tag=tag.ELEMWISE)
 def log(x):
     """Take logarithm of input x.
@@ -635,15 +669,18 @@ def clip(x, a_min, a_max):
 
     def _compute(*indices):
         value = x(*indices)
+        # Clip a_min/a_max to min/max value in data type.
+        dtype_min = float(tvm.tir.op.min_value(value.dtype).value)
+        dtype_max = float(tvm.tir.op.max_value(value.dtype).value)
         const_min = (
             tvm.tir.Cast(value.dtype, a_min)
             if isinstance(a_min, PrimExpr)
-            else tvm.tir.const(a_min, value.dtype)
+            else tvm.tir.const(max(dtype_min, a_min), value.dtype)
         )
         const_max = (
             tvm.tir.Cast(value.dtype, a_max)
             if isinstance(a_max, PrimExpr)
-            else tvm.tir.const(a_max, value.dtype)
+            else tvm.tir.const(min(dtype_max, a_max), value.dtype)
         )
         return tvm.te.max(tvm.te.min(value, const_max), const_min)
 

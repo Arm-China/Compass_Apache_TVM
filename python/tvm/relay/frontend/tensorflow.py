@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=import-self, invalid-name, unused-argument, too-many-lines, len-as-condition, broad-except
 # pylint: disable=import-outside-toplevel, redefined-builtin
+#
+# This file has been modified by Arm China team.
+#
 """TF: Tensorflow frontend."""
 import warnings
 from collections import defaultdict
@@ -42,6 +45,7 @@ from .common import set_span
 from .tensorflow_ops import _convert_map
 from .tensorflow_ops import _need_prelude_for_shape_inference
 from .tensorflow_ops import _get_more_static_shape
+
 
 __all__ = ["from_tensorflow"]
 
@@ -644,9 +648,8 @@ class GraphProto(object):
                     out.append(self._nodes[out_name][0])
 
         if isinstance(out, _expr.TupleWrapper):
-            out = out.tuple_value
-        else:
-            out = out[0] if len(out) == 1 else _expr.Tuple(out)
+            out = list(out)
+        out = out[0] if len(out) == 1 else _expr.Tuple(out)
         fvars = analysis.free_vars(out)
         func = _function.Function(fvars, out)
         final_params = {}
@@ -670,6 +673,8 @@ class GraphProto(object):
         a. Set of operator names which don't have their mapping in TVM, i.e.
             which are not supported
         """
+        from tvm.relay.op.contrib.aipu_compass import TF_CUSTOM_OP_DICT
+
         missing_operators = set()
         from tensorflow.python.framework import op_def_registry
 
@@ -687,7 +692,17 @@ class GraphProto(object):
             elif node.op in ["PartitionedCall", "StatefulPartitionedCall"]:
                 pass
             else:
-                if any([node.op in t for t in [_identity_list, _convert_map, _control_flow_nodes]]):
+                if any(
+                    [
+                        node.op in t
+                        for t in [
+                            _identity_list,
+                            _convert_map,
+                            _control_flow_nodes,
+                            TF_CUSTOM_OP_DICT,
+                        ]
+                    ]
+                ):
                     pass
                 elif op_def is not None and op_def.is_stateful:
                     missing_operators.add(node.op)
@@ -826,8 +841,14 @@ class GraphProto(object):
                         if cf_name.startswith(switch_prefix):
                             self._backtrack_construct(cf_name)
                             break
+                if node_name_prefix in self._branches:
+                    branch = self._branches[node_name_prefix]
+                else:
+                    for br in self._branches:
+                        if br.startswith(node_name_prefix):
+                            branch = self._branches[br]
+                            break
 
-                branch = self._branches[node_name_prefix]
                 false_br = self._licm_construct(plname, node.input[0])
                 true_br = self._licm_construct(plname, node.input[1])
                 branch.true_branch = true_br
@@ -1025,10 +1046,15 @@ class GraphProto(object):
         sym : relay.op
             Converted relay operator
         """
+        from tvm.relay.op.contrib.aipu_compass import TF_CUSTOM_OP_DICT
+
         identity_list = identity_list if identity_list else _identity_list
         convert_map = convert_map if convert_map else _convert_map
         if op_name in identity_list:
             sym = get_relay_op(op_name)(*inputs, **attrs)
+        elif op_name in TF_CUSTOM_OP_DICT:
+            converter = TF_CUSTOM_OP_DICT[op_name]
+            sym = converter(inputs, attrs, self._params)
         elif op_name in convert_map:
             if _need_prelude_for_shape_inference(op_name):
                 sym = convert_map[op_name](inputs, attrs, self._params, self._prelude)
@@ -1147,28 +1173,27 @@ class GraphProto(object):
 
                     if elem_shape:
                         attr["shape"] = elem_shape
-                    if attr["identical_element_shapes"] or elem_shape:
-                        shape_node, wnode_op, output_index = self._tensor_array_shape_nodes[
-                            node.name
-                        ]
-                        name = shape_node.name
-                        if output_index > 0:
-                            name += ":" + str(output_index)
-                        converted = self._backtrack_construct(name)
-                        shape = _infer_shape(converted, self._mod)
-                        if wnode_op.startswith("TensorArraySplit"):
-                            shape = (Any(),) + shape[1:]
-                        elif wnode_op.startswith("TensorArrayScatter"):
-                            shape = shape[1:]
 
-                        if node.name in self._tensor_array_shapes:
-                            preset_shape = self._tensor_array_shapes[node.name]
-                            shape = _get_more_static_shape(shape, preset_shape)
+                    # it should infer shape no matter whether elem_shape.
+                    shape_node, wnode_op, output_index = self._tensor_array_shape_nodes[node.name]
+                    name = shape_node.name
+                    if output_index > 0:
+                        name += ":" + str(output_index)
+                    converted = self._backtrack_construct(name)
+                    shape = _infer_shape(converted, self._mod)
+                    if wnode_op.startswith("TensorArraySplit"):
+                        shape = (Any(),) + shape[1:]
+                    elif wnode_op.startswith("TensorArrayScatter"):
+                        shape = shape[1:]
 
-                        if "shape" in attr:
-                            attr["shape"] = _get_more_static_shape(shape, attr["shape"])
-                        else:
-                            attr["shape"] = shape
+                    if node.name in self._tensor_array_shapes:
+                        preset_shape = self._tensor_array_shapes[node.name]
+                        shape = _get_more_static_shape(shape, preset_shape)
+
+                    if "shape" in attr:
+                        attr["shape"] = _get_more_static_shape(shape, attr["shape"])
+                    else:
+                        attr["shape"] = shape
 
                 # LICM
                 if plname in self._while_loop_name_set:

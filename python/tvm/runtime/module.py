@@ -17,12 +17,17 @@
 
 # pylint: disable=invalid-name, unused-import, import-outside-toplevel, inconsistent-return-statements
 """Runtime Module namespace."""
+#
+# This file has been modified by Arm China team.
+#
 import os
 import ctypes
 import struct
+import uuid
 from typing import Sequence
 import numpy as np
 
+import tvm
 import tvm._ffi
 from tvm._ffi.base import _LIB, check_call, c_str, string_types, _RUNTIME_ONLY
 from tvm._ffi.libinfo import find_include_path
@@ -228,6 +233,22 @@ class Module(object):
             The result source code.
         """
         return _ffi_api.ModuleGetSource(self, fmt)
+
+    def get_program(self):
+        """Get binary format program compiled from source code from module, if
+        available.
+
+        Returns
+        -------
+        program : bytes
+            The result binary format program.
+        """
+        return _ffi_api.ModuleGetProgram(self)
+
+    def save_program(self, file_name: str):
+        program = self.get_program()
+        with open(file_name, "wb") as f:
+            f.write(program)
 
     @property
     def imported_modules(self):
@@ -713,3 +734,8 @@ def num_threads() -> int:
 
 
 _set_class_module(Module)
+
+
+@tvm.register_func("uuid.uuid4().hex")
+def _():
+    return uuid.uuid4().hex

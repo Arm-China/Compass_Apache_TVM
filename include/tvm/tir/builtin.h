@@ -16,7 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+/*
+ * This file has been modified by Arm China team.
+ */
 /*!
  * \file tvm/tir/builtin.h
  * \brief TIR builtin intrinsics.
@@ -84,6 +86,11 @@ TVM_DLL const Op& shift_left();
  * \brief Right shift
  */
 TVM_DLL const Op& shift_right();
+
+/*!
+ * \brief Narrow right shift with optional saturation and round
+ */
+TVM_DLL const Op& narrow_shift_right();
 
 /*!
  * \brief See pesudo code
@@ -154,6 +161,29 @@ TVM_DLL const Op& popcount();
  *  }
  */
 TVM_DLL const Op& fma();
+
+/*!
+ * \brief Represent a constant predicate through arguments.
+ *
+ *  This is needed because the bool array can't be directly represented by
+ *  PrimExpr now. The argument count must be > 0, the predicate that length < 1
+ *  is meaningless, the predicate that length == 1 indicate the data is scalar.
+ *
+ *  def const_pred(arg0: bool, arg1: bool, ..., argn: bool) -> boolxn {
+ *    return [arg0, arg1, ..., argn]
+ *  }
+ */
+TVM_DLL const Op& const_pred();
+
+/*!
+ * \brief Generate a predicate that the lowest n items are True, and others are
+ *        False.
+ *
+ *  def low_true_pred(n: PrimExpr, total: int) -> boolxn {
+ *    return [True] * n + [False] * (total - n)
+ *  }
+ */
+TVM_DLL const Op& low_true_pred();
 
 /*!
  * \brief Call an extern C function with given name

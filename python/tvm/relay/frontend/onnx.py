@@ -17,6 +17,9 @@
 # pylint: disable=invalid-name, import-self, len-as-condition, unused-argument, too-many-lines
 # pylint: disable=import-outside-toplevel
 """ONNX: Open Neural Network Exchange frontend for Relay."""
+#
+# This file has been modified by Arm China team.
+#
 import copy
 import math
 import warnings
@@ -24,7 +27,7 @@ from typing import Optional
 
 import numpy as np
 import tvm
-from tvm import relay
+from tvm import relay, tir
 from tvm.ir import IRModule
 from tvm.topi.utils import get_const_tuple
 
@@ -578,6 +581,14 @@ class OnnxOpConverter(object):
         if hasattr(cls, f"_impl_v{version}"):
             return getattr(cls, f"_impl_v{version}")
         raise NotImplementedError(f"opset version {version} of {cls.__name__} not implemented")
+
+
+class Identity(OnnxOpConverter):
+    """Operator converter for Adam op."""
+
+    @classmethod
+    def _impl_v13(cls, inputs, attr, params):
+        return inputs[0]
 
 
 class Unary(OnnxOpConverter):
@@ -2147,6 +2158,30 @@ class Prelu(OnnxOpConverter):
     def _impl_v1(cls, inputs, attr, params):
         assert len(inputs) == 2, f"Prelu need 2 inputs, {len(inputs)} given"
         input_shape = shape_of(inputs[0])
+        alpha_shape = shape_of(inputs[1])
+
+        if isinstance(input_shape, _expr.Constant) and isinstance(alpha_shape, _expr.Constant):
+            input_shape = list(input_shape.data.numpy())
+            alpha_shape = list(alpha_shape.data.numpy())
+            axis = 0
+
+            # pertensor
+            if not alpha_shape or (len(alpha_shape) == 1 and alpha_shape[0] == 1):
+                alpha = _op.broadcast_to(inputs[1], [input_shape[axis]])
+                return _op.nn.prelu(inputs[0], alpha, axis)
+
+            # perchannel
+            while len(alpha_shape) < len(input_shape):
+                alpha_shape.insert(0, 1)
+            for i, dim in enumerate(alpha_shape):
+                if dim != 1:
+                    axis = i
+                    break
+            if np.prod(np.array(alpha_shape)) == alpha_shape[axis]:
+                alpha = _op.reshape(inputs[1], [input_shape[axis]])
+                return _op.nn.prelu(inputs[0], alpha, axis)
+
+        # dynamic or elemwise
         alpha = _op.broadcast_to_like(inputs[1], inputs[0])
         alpha = _op.reshape(alpha, [-1])
         output = _op.nn.prelu(_op.reshape(inputs[0], [-1]), alpha, axis=0)
@@ -2838,6 +2873,8 @@ class Scatter(OnnxOpConverter):
         assert updates_rank == data_rank, "Updates rank is not the same as data one"
 
         for i in range(data_rank):
+            if any(isinstance(x, tir.Any) for x in (indices_shape[i], updates_shape[i])):
+                continue
             assert (
                 indices_shape[i] == updates_shape[i]
             ), "Indices dimension size should be the same as updates one"
@@ -3295,6 +3332,8 @@ class Softmax(OnnxOpConverter):
         ndim = len(in_shape)
         if axis < 0:
             axis += ndim
+        if axis == ndim - 1:
+            return _op.nn.softmax(inputs[0], axis=axis)
         if axis == 0:
             reshape_shape = [-1]
         elif axis == ndim - 1:
@@ -6503,7 +6542,7 @@ _identity_list = []
 def _get_convert_map(opset):
     return {
         # defs/experimental
-        "Identity": Renamer("copy"),
+        "Identity": Identity.get_converter(opset),
         "Optional": Optional_.get_converter(opset),
         "OptionalHasElement": OptionalHasElement.get_converter(opset),
         "OptionalGetElement": OptionalGetElement.get_converter(opset),
@@ -6908,6 +6947,8 @@ class GraphProto:
             )
 
     def _check_for_unsupported_ops(self, graph):
+        from tvm.relay.op.contrib.aipu_compass import ONNX_CUSTOM_OP_DICT
+
         convert_map = _get_convert_map(self.opset)
         unsupported_ops = set()
         for node in graph.node:
@@ -6916,6 +6957,7 @@ class GraphProto:
                 op_name not in convert_map
                 and op_name != "Constant"
                 and op_name not in _identity_list
+                and op_name not in ONNX_CUSTOM_OP_DICT.keys()
             ):
                 unsupported_ops.add(op_name)
         if unsupported_ops:
@@ -7064,9 +7106,14 @@ class GraphProto:
         sym : tvm.relay.function.Function
             Converted relay function
         """
+        from tvm.relay.op.contrib.aipu_compass import ONNX_CUSTOM_OP_DICT
+
         convert_map = _get_convert_map(opset)
         if op_name in _identity_list:
             sym = get_relay_op(op_name)(*inputs, **attrs)
+        elif op_name in ONNX_CUSTOM_OP_DICT.keys():
+            converter = ONNX_CUSTOM_OP_DICT[op_name]
+            sym = converter(inputs, attrs, self._params)
         elif op_name in convert_map:
             sym = convert_map[op_name](inputs, attrs, self._params)
         else:

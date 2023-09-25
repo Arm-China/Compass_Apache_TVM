@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 # Makefile for Sphinx documentation
 #
@@ -24,6 +27,7 @@ SPHINXBUILD   = python3 -m sphinx
 PAPER         =
 BUILDDIR      = _build
 STAGINGDIR    = _staging
+AIPUDOCDIR    = $(PWD)/../aipu/docs
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -102,6 +106,7 @@ staging:
 	      -name "*.rst"  \
 	      -exec ln -s $(PWD)/{} $(STAGINGDIR)/{} \;
 
+	ln -s $(AIPUDOCDIR) $(STAGINGDIR)/dev/aipu
 	ln -s $(PWD)/conf.py $(STAGINGDIR)/conf.py
 	ln -s $(PWD)/_static $(STAGINGDIR)/_static
 

@@ -21,6 +21,9 @@
  * \file src/runtime/vm/vm.cc
  * \brief The Relay virtual machine runtime.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <dmlc/memory_io.h>
 #include <tvm/runtime/container/adt.h>
@@ -201,6 +204,23 @@ PackedFunc VirtualMachine::GetFunction(const String& name, const ObjectPtr<Objec
         return 1;
       }
     });
+  } else if (name == "get_input_device") {
+    auto ret = [sptr_to_self, this](std::string func_name, int idx) {
+      ICHECK(exec_) << "The executable is not created yet.";
+      auto gvit = exec_->global_map.find(func_name);
+      ICHECK(gvit != exec_->global_map.end()) << "Cannot find function " << func_name;
+      const auto& vm_func = exec_->functions[gvit->second];
+      ICHECK_LT(static_cast<size_t>(idx), vm_func.params.size());
+      return GetDevice(vm_func.param_device_indexes[idx]);
+    };
+    return TypedPackedFunc<Device(std::string, int)>(ret);
+  } else if (name == "get_entry_param_dtype") {
+    auto ret = [sptr_to_self, this](int idx) {
+      ICHECK(exec_) << "The executable is not created yet.";
+      ICHECK_LT(static_cast<size_t>(idx), exec_->entry_param_dtypes.size());
+      return exec_->entry_param_dtypes[idx];
+    };
+    return TypedPackedFunc<std::string(int)>(ret);
   } else if (name == "get_input_index") {
     return TypedPackedFunc<int64_t(std::string, std::string)>(
         [this](std::string input_name, std::string func_name) {
@@ -240,6 +260,9 @@ PackedFunc VirtualMachine::GetFunction(const String& name, const ObjectPtr<Objec
       std::string path = args[0];
       exec_->LoadLateBoundConstantsFromFile(path);
     });
+  } else if (name == "get_executable") {
+    return PackedFunc(
+        [sptr_to_self, this](TVMArgs args, TVMRetValue* rv) { *rv = runtime::Module(exec_); });
   } else {
     LOG(FATAL) << "Unknown packed function: " << name;
   }

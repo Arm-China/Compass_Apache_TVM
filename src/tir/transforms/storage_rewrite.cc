@@ -22,9 +22,13 @@
  * \brief Memory access pattern analysis and optimization.
  *  Re-write data access to enable memory sharing when possible.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/arith/analyzer.h>
 #include <tvm/ir/type.h>
 #include <tvm/runtime/registry.h>
+#include <tvm/target/target.h>
 #include <tvm/target/target_info.h>
 #include <tvm/tir/analysis.h>
 #include <tvm/tir/builtin.h>
@@ -613,7 +617,10 @@ class StoragePlanRewriter : public StmtExprMutator {
           ICHECK_NE(e->const_nbits, 0U) << "Special tagged memory must be const size";
           for (size_t j = 0; j < i; ++j) {
             if (e->scope == vec[j]->scope) {
-              vec[j]->merged_children.push_back(e);
+              // On the AIPU platform, temporarily we do not need to merge the arrays.
+              if (is_aipu_target == false) {
+                vec[j]->merged_children.push_back(e);
+              }
               break;
             }
           }
@@ -938,6 +945,10 @@ class StoragePlanRewriter : public StmtExprMutator {
     bool is_small_array =
         (scope.tag.length() == 0) && (scope.rank >= StorageRank::kWarp || op->dtype.is_handle() ||
                                       (is_known_size && const_nbits <= 32));
+    // AIPU need reuse lsram and gsram
+    if (scope.rank == StorageRank::kLsram || scope.rank == StorageRank::kGsram) {
+      is_small_array = false;
+    }
 
     if (is_small_array || !is_flat_memory_space) {
       return NewAlloc(op, attach_scope, scope, const_nbits);
@@ -955,6 +966,10 @@ class StoragePlanRewriter : public StmtExprMutator {
         if (e->scope != scope) continue;
         // when not divided, no reuse, eg, float4 vs float3
         if (e->bits_offset % op_elem_bits != 0) continue;
+        // On the AIPU platform, when dtype not match, no reuse (in sram).
+        if (is_aipu_target) {
+          if (e->elem_type != op->dtype.element_of()) continue;
+        }
         e->const_nbits = std::max(const_nbits, e->const_nbits);
         const_free_map_.erase(it);
         return e;
@@ -994,7 +1009,9 @@ class StoragePlanRewriter : public StmtExprMutator {
     // This rules only apply if we are using non special memory
     if (e->scope.tag.length() == 0) {
       // Disable sharing of local memory.
-      if (e->scope.rank >= StorageRank::kWarp || e->allocs[0]->dtype.is_handle()) return;
+      if ((e->scope.rank >= StorageRank::kWarp || e->allocs[0]->dtype.is_handle()) &&
+          e->scope.rank != StorageRank::kLsram && e->scope.rank != StorageRank::kGsram)
+        return;
       // disable reuse of small arrays
       if (e->const_nbits > 0 && e->const_nbits <= 32) return;
     }
@@ -1030,6 +1047,8 @@ class StoragePlanRewriter : public StmtExprMutator {
   std::unordered_set<const BufferNode*> all_buffers_accessed_;
   // analyzer
   arith::Analyzer analyzer_;
+  bool is_aipu_target =
+      (Target::Current(true).defined() && Target::Current()->kind->name == "aipu");
 };
 
 /* Helper struct containing information on how a buffer is declared and used
@@ -1094,7 +1113,12 @@ struct BufferVarInfo {
       arith::ModularSet me = analyzer_.modular_set(extent);
 
       int lanes = access_dtype.begin()->lanes();
-      if ((me->coeff % lanes == 0) && (me->base % lanes == 0)) {
+      bool is_aipu_target =
+          (Target::Current(true).defined() && Target::Current()->kind->name == "aipu");
+      if (((me->coeff % lanes == 0) && (me->base % lanes == 0)) || is_aipu_target) {
+        // For AIPU, the lanes of buffer should use the lanes of load/store,
+        // even through the buffer size isn't divisible by the lanes, e.g.,
+        // buffer size is 36, and the lanes is 32.
         preferred_lanes = lanes;
       }
     }
@@ -1142,6 +1166,16 @@ class VectorTypeAccessChecker : public StmtExprVisitor {
         OnArrayDeclaration(buffer_var, dtype, extent, BufferVarInfo::kPrimFuncBufferMap);
       }
     }
+  }
+
+  void VisitStmt_(const AttrStmtNode* op) final {
+    if (op->attr_key == "pragma_aipudma_copy") {
+      // For AIPU target, the scalar load or store node of SRAM variables inside
+      // DMA, will prevent the allocation node of SRAM variables from being
+      // converted to vector version, so ignore all of them.
+      return;
+    }
+    return StmtExprVisitor::VisitStmt_(op);
   }
 
   void VisitExpr_(const BufferLoadNode* op) final {
@@ -1537,8 +1571,10 @@ class VectorTypeRewriter : public StmtExprMutator {
     Var new_buffer_var = info.new_buffer_var;
 
     Array<PrimExpr> extents = op->extents;
+    // Because the last extent maybe not divisible by the factor, so here should
+    // ceil the result.
     PrimExpr last_extent = extents[extents.size() - 1];
-    extents.Set(extents.size() - 1, last_extent / make_const(last_extent.dtype(), info.factor()));
+    extents.Set(extents.size() - 1, truncdiv(last_extent + (info.factor() - 1), info.factor()));
     return Allocate(new_buffer_var, info.new_element_dtype, extents, op->condition, op->body);
   }
 
@@ -1649,12 +1685,17 @@ PrimFunc PointerValueTypeRewrite(PrimFunc f, bool allow_untyped_pointers = false
   return f;
 }
 
+TVM_REGISTER_PASS_CONFIG_OPTION("tir.DisablePointerValueTypeRewrite", Bool);
+
 namespace transform {
 
 Pass StorageRewrite() {
   auto pass_func = [](PrimFunc f, IRModule m, PassContext ctx) {
     auto* n = f.CopyOnWrite();
     n->body = StoragePlanRewriter().Rewrite(std::move(n->body), true);
+    if (ctx->GetConfig<Bool>("tir.DisablePointerValueTypeRewrite", Bool(false)).value()) {
+      return f;
+    }
     // Parameters may not be rewritten, but internal allocations may.
     // Vectorization of AllocateConst is currently disabled, as it has
     // indexing issues for types that include padding (e.g. int8x3

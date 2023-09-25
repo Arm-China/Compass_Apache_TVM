@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """The base parser for tir"""
+#
+# This file has been modified by Arm China team.
+#
 
 import contextlib
 from functools import partial
@@ -22,7 +25,7 @@ from typing import Any
 
 import tvm
 from tvm.ir import GlobalVar, PrimType
-from tvm.tir import Buffer, IterVar, PrimExpr, Var
+from tvm.tir import Buffer, IterVar, PrimExpr, Var, Let, StringImm, convert_to_prim_expr
 
 from ...ir_builder import ir as I
 from ...ir_builder import tir as T
@@ -145,9 +148,30 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         return value
     else:
         value = tvm.runtime.convert(value)
-        frame = T.LetStmt(value)
-        var = frame.var
-        IRBuilder.name(var_name, var)
+        value = convert_to_prim_expr(value)  # Convert the auxiliary node, e.g., BufferRegion.
+
+        var = Var(var_name, value.dtype)
+        defined_vars = self.var_table.get()
+        if isinstance(value, Let) and StringImm("define_size_var") == value.body:
+            if var_name in defined_vars:
+                self.report_error(node, f'Variable "{var_name}" is redefined.')
+            # Use the size var in the let expression directly and rename it.
+            var = value.var
+            IRBuilder.name(var_name, var)
+            value = value.value
+        else:
+            # Not a explicit size var definition statement, if there isn't a existing variable have
+            # the same name, then treat it as a definition, otherwise treat is as a assignment.
+            if var_name in defined_vars:
+                var = defined_vars[var_name]
+                if value.dtype != var.dtype:
+                    self.report_error(
+                        node,
+                        f'Type mismatch assignment: "{var.dtype}" vs. "{value.dtype}", need to do '
+                        "the explicit type conversion for the right hand side(i.e., new value).",
+                    )
+
+        frame = T.LetStmt(value, var=var)
         frame.add_callback(partial(frame.__exit__, None, None, None))
         frame.__enter__()
         return var
@@ -444,6 +468,15 @@ def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
         The doc AST Expr node.
     """
 
+    # if node is subroutine call, should not eval_expr
+    if isinstance(node.value, doc.Call):
+        func = self.eval_expr(node.value.func)
+        if hasattr(func, "prim_func_kwargs"):
+            args = [self.eval_expr(arg) for arg in node.value.args]
+            func_name = GlobalVar(func.__name__)
+            # not support return value for subroutine call
+            T.evaluate(tvm.tir.Call(dtype="void", op=func_name, args=args))
+            return
     res = self.eval_expr(node.value)
     if res is None:
         pass
@@ -479,7 +512,16 @@ def visit_if(self: Parser, node: doc.If) -> None:
         The doc AST if node.
     """
     with self.var_table.with_frame():
-        with T.If(self.eval_expr(node.test)):
+        cond = self.eval_expr(node.test)
+        if isinstance(cond, bool):
+            with self.var_table.with_frame():
+                if cond is True:
+                    self.visit_body(node.body)
+                elif node.orelse:
+                    self.visit_body(node.orelse)
+            return
+
+        with T.If(cond):
             with T.Then():
                 with self.var_table.with_frame():
                     self.visit_body(node.body)
@@ -520,7 +562,9 @@ def visit_return(self: Parser, node: doc.Return) -> None:
     node : doc.Return
         The doc AST return node.
     """
-    self.report_error(node, "Return is not allowed.")
+    if node.value is not None:
+        self.report_error(node, "Return with value is not allowed.")
+    T.evaluate(T.ret(None))
 
 
 @dispatch.register(token="tir", type_name="tvm_declare_function")

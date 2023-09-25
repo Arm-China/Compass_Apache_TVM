@@ -21,6 +21,9 @@
  * \file message_passing.cc
  * \brief The message passing domain.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "message_passing.h"
 
 #include <tvm/arith/analyzer.h>
@@ -124,6 +127,12 @@ void PassDownDomain(const Stage& stage, std::unordered_map<IterVar, Range>* p_st
   // forwar iteration on relations
   for (IterVarRelation rel : stage->relations) {
     if (const SplitNode* r = rel.as<SplitNode>()) {
+      if (stage.IsComputeInside() && (state.count(r->inner) != 0)) {
+        // The bounds of iteration variables of current "IterVarRelation" are
+        // already got from the attach bound map, so here just skip it.
+        ICHECK(state.count(r->outer) != 0);
+        continue;
+      }
       if (!state.count(r->parent)) {
         ICHECK(allow_missing);
         continue;
@@ -162,6 +171,9 @@ void PassDownDomain(const Stage& stage, std::unordered_map<IterVar, Range>* p_st
                Range::FromMinExtent(0, ceil_div(range_parent->extent, r->nparts)), actx);
       }
     } else if (const FuseNode* r = rel.as<FuseNode>()) {
+      // If the bounds of iteration variables of current "IterVarRelation" are
+      // already got from the attach bound map, then just skip it.
+      if (stage.IsComputeInside() && (state.count(r->fused) != 0)) continue;
       if (!state.count(r->outer) || !state.count(r->inner)) {
         ICHECK(allow_missing);
         continue;

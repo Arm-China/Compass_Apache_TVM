@@ -38,6 +38,9 @@
  *  * -1: the error can be retrieved through TVMGetLastError.
  *  * -2: a frontend error occurred and recorded in the frontend.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_C_RUNTIME_API_H_
 #define TVM_RUNTIME_C_RUNTIME_API_H_
 
@@ -122,6 +125,7 @@ typedef enum {
   kDLSDAccel,
   kOpenGL,
   kDLMicroDev,
+  kDLAIPU = 60,
   TVMDeviceExtType_End,  // sentinel value
 } TVMDeviceExtType;
 
@@ -152,6 +156,7 @@ static_assert(kDLAOCL == 32, TVM_HARCODED_INTEGER_CHANGED_MSG);
 static_assert(kDLSDAccel == 33, TVM_HARCODED_INTEGER_CHANGED_MSG);
 static_assert(kOpenGL == 34, TVM_HARCODED_INTEGER_CHANGED_MSG);
 static_assert(kDLMicroDev == 35, TVM_HARCODED_INTEGER_CHANGED_MSG);
+static_assert(kDLAIPU == 60, TVM_HARCODED_INTEGER_CHANGED_MSG);
 #undef TVM_HARCODED_INTEGER_CHANGED_MSG
 #endif
 

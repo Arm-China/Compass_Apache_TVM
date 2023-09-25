@@ -18,6 +18,9 @@
 # pylint: disable=consider-iterating-dictionary, invalid-name, unused-argument, unused-variable, broad-except
 # pylint: disable=import-outside-toplevel, simplifiable-if-expression, cell-var-from-loop, unnecessary-lambda
 # pylint: disable=missing-function-docstring, redefined-builtin, use-implicit-booleaness-not-comparison
+#
+# This file has been modified by Arm China team.
+#
 """PT: PyTorch frontend."""
 import functools
 import itertools
@@ -4847,7 +4850,7 @@ def convert_params(graph, state_dict, source_map, use_parser_friendly_name=False
                     tensor, var = _get_tensor_and_var(torch_tensor, var_name)
                     param_tensors[var_name] = tensor
                     # for quantized parameters to be correctly located
-                    param_debug_name_map[full_attr_node_name] = var_name
+                    param_debug_name_map[full_attr] = var_name
                     vars_by_name[var_name] = var
                 params[full_attr_node_name] = var
 
@@ -4972,6 +4975,9 @@ def from_pytorch(
     outputs = _get_relay_input_vars(
         graph, input_infos, prelude, default_dtype=default_dtype, is_module=is_module
     )
+    data_inputs = []
+    for v in outputs.values():
+        data_inputs.append(v)
 
     if use_parser_friendly_name:
         new_names = [key.replace(".", "_") for key in params.keys()]
@@ -5022,10 +5028,10 @@ def from_pytorch(
 
     # Separate data inputs and parameters to make sure data inputs come first.
     func_args = []
-    data_inputs = []
     for arg in _analysis.free_vars(ret):
         if arg.name_hint not in tvm_params.keys():
-            data_inputs.append(arg)
+            idx = [i for i, var in enumerate(data_inputs) if arg.name_hint == var.name_hint][0]
+            data_inputs[idx] = arg
         else:
             func_args.append(arg)
 

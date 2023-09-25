@@ -21,6 +21,9 @@
  * \file tvm/runtime/vm/executable.h
  * \brief The Relay virtual machine executable.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_VM_EXECUTABLE_H_
 #define TVM_RUNTIME_VM_EXECUTABLE_H_
 
@@ -296,6 +299,8 @@ class TVM_DLL Executable : public ModuleNode {
   std::vector<VMFunction> functions;
   /*! \brief The index of the device holding each constant. */
   std::vector<Index> const_device_indexes;
+  /*! \brief The data type list of all parameters of the entry point function. */
+  std::vector<std::string> entry_param_dtypes;
 
  private:
   /*!
@@ -341,6 +346,13 @@ class TVM_DLL Executable : public ModuleNode {
   void SaveCodeSection(dmlc::Stream* strm);
 
   /*!
+   * \brief Save the data type list of all parameters of the entry point function.
+   *
+   * \param strm The output stream.
+   */
+  void SaveEntryParamDataTypeSection(dmlc::Stream* strm);
+
+  /*!
    * \brief Load the virtual devices
    *
    * /param strm The input stream.
@@ -367,6 +379,13 @@ class TVM_DLL Executable : public ModuleNode {
    * \param strm The input stream.
    */
   void LoadCodeSection(dmlc::Stream* strm);
+
+  /*!
+   * \brief Load the data type list of all parameters of the entry point function.
+   *
+   * \param strm The input stream.
+   */
+  void LoadEntryParamDataTypeSection(dmlc::Stream* strm);
 
   /*! \brief The serialized bytecode. */
   std::string code_;

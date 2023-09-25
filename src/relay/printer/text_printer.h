@@ -22,6 +22,9 @@
  * \brief Printer to print out the unified IR text format
  *        that can be parsed by a parser.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #ifndef TVM_RELAY_PRINTER_TEXT_PRINTER_H_
 #define TVM_RELAY_PRINTER_TEXT_PRINTER_H_
@@ -191,6 +194,8 @@ class RelayTextPrinter : public ExprFunctor<Doc(const Expr&)>,
   Doc VisitAttr_(const tir::FloatImmNode* op) final;
   Doc VisitAttr_(const tir::StringImmNode* op) final;
 
+  friend Array<Expr> PrinterIndexToExpr(const BaseFunc& func);
+
  private:
   /*! \brief Whether to print meta data. */
   bool show_meta_data_;
@@ -206,6 +211,8 @@ class RelayTextPrinter : public ExprFunctor<Doc(const Expr&)>,
   std::unordered_map<Expr, Doc, ObjectPtrHash, ObjectPtrEqual> result_memo_;
   /*! \brief Map from Expr to Doc */
   std::unordered_map<Expr, Doc, ObjectPtrHash, ObjectPtrEqual> memo_;
+  /*! \brief Map from doc index to Expr */
+  std::unordered_map<int, Expr> memo_index_;
   /*! \brief Map from Type to Doc */
   std::unordered_map<Type, Doc, ObjectPtrHash, ObjectPtrEqual> memo_type_;
   /*! \brief Map from Type to Doc */

@@ -21,6 +21,9 @@
  * \file tvm/runtime/device_api.h
  * \brief Abstract device memory management API
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RUNTIME_DEVICE_API_H_
 #define TVM_RUNTIME_DEVICE_API_H_
 
@@ -282,6 +285,8 @@ inline const char* DeviceName(int type) {
       return "oneapi";
     case kDLWebGPU:
       return "webgpu";
+    case kDLAIPU:
+      return "aipu";
     case kDLHexagon:
       return "hexagon";
     case kOpenGL:

@@ -21,6 +21,9 @@
  * \file tvm/te/schedule.h
  * \brief Define a schedule.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 // Acknowledgement: Many schedule primitives originate from Halide and Loopy.
 #ifndef TVM_TE_SCHEDULE_H_
 #define TVM_TE_SCHEDULE_H_
@@ -87,6 +90,16 @@ class Stage : public ObjectRef {
    * \return reference to self.
    */
   TVM_DLL Stage& compute_at(Stage parent, IterVar scope);  // NOLINT(*)
+  /*!
+   * \brief Modified version of "compute_at" only for providing a restricted
+   *        workaround of the "fuse-split-compute_at" issue.
+   * \param attached_stage The target stage in which the current stage will be
+   *        placed.
+   * \param attached_iv The axis of the target stage inside which the current
+   *        stage will be placed.
+   * \return The remain axis that can be scheduled further.
+   */
+  TVM_DLL IterVar ComputeInside(Stage attached_stage, IterVar attached_iv);
   /*!
    * \brief Compute the function inline.
    * \return reference to self.
@@ -306,6 +319,8 @@ class Stage : public ObjectRef {
    * \return A stage representing the attach spec of the group.
    */
   Stage GetAttachSpec() const;
+  /*! \brief Whether the stage have applied "compute_inside" or not. */
+  bool IsComputeInside() const;
   // declare container type
   using ContainerType = StageNode;
 };
@@ -591,6 +606,13 @@ class StageNode : public Object {
   Stage group;
   /*! \brief Number of direct child stages, only used for group stage.*/
   int num_child_stages{0};
+  /*! \brief Introduced for workaround of "fuse-split-compute_at" issue, the key
+   *         is iteration variable of current stage, the value is corresponding
+   *         iteration variable of the attached stage. The bound of the key
+   *         iteration variable is directly copied from that of the value
+   *         iteration variable instead of from "InferBound".
+   */
+  Map<IterVar, IterVar> attach_bound_map;
 
   void VisitAttrs(AttrVisitor* v) {
     v->Visit("op", &op);
@@ -610,6 +632,7 @@ class StageNode : public Object {
     v->Visit("axis_separators", &axis_separators);
     v->Visit("group", &group);
     v->Visit("num_child_stages", &num_child_stages);
+    v->Visit("attach_bound_map", &attach_bound_map);
   }
 
   static constexpr const char* _type_key = "Stage";
