@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 
 # pylint: disable=invalid-name
 """Check results with multiple methods."""
@@ -1185,15 +1184,6 @@ def clear_traceback(func):
     return _wrapper
 
 
-def run_aipurun(ir_text, ir_bin, inputs, target="X2_1204", **kwargs):
-    cmd = ["aipurun", ir_text, "-w", ir_bin, "-i", inputs, "--target", target]
-    disable_plugin = kwargs.get("disable_plugin", None)
-    if disable_plugin:
-        cmd += ["--disable-plugins", disable_plugin]
-    cwd = kwargs.get("cwd", os.getcwd())
-    aipu_builder.check_call_aipu_tool(cmd, work_dir=cwd)
-
-
 def run_op_case(work_dir, case_file_path, target):
     """
     work_dir:
@@ -1210,7 +1200,30 @@ def run_op_case(work_dir, case_file_path, target):
     inputs = [os.path.join(case_file_path, i) for i in inputs]
     inputs = ",".join(inputs)
     # Run DSL OP
-    run_aipurun(graph_path, weight_path, inputs, target=target, cwd=work_dir)
+    cmd = ["aipurun", graph_path, "-w", weight_path, "-i", inputs, "--target", target]
+    # disable passes
+    passes = ""
+    disable_pass_file = os.environ.get("AIPU_TVM_DISABLE_PASS_FILE", None)
+    if disable_pass_file:
+        with open(disable_pass_file, "r") as p:
+            passes = p.read().strip()
+    else:
+        try:
+            with os.popen("aipurun --show-all-passes", "r") as p:
+                all_passes = p.readlines()
+                passes = ",".join(
+                    [
+                        i.strip("PassTuple(").strip().strip(")")
+                        for i in [all_passes[2], all_passes[5]]
+                    ]
+                )
+        except IndexError as e:
+            print(e)
+            print("[WARN] Failed to obtain passes, not disable any pass during the 'aipurun'.")
+    if passes:
+        cmd += ["--disable-pass", passes]
+    # run aipurun
+    aipu_builder.check_call_aipu_tool(cmd, work_dir=work_dir)
     assert "output.bin" in os.listdir(work_dir), "can not found output!"
     # Run Gt
     cur_dir = os.getcwd()

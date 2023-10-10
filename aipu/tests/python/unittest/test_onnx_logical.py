@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 import pytest
 from onnx import TensorProto
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing

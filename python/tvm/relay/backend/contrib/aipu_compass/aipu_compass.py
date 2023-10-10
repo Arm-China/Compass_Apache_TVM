@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 """Simple wrap of AIPU Compass compile flow."""
 import os
 import time
@@ -147,6 +146,7 @@ class AipuCompass:
             "nn.deformable_conv2d": ["NHWC", "HWIO"],
             "contrib.aipu_compass.deformable_conv2d_v2": ["NHWC", "HWIO"],
             "nn.adaptive_avg_pool2d": ["NHWC"],
+            "contrib.aipu_compass.channel_shuffle": ["NHWC"],
         }
         passes = [
             compass_transform.HintPatternRewrite(),

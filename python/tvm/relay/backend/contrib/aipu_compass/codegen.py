@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 """AIPU Compass IR codegen of Relay."""
 import os
 import textwrap
@@ -688,8 +687,6 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             self._gen_qnn_matmul(call)
         elif _is_composite_op(call.op, "aipu_compass.BatchNorm"):
             self._gen_batchnorm(call)
-        elif _is_composite_op(call.op, "aipu_compass.ChannelShuffle"):
-            self._gen_channel_shuffle(call)
         elif _is_composite_op(call.op, "aipu_compass.HardSwish"):
             self._gen_hardswish(call)
         elif _is_composite_op(call.op, "aipu_compass.QnnHardSwish"):
@@ -901,6 +898,8 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             self._gen_ctc_greedy_decoder(call)
         elif call.op == relay.op.get("contrib.aipu_compass.fake_quant_with_min_max_vars"):
             self._gen_fake_quant_min_max_vars(call)
+        elif call.op == relay.op.get("contrib.aipu_compass.channel_shuffle"):
+            self._gen_channel_shuffle(call)
         elif call.op == relay.op.get("nn.mirror_pad"):
             self._gen_mirror_pad(call)
         elif _is_composite_op(call.op, "aipu_compass.QnnMirrorPad"):
@@ -2609,18 +2608,11 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         )
 
     def _gen_channel_shuffle(self, channel_shuffle):
-        transpose3 = channel_shuffle.op.body
-        reshape2 = transpose3.args[0]
-        transpose2 = reshape2.args[0]
-        reshape1 = transpose2.args[0]
-        transpose1 = reshape1.args[0]
-        group = transpose2.checked_type.shape[2]
-
-        self._gen_basic_layer_items("ChannelShuffle", transpose1.args[0], channel_shuffle)
+        self._gen_basic_layer_items("ChannelShuffle", channel_shuffle.args[0], channel_shuffle)
         self._ir_text += textwrap.dedent(
             f"""
             splits=1
-            group={group}
+            group={channel_shuffle.attrs.group}
             """
         )
 

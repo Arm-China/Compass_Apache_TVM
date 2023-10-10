@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 """Generate .dot file to describe relay IR and generate .png if dot command is installed"""
 import tvm
 from tvm import relay

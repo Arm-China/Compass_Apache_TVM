@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 # pylint: disable=bad-super-call, unsupported-binary-operation
 """ Rewrite module by pattern """
 import numpy as np
@@ -819,6 +818,46 @@ class ReorderConv2dReshapeAddActivation(DFPatternCallback):
             return new_squeeze
 
 
+@RewriteDecorator
+class ChannelShuffleMerger(DFPatternCallback):
+    """reshape + transpose + reshape ===> channel_shuffle"""
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        reshape0 = is_op("reshape")(wildcard())
+        transpose = is_op("transpose")(reshape0)
+        reshape1 = is_op("reshape")(transpose)
+        self.pattern = reshape1
+
+    def callback(self, pre, post, node_map):
+        reshape1 = node_map[self.pattern][0]
+        transpose = reshape1.args[0]
+        reshape0 = transpose.args[0]
+
+        in_shape = [int(x) for x in reshape0.args[0].checked_type.shape]
+        out_shape = [int(x) for x in reshape0.checked_type.shape]
+        out1_shape = [int(x) for x in reshape1.checked_type.shape]
+        if len(in_shape) + 1 != len(out_shape) or in_shape != out1_shape:
+            return post
+        axes = [int(x) for x in transpose.attrs.axes]
+        dim_num = len(axes)
+        # NCHW
+        if in_shape[1] == out_shape[1] * out_shape[2]:
+            ref_axes = [0, 2, 1] + list(range(3, dim_num))
+            group = min(out_shape[1], out_shape[2])
+        # NHWC
+        elif in_shape[-1] == out_shape[-1] * out_shape[-2]:
+            ref_axes = list(range(0, dim_num - 2)) + [dim_num - 1, dim_num - 2]
+            group = min(out_shape[-1], out_shape[-2])
+        else:
+            return post
+        if axes != ref_axes:
+            return post
+
+        splits = 1
+        return relay.op.contrib.aipu_compass.channel_shuffle(reshape0.args[0], group, splits)
+
+
 @tvm.ir.transform.module_pass(opt_level=0)
 class HintPatternRewrite:
     """
@@ -853,6 +892,7 @@ class HintPatternRewrite:
             RemoveRequantizeBeforeQnnConv2d(before_passes=infer_type),
             RemoveRequantizeAfterQuantize(before_passes=infer_type),
             QnnConvertReduceMeanWithInconsistentIOScaleZp(before_passes=infer_type),
+            ChannelShuffleMerger(),
         ]
         for pattern in patterns:
             update_mod = pattern(update_mod)

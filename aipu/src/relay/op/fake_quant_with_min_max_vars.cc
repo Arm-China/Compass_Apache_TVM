@@ -1,6 +1,5 @@
-// This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-// See the copyright file distributed with this work for additional information
-// regarding copyright ownership.
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/relay/op/fake_quant_with_min_max_vars.cc
  * \brief Operator definitions for FakeQuantWithMinMaxVars.
@@ -51,7 +50,7 @@ bool FakeQuantWithMinMaxVarsRel(const Array<Type>& types, int num_inputs, const 
   if (data == nullptr) return false;
   /*output shape is the same as input shape.*/
   Array<IndexExpr> oshape = data->shape;
-  reporter->Assign(types[1], TensorType(oshape, DataType::Float(32)));
+  reporter->Assign(types[1], TensorType(oshape, data->dtype));
   return true;
 }
 

@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 # pylint: disable=unused-argument, unsupported-binary-operation
 """Relay IR to Compass IR mapping rules."""
 import inspect
@@ -1052,35 +1051,24 @@ def _check_transpose(transpose: relay.Call):
     return all(res)
 
 
-def _channel_shuffle_pattern():
-    transpose1 = is_op("transpose")(wildcard())
-    reshape1 = is_op("reshape")(transpose1)
-    transpose2 = is_op("transpose")(reshape1)
-    reshape2 = is_op("reshape")(transpose2)
-    channel_shuffle = is_op("transpose")(reshape2)
+@ir.register_op_attr("contrib.aipu_compass.channel_shuffle", "target.aipu_compass")
+@_checker
+def _check(channel_shuffle: relay.Call):
+    # Check if it is supported by AIPU Compass.
+    in_shape = channel_shuffle.args[0].checked_type.shape
+    out_shape = channel_shuffle.checked_type.shape
+    group = channel_shuffle.attrs.group
 
-    @_checker
-    def check(channel_shuffle: relay.Call):
-        reshape2 = channel_shuffle.args[0]
-        transpose2 = reshape2.args[0]
-        reshape1 = transpose2.args[0]
-        transpose1 = reshape1.args[0]
-        in_shape = transpose1.args[0].checked_type.shape
-        out_shape = channel_shuffle.checked_type.shape
-        group = transpose2.checked_type.shape[2]
+    res = []
+    # support 2, 3, 4 dim
+    res.append(_check_dim([in_shape, out_shape], [2, 3, 4]))
+    # check shape of input and output
+    res.append(_check_shape(in_shape, 0, 0, 4))
+    res.append(_check_shape(out_shape, 0, 0, 4))
+    # check group
+    res.append(1 <= group <= 16384)
 
-        res = []
-        # support 2, 3, 4 dim
-        res.append(_check_dim([in_shape, out_shape], [2, 3, 4]))
-        # check shape of input and output
-        res.append(_check_shape(in_shape, 0, 0, 4))
-        res.append(_check_shape(out_shape, 0, 0, 4))
-        # check group
-        res.append(1 <= group <= 16384)
-
-        return all(res)
-
-    return ("aipu_compass.ChannelShuffle", channel_shuffle, check)
+    return all(res)
 
 
 def peel_hardswish(hardswish):
@@ -1521,7 +1509,6 @@ def pattern_table_pre(include_float, include_quant):
         _instancenorm_pattern(),
         _batchnorm_pattern(),
         _mean_variance_norm_pattern(),
-        _channel_shuffle_pattern(),
         _log_softmax_pattern(),
         _batchnorm_single_pattern(),
     ]

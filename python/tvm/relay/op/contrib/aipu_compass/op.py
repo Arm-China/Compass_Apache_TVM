@@ -1,6 +1,5 @@
-# This file is CONFIDENTIAL and created by Arm Technology (China) Co., Ltd.
-# See the copyright file distributed with this work for additional information
-# regarding copyright ownership.
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
 """Operators extended by AIPU Compass."""
 import numpy as np
 import tvm
@@ -480,6 +479,23 @@ def infer_correct_layout_lrn(attrs, new_in_layouts, old_in_layouts, old_in_types
         ret = old_in_layouts[0]
 
     return InferCorrectLayoutOutput([ret], [ret], ir.make_node("relay.attrs.LRNAttrs", **new_attrs))
+
+
+def channel_shuffle(data, group, splits):
+    """Make a channel shuffle operator.
+    data : The input tensor.
+
+    group : int
+        The group number of the input tensor.
+
+    splits : int
+        The number of output tensors.
+
+    Returns
+    -------
+    result : relay.Expr
+    """
+    return _make.channel_shuffle(data, group, splits)
 
 
 def custom_op(data, out_type):
