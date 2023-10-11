@@ -174,6 +174,7 @@ ALLOW_SPECIFIC_FILE = {
     # Zhouyi NPU documentation related files
     "aipu/docs/images/rpc_server_arch.svg",
     "aipu/docs/images/multi_task.png",
+    "aipu/docs/images/graph_parition_solution.png",
     "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/input0.bin",
     "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/output.bin",
     "aipu/samples/tf_mobilenet_v1_bare_metal/bsp/lib/libbm_bsp.a",
