@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=wildcard-import, redefined-builtin, invalid-name
 """The Relay IR namespace containing the IR definition and compiler."""
+#
+# This file has been modified by Arm China team.
+#
 import os
 from sys import setrecursionlimit
 
@@ -64,6 +67,12 @@ from .scope_builder import ScopeBuilder
 
 # Load Memory Passes
 from .transform import memory_plan
+
+# Override AIPU specific strategy of some operators.
+try:
+    from .op.strategy.aipu import override
+except ImportError:
+    pass
 
 # Parser
 from .parser import parse, parse_expr, fromtext, SpanCheck

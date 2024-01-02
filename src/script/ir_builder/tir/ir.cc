@@ -625,6 +625,23 @@ TVM_REGISTER_GLOBAL("script.ir_builder.tir.Arg")
       LOG(FATAL) << "ValueError: Unexpected type for TIR Arg: " << obj->GetTypeKey();
       throw;
     });
+TVM_REGISTER_GLOBAL("script.ir_builder.tir.PtrArg")
+    .set_body_typed([](String name, ObjectRef obj) -> ObjectRef {
+      using namespace tvm::tir;
+      if (auto var = obj.as<Var>()) {
+        return Arg(name, var.value());
+      }
+      if (auto buffer = obj.as<Buffer>()) {
+        Buffer buf = buffer.value();
+        PrimFuncFrame frame = FindPrimFuncFrame("T.Arg");
+        details::Namer::Name(buf, name);
+        frame->args.push_back(buf->data);
+        frame->buffer_map.Set(buf->data, buf);
+        return buf;
+      }
+      LOG(FATAL) << "ValueError: Unexpected type for TIR Arg: " << obj->GetTypeKey();
+      throw;
+    });
 TVM_REGISTER_GLOBAL("script.ir_builder.tir.FuncName").set_body_typed(FuncName);
 TVM_REGISTER_GLOBAL("script.ir_builder.tir.FuncAttrs").set_body_typed(FuncAttrs);
 TVM_REGISTER_GLOBAL("script.ir_builder.tir.FuncRet").set_body_typed(FuncRet);

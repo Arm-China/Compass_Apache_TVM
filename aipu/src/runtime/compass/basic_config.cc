@@ -54,5 +54,18 @@ AipuCompassBasicConfig AipuCompassBasicConfig::Global() {
   return inst_;
 }
 
+Map<String, String> AipuCompassBasicConfig::GetCommon() { return inst_->common; }
+
+Map<String, String> AipuCompassBasicConfig::GetRuntime() { return inst_->runtime; }
+
+TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassBasicConfig_GetCommon")
+    .set_body_method(&runtime::AipuCompassBasicConfig::GetCommon);
+
+TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassBasicConfig_GetRuntime")
+    .set_body_method(&runtime::AipuCompassBasicConfig::GetRuntime);
+
+TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassBasicConfig_Global")
+    .set_body_typed(runtime::AipuCompassBasicConfig::Global);
+
 }  // namespace runtime
 }  // namespace tvm

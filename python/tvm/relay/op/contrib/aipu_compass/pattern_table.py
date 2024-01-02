@@ -4,6 +4,7 @@
 """Relay IR to Compass IR mapping rules."""
 import inspect
 from functools import reduce, wraps
+import math
 from operator import mul
 from typing import List, Tuple, Union
 import numpy as np
@@ -322,6 +323,32 @@ def _softplus_pattern():
         return True
 
     return ("aipu_compass.Softplus", pattern, check)
+
+
+def _gelu_pattern():
+    inp = wildcard()
+    multiply = inp * is_constant()
+    div = inp / is_constant()
+    erf = is_op("erf")(div)
+    add = erf + is_constant()
+    pattern = multiply * add
+
+    @_checker
+    def check(gelu: relay.Call):
+        # Check if the given match is supported by AIPU Compass.
+        _, half = unpack_commutative_args(gelu.args[0])
+        erf, one = unpack_commutative_args(gelu.args[1])
+        _, sqrt2 = unpack_commutative_args(erf.args[0])
+        if not _is_scalar_and_close(half, 0.5):
+            return False
+        if not _is_scalar_and_close(one, 1):
+            return False
+        if not _is_scalar_and_close(sqrt2, math.sqrt(2)):
+            return False
+        yield  # The Compass OP Spec check code must be placed after this statement.
+        return True
+
+    return ("aipu_compass.Gelu", pattern, check)
 
 
 def _check_conv2d(conv2d: relay.Call, add: relay.Call):
@@ -869,7 +896,7 @@ def _layernorm_pattern1():
     inp = wildcard()
     mean = is_op("mean")(inp)
     input_mean = inp - mean
-    power = is_op("power")(input_mean, is_constant())
+    power = input_mean * input_mean
     power_mean = is_op("mean")(power)
     rsqrt = power_mean + is_constant()
     rsqrt = is_op("rsqrt")(rsqrt)
@@ -885,17 +912,13 @@ def _layernorm_pattern1():
         rsqrt, input_mean = unpack_commutative_args(rsqrt_mul, "subtract")
         rsqrt_inp = rsqrt.args[0]
         power_mean, epsilon = unpack_commutative_args(rsqrt_inp)
-        power = power_mean.args[0]
         power_mean_axis = power_mean.attrs.axis
         power_mean_axis = [int(axis) for axis in power_mean_axis]
-        power_num = power.args[1]
         mean = input_mean.args[1]
         mean_axis = mean.attrs.axis
         mean_axis = [int(axis) for axis in mean_axis]
 
         if mean_axis != power_mean_axis:
-            return False
-        if not _is_scalar_and_close(power_num, 2):
             return False
         if epsilon.data.numpy() > 1e-4:
             return False
@@ -1506,6 +1529,7 @@ def pattern_table_pre(include_float, include_quant):
         _layernorm_pattern0(),
         _layernorm_pattern1(),
         _softplus_pattern(),
+        _gelu_pattern(),
         _instancenorm_pattern(),
         _batchnorm_pattern(),
         _mean_variance_norm_pattern(),

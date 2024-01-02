@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 /*!
  * \brief Planning where buffers to be allocated and update the AST.
@@ -41,6 +44,15 @@ class CollectUnmanagedAllocations : public StmtExprVisitor {
 
   void VisitStmt_(const AllocateConstNode* op) final {
     unmanaged_allocations.insert(op->buffer_var.get());
+    StmtExprVisitor::VisitStmt_(op);
+  }
+
+  void VisitStmt_(const LetStmtNode* op) final {
+    if (auto* call = op->value.as<CallNode>()) {
+      if (call->op.same_as(builtin::pointer())) {
+        unmanaged_allocations.insert(op->var.get());
+      }
+    }
     StmtExprVisitor::VisitStmt_(op);
   }
 

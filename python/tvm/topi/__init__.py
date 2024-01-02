@@ -24,6 +24,9 @@ for constructing compute declaration as well as optimized schedules.
 Some of the schedule function may have been specially optimized for a
 specific workload.
 """
+#
+# This file has been modified by Arm China team.
+#
 from tvm._ffi.libinfo import __version__
 
 # Ensure C++ schedules get registered first, so python schedules can
@@ -63,6 +66,11 @@ from . import image
 from . import sparse
 from . import hls
 from . import random
+
+try:
+    from . import aipu
+except ImportError:
+    pass
 from . import hexagon
 from . import adreno
 

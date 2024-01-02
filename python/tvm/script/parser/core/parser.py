@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """The core parser"""
+#
+# This file has been modified by Arm China team.
+#
 
 import abc
 import inspect
@@ -151,10 +154,12 @@ class ScriptMacro(abc.ABC):
             with parser.var_table.with_frame():
                 for k, v in self.closure_vars.items():
                     parser.var_table.add(k, v)
-                for k, v in local_vars.items():
-                    parser.var_table.add(k, v)
 
-                parse_result = self.parse_macro(parser)
+                with parser.var_table.with_frame():
+                    for k, v in local_vars.items():
+                        parser.var_table.add(k, v)
+
+                    parse_result = self.parse_macro(parser)
 
             parser.var_table = saved_var_table
 
@@ -163,7 +168,6 @@ class ScriptMacro(abc.ABC):
                 for k, v in local_vars.items():
                     parser.var_table.add(k, v)
 
-                print(parser.var_table.get())
                 parse_result = self.parse_macro(parser)
 
         return parse_result
@@ -799,3 +803,18 @@ class Parser(doc.NodeVisitor):
             The visiting result.
         """
         return _dispatch(self, "Return")(self, node)
+
+    def visit_Break(self, node: doc.Break) -> Any:  # pylint: disable=invalid-name
+        """The general break visiting method.
+
+        Parameters
+        ----------
+        node : doc.Break
+            The doc AST break node.
+
+        Returns
+        -------
+        res : Any
+            The visiting result.
+        """
+        return _dispatch(self, "Break")(self, node)

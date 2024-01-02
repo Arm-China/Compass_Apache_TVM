@@ -23,6 +23,7 @@ from tvm.ir import PrimExpr
 from tvm.runtime import const
 
 from .buffer import Buffer, decl_buffer, DataProducer
+from .pointer import Pointer
 from .data_layout import Layout, BijectiveLayout, bijective_layout, layout
 from .expr import Var, SizeVar, Reduce, FloatImm, IntImm, StringImm, Cast
 from .expr import Add, Sub, Mul, Div, Mod, FloorDiv, FloorMod
@@ -92,6 +93,7 @@ from .op import comm_reducer, min, max, sum
 from .op import q_multiply_shift, q_multiply_shift_per_axis, shift_left, shift_right
 from .op import TVMBackendAllocWorkspace, TVMBackendFreeWorkspace
 from .op import start_profile_intrinsic, end_profile_intrinsic
+from .op import reassign
 from .generic import add, subtract, multiply, cast
 
 from .schedule import StmtSRef, BlockScope, ScheduleState, Schedule, ScheduleError

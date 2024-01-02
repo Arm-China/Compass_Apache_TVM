@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 import tvm
 from tvm import te
@@ -1135,7 +1138,7 @@ def verify_single_allocation(stmt, alloc_size=None):
         if (
             isinstance(n, tvm.tir.Block)
             and n.alloc_buffers is not None
-            and (True in ((buf.scope() == "shared.dyn") for buf in n.alloc_buffers))
+            and (True in ((buf.scope == "shared.dyn") for buf in n.alloc_buffers))
         ):
             num_alloc[0] += len(n.alloc_buffers)
             for buf in n.alloc_buffers:

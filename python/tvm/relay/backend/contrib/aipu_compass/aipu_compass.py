@@ -9,7 +9,7 @@ from tvm import relay
 from tvm.relay.backend import Runtime, Executor
 from tvm.relay.op.contrib.aipu_compass.pattern_table import pattern_table_pre, pattern_table_post
 from tvm.aipu.logger import timer, set_logger, INFO, WARN
-from .config import config_aipu_compass, AipuCompassConfig
+from .config import config_aipu_compass, AipuCompassConfig, AipuCompassBasicConfig
 from .parser import parse_model
 from . import transform as compass_transform
 from . import analysis as compass_analysis
@@ -538,7 +538,7 @@ def sync_compass_output_dir(rpc_sess):
         return
     remote_files = [x for x in rpc_sess.list_files(".") if x.startswith("compass_output")]
 
-    local_output_dir = AipuCompassConfig.get().common["output_dir"]
+    local_output_dir = AipuCompassBasicConfig.get().common["output_dir"]
     for remote_file in remote_files:
         rel_path = remote_file.split(os.path.sep, 1)[1]
         with open(os.path.join(local_output_dir, rel_path), "wb") as f:

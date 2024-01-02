@@ -131,6 +131,8 @@ class DataType(ctypes.Structure):
             type_str = numpy_str_map[type_str]
         elif isinstance(type_str, np.dtype):
             type_str = str(type_str)
+        elif type_str is None:
+            type_str = "void"
 
         assert isinstance(type_str, str)
 
@@ -206,6 +208,8 @@ class DataType(ctypes.Structure):
         return x
 
     def __eq__(self, other):
+        if not isinstance(other, DataType):
+            return False
         return (
             self.bits == other.bits
             and self.type_code == other.type_code
@@ -220,12 +224,24 @@ class DataType(ctypes.Structure):
         return (self.bits + 7) // 8
 
     @property
+    def total_bytes(self):
+        return self.bytes * self.lanes
+
+    @property
+    def is_void(self):
+        return self.type_code == DataTypeCode.HANDLE and self.bits == 0 and self.lanes == 0
+
+    @property
     def is_int(self):
         return self.type_code == DataTypeCode.INT
 
     @property
     def is_uint(self):
         return self.type_code == DataTypeCode.UINT
+
+    @property
+    def is_bool(self):
+        return self.is_uint and self.bits == 1
 
     @property
     def is_integer(self):
@@ -238,6 +254,10 @@ class DataType(ctypes.Structure):
     @property
     def is_float16(self):
         return self.is_float and self.bits == 16
+
+    @property
+    def is_float32(self):
+        return self.is_float and self.bits == 32
 
     @property
     def is_scalar(self):
@@ -704,3 +724,17 @@ class ObjectRValueRef:
 
 
 TVMArrayHandle = ctypes.POINTER(TVMArray)
+
+
+def can_implicit_convert(src_dtype, dst_dtype):
+    """Whether the "src_dtype" can be converted to "dst_dtype" implicitly."""
+    src_dtype, dst_dtype = DataType(src_dtype), DataType(dst_dtype)
+
+    if (
+        src_dtype.lanes != dst_dtype.lanes
+        or (not src_dtype.is_scalar and dst_dtype.bits < src_dtype.bits)
+        or (dst_dtype.is_integer and src_dtype.is_float)
+    ):
+        return False
+
+    return True

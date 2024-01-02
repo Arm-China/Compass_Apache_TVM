@@ -439,6 +439,28 @@ def undef():
     return call_intrin("int32", "tir.undef")
 
 
+def reassign(var, value):
+    """Create a expression that represent reassignment for the given variable.
+
+    The opposite of reassignment is definition, it is represented by let statement
+    in TIR. This Op need to be used with the help of evaluate statement.
+
+    Parameters
+    ----------
+    var : Var
+        The variable that will be reassigned.
+
+    value: PrimExpr
+        The value that will assign to the variable.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("void", "tir.reassign", var, value)
+
+
 def call_tir(global_var: tvm.ir.GlobalVar, *args):
     """Performs a call into another PrimFunc in the same IRModule
 
@@ -753,6 +775,34 @@ def tvm_access_ptr(ptype, data, offset, extent, rw_mask):
         The call expression.
     """
     return call_intrin("handle", "tir.tvm_access_ptr", ptype, data, offset, extent, rw_mask)
+
+
+def pointer(dtype, scope, begin, offset):
+    """Create a expression that represent pointer.
+
+    Parameters
+    ----------
+    dtype : Union[str, DataType]
+        The data type of the data that the pointer point to.
+
+    scope: str
+        The storage scope of the data that the pointer point to.
+
+    begin : PrimExpr
+        The expression that represents a base memory address, its data type can
+        be different with the pointer.
+
+    offset : PrimExpr
+        The expression that represents a offset from the base memory address, in
+        unit of data type of the pointer, the concrete address that the pointer
+        represents is ((dtype*)begin + offset).
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("handle", "tir.pointer", type_annotation(dtype), scope, begin, offset)
 
 
 def tvm_throw_last_error():
@@ -1475,6 +1525,21 @@ def ret(val):
         return call_intrin(None, "tir.ret")
     val = convert(val)
     return call_intrin(val.dtype, "tir.ret", val)
+
+
+def Break():
+    """Create a tir break expression
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    ret : PrimExpr
+        The break expression
+    """
+
+    return call_intrin("void", "tir.Break")
 
 
 def any(*args, span=None):

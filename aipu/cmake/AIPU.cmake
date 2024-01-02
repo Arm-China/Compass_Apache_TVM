@@ -47,7 +47,8 @@ if(NOT ${USE_AIPU} MATCHES ${IS_FALSE_PATTERN})
   list(APPEND TVM_RUNTIME_LINKER_LIBS
     "-l:${AIPU_DRIVER_LIB_NAME}"
     "-L${AIPU_DRIVER_LIB_DIR}"
-    "-Wl,-rpath,$ORIGIN"
+    "-Wl,--enable-new-dtags,-rpath,$ORIGIN"
+    "-Wl,--enable-new-dtags,-rpath,${AIPU_DRIVER_LIB_DIR}"
   )
 
   if (${AIPU_PLATFORM} STREQUAL "sim")
@@ -71,5 +72,9 @@ if(NOT ${USE_AIPU} MATCHES ${IS_FALSE_PATTERN})
     endif()
 
     list(APPEND RUNTIME_SRCS ${RUNTIME_AIPU_PLATFORM_SRCS})
+  endif()
+
+  if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "QNX")
+    
   endif()
 endif()

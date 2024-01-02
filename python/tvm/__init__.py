@@ -28,7 +28,7 @@ import traceback
 # tvm._ffi
 from ._ffi.base import TVMError, __version__, _RUNTIME_ONLY
 
-from ._ffi.runtime_ctypes import DataTypeCode, DataType
+from ._ffi.runtime_ctypes import DataTypeCode, DataType, can_implicit_convert
 from ._ffi import register_object, register_func, register_extension, get_global_func
 
 # top-level alias

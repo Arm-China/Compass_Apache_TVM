@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 import tvm.testing
 from tvm import te
@@ -1405,7 +1408,7 @@ class TestSymbolicDiagMaskCase:
                             T.float32(3.4028234663852886e38),
                         )
         for i in T.thread_binding(256, thread="blockIdx.x"):
-            for k in T.thread_binding(256, thread="threadIdx.x"):
+            for j in T.thread_binding(256, thread="threadIdx.x"):
                 for k in range((n * n + 65535) // 65536):
                     with T.block("T_broadcast_to"):
                         T.where(k * 65536 + i * 256 + k < n * n)

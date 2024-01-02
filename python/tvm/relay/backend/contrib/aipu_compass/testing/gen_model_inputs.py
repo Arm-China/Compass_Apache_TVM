@@ -262,7 +262,7 @@ class CoCo:
         # Default initialized to validation dataset
         if annotation_file is None:
             annotation_file = (
-                f"{os.environ['ZHOUYI_DATASET_HOME']}/MSCOCO/coco2017"
+                f"{os.environ['ZHOUYI_DATASET_HOME']}/MSCOCO/data/coco2017"
                 "/annotations/instances_val2017.json"
             )
         print("loading annotations into memory...")
@@ -450,7 +450,7 @@ class CoCo:
         Default using the validation image path.
         """
         if pre_path is None:
-            pre_path = f"{os.environ['ZHOUYI_DATASET_HOME']}/MSCOCO/coco2017/val2017"
+            pre_path = f"{os.environ['ZHOUYI_DATASET_HOME']}/MSCOCO/data/coco2017/val2017"
         return os.path.join(pre_path, img_name)
 
     def get_label_mapping_dict(self):
@@ -509,7 +509,7 @@ class VOC:
         :return:
         """
         if root_dir is None:
-            root_dir = f"{os.environ['ZHOUYI_DATASET_HOME']}/voc/VOCdevkit/"
+            root_dir = f"{os.environ['ZHOUYI_DATASET_HOME']}/VOCdevkit/data/"
         assert os.path.isdir(root_dir), f"{root_dir} is not exists."
         if image_sets is None:
             image_sets = [("2007", "test")]
@@ -539,7 +539,7 @@ class VOC:
     def _load_items(self):
         """Load individual image indices from image_sets."""
         for (year, name) in self._image_sets:
-            rootpath = os.path.join(self._root_dir, "VOC" + year)
+            rootpath = os.path.join(self._root_dir, "voc" + year)
             lf = os.path.join(rootpath, "ImageSets", "Main", name + ".txt")
             with open(lf, "r") as f:
                 self._ids += [(rootpath, line.strip()) for line in f.readlines()]
@@ -703,7 +703,7 @@ class ImageNetVal(ClassificationDataset):
         Generate a dictionary of one-to-one correspondence between images and label ids.
         """
         super().__init__()
-        val_label_file = f"{os.environ['ZHOUYI_DATASET_HOME']}/ImageNet/val_label.txt"
+        val_label_file = f"{os.environ['ZHOUYI_DATASET_HOME']}/ImageNet/data/ILSVRC2012_val.txt"
         self.img_id_mapping_dict = dict()
         if os.path.isfile(val_label_file):
             with open(val_label_file, "r") as f:
@@ -719,7 +719,7 @@ class ImageNetVal(ClassificationDataset):
         """
         if not img_name:
             raise RuntimeError("image name is NOT Valid.")
-        img_pre_path = f"{os.environ['ZHOUYI_DATASET_HOME']}/ImageNet/ILSVRC2012_img_val"
+        img_pre_path = f"{os.environ['ZHOUYI_DATASET_HOME']}/ImageNet/data/ILSVRC2012_img_val"
         return os.path.join(img_pre_path, img_name)
 
     def get_img_label(self, img_name=""):

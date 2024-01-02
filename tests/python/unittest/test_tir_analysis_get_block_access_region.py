@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 import pytest
 import tvm
 from tvm import tir
@@ -38,8 +41,9 @@ def func() -> None:
                 vi, vj = T.axis.remap("SS", [i, j])
                 T.reads([A[vi * 4 + 4 : vi * 4 + 8, vj * 4 + 4 : vj * 4 + 8], C[12:16, 12:16]])
                 T.writes([A[vi * 4 + 4 : vi * 4 + 8, vj * 4 + 4 : vj * 4 + 8]])
-                for i, j in T.grid(4, 4):
-                    A[vi * 4 + 4 + i, vj * 4 + 4 + j] += C[i + 12, j + 12]
+                # Change name because py sim cannot support duplicate name.(CTV-1139)
+                for ii, jj in T.grid(4, 4):
+                    A[vi * 4 + 4 + ii, vj * 4 + 4 + jj] += C[ii + 12, jj + 12]
         T.evaluate(D.data)
 
 

@@ -73,6 +73,10 @@ class ExprOp(object):
     # TODO(tkonolige): use inspect to add source information to these objects
 
     def __add__(self, other):
+        from .pointer import Pointer  # pylint: disable=import-outside-toplevel
+
+        if isinstance(other, Pointer):
+            return other.__radd__(self)
         return _generic.add(self, other)
 
     def __radd__(self, other):

@@ -32,6 +32,8 @@ class AipuCompassBasicConfig : public ObjectRef {
  public:
   String GetRuntimeWorkDir(String rly_func_name);
   static AipuCompassBasicConfig Global();
+  Map<String, String> GetCommon();
+  Map<String, String> GetRuntime();
   template <typename T>
   static void SetSingleton(ObjectPtr<T> obj);
 

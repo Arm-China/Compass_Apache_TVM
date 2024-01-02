@@ -12,9 +12,15 @@
 namespace tvm {
 namespace runtime {
 
+#ifndef __QNX__
 static aipu_ctx_handle_t* process_ctx = nullptr;
 static std::mutex inst_lock;
 static std::atomic<int32_t> inst_counter(0);
+#else
+thread_local aipu_ctx_handle_t* process_ctx = nullptr;
+thread_local std::mutex inst_lock;
+thread_local std::atomic<int32_t> inst_counter(0);
+#endif
 
 aipu_ctx_handle_t* ContextAlloc() {
   inst_counter.fetch_add(1);
@@ -84,35 +90,14 @@ void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
   // "aipu_create_job" will failed for simulaltor.
   ConfigGraphItems();
 
-  // If input from shared memory physical address, set it before create job
+  // Create job with the loaded AIPU binary program.
+  status_ = aipu_create_job(ctx_, graph_id_, &job_id_, &job_cfg_);
+  AIPU_DRIVER_HANDLE_ERROR(status_);
+
+  // If input from shared memory physical address, set it.
   if (shared_inputs_pa != nullptr) {
     SetInputShared(shared_inputs_pa);
   }
-
-  // Create job with the loaded AIPU binary program.
-  // Try Put the output on soc sram in priority.
-  std::vector<int32_t> out_idx;
-  if (shared_outputs_pa != nullptr) {
-    uint32_t count = 0;
-    aipu_tensor_type_t tensor_type = AIPU_TENSOR_TYPE_OUTPUT;
-    aipu_get_tensor_count(ctx_, graph_id_, tensor_type, &count);
-
-    for (uint32_t idx = 0; idx < count; idx++) {
-      if (shared_outputs_pa[idx] != 0xFFFFFFFFFFFFFFFF) {
-        out_idx.push_back(idx);
-      }
-    }
-#ifndef __QNX__
-    if (out_idx.size() > 0) {
-      job_cfg_.fm_mem_region = AIPU_MEM_REGION_SRAM;
-      job_cfg_.fm_idxes = &out_idx[0];
-      job_cfg_.fm_idxes_cnt = out_idx.size();
-    }
-#endif
-  }
-
-  status_ = aipu_create_job(ctx_, graph_id_, &job_id_, &job_cfg_);
-  AIPU_DRIVER_HANDLE_ERROR(status_);
 
   if (shared_outputs_pa != nullptr) {
     MarkOutputShared(shared_outputs_pa);
@@ -201,14 +186,14 @@ void AipuDriver::SetInputShared(uint64_t* inputs_pa) {
   aipu_get_tensor_count(ctx_, graph_id_, tensor_type, &count);
   for (uint32_t idx = 0; idx < count; idx++) {
     if (inputs_pa[idx] != 0) {
-      aipu_shared_tensor_info_t set_shared_tensor_info;
-      memset(&set_shared_tensor_info, 0, sizeof(set_shared_tensor_info));
-      set_shared_tensor_info.id = graph_id_;
-      set_shared_tensor_info.type = AIPU_TENSOR_TYPE_INPUT;
-      set_shared_tensor_info.tensor_idx = idx;
-      set_shared_tensor_info.pa = inputs_pa[idx];
-      AIPU_DRIVER_HANDLE_ERROR(
-          aipu_ioctl(ctx_, AIPU_IOCTL_SET_SHARED_TENSOR, &set_shared_tensor_info));
+      aipu_shared_tensor_info_t shared_tensor_info;
+      memset(&shared_tensor_info, 0, sizeof(shared_tensor_info));
+      shared_tensor_info.id = job_id_;
+      shared_tensor_info.type = AIPU_TENSOR_TYPE_INPUT;
+      shared_tensor_info.tensor_idx = idx;
+      shared_tensor_info.pa = inputs_pa[idx];
+      shared_tensor_info.shared_case_type = AIPU_SHARE_BUF_IN_ONE_PROCESS;
+      AIPU_DRIVER_HANDLE_ERROR(aipu_specify_iobuf(ctx_, job_id_, &shared_tensor_info));
       shared_inputs_pa[idx] = inputs_pa[idx];
     }
   }
@@ -227,15 +212,25 @@ void AipuDriver::MarkOutputShared(uint64_t* outputs_pa) {
   aipu_get_tensor_count(ctx_, graph_id_, tensor_type, &count);
   for (uint32_t idx = 0; idx < count; idx++) {
     if (outputs_pa[idx] != 0xFFFFFFFFFFFFFFFF) {
-      aipu_shared_tensor_info_t mark_shared_tensor_info;
-      memset(&mark_shared_tensor_info, 0, sizeof(mark_shared_tensor_info));
-      mark_shared_tensor_info.id = job_id_;
-      mark_shared_tensor_info.type = AIPU_TENSOR_TYPE_OUTPUT;
-      mark_shared_tensor_info.tensor_idx = idx;
-      mark_shared_tensor_info.pa = 0;
+      aipu_tensor_desc_t desc;
       AIPU_DRIVER_HANDLE_ERROR(
-          aipu_ioctl(ctx_, AIPU_IOCTL_MARK_SHARED_TENSOR, &mark_shared_tensor_info));
-      outputs_pa[idx] = mark_shared_tensor_info.pa;
+          aipu_get_tensor_descriptor(ctx_, graph_id_, AIPU_TENSOR_TYPE_OUTPUT, idx, &desc));
+      uint32_t buf_size = desc.size;
+      aipu_share_buf_t shared_buf = {0};
+      shared_buf.size = buf_size;
+      shared_buf.mem_type = AIPU_MEM_REGION_SRAM;
+      AIPU_DRIVER_HANDLE_ERROR(aipu_ioctl(ctx_, AIPU_IOCTL_ALLOC_SHARE_BUF, &shared_buf));
+      shared_outputs_buf.push_back(shared_buf);
+
+      aipu_shared_tensor_info_t shared_tensor_info;
+      memset(&shared_tensor_info, 0, sizeof(shared_tensor_info));
+      shared_tensor_info.id = job_id_;
+      shared_tensor_info.type = AIPU_TENSOR_TYPE_OUTPUT;
+      shared_tensor_info.tensor_idx = idx;
+      shared_tensor_info.pa = shared_buf.pa;
+      shared_tensor_info.shared_case_type = AIPU_SHARE_BUF_IN_ONE_PROCESS;
+      AIPU_DRIVER_HANDLE_ERROR(aipu_specify_iobuf(ctx_, job_id_, &shared_tensor_info));
+      outputs_pa[idx] = shared_buf.pa;
       shared_outputs_pa[idx] = outputs_pa[idx];
     }
   }
@@ -256,6 +251,13 @@ void AipuDriver::DeinitGraphJob() {
     AIPU_DRIVER_HANDLE_ERROR(status_);
     graph_id_ = 0;
   }
+
+#ifndef __QNX__
+  for (uint32_t idx = 0; idx < shared_outputs_buf.size(); idx++) {
+    AIPU_DRIVER_HANDLE_ERROR(aipu_ioctl(ctx_, AIPU_IOCTL_FREE_SHARE_BUF, &shared_outputs_buf[idx]));
+  }
+  shared_outputs_buf.clear();
+#endif
 }
 
 AipuDriver::~AipuDriver() {

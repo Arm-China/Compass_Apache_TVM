@@ -17,6 +17,9 @@
 
 # pylint: disable=wildcard-import
 """Relay op strategies."""
+#
+# This file has been modified by Arm China team.
+#
 from __future__ import absolute_import as _abs
 
 from .generic import *
@@ -28,5 +31,10 @@ from . import mali
 from . import bifrost
 from . import rocm
 from . import intel_graphics
+
+try:
+    from .aipu import aipu
+except ImportError:
+    pass
 from . import hexagon
 from . import adreno

@@ -17,6 +17,7 @@ try:
     from AIPUBuilder.Optimizer.tools.optimizer_main import main as _opt_main
     from AIPUBuilder.Optimizer.tools.optimizer_forward import OptForward
     from AIPUBuilder.simplifier.main import main as _gsim_main
+    from AIPUBuilder.Profiler.main import main as _profiler_main
 
     # Scan and register all of AIPU Optimizer plugins.
     from AIPUBuilder.Optimizer import plugins as _
@@ -96,11 +97,24 @@ def _aipugsim_pyapi(sys_argv):
     return ret
 
 
+def _aipuprofiler_pyapi(sys_argv):
+    old_sys_argv = sys.argv
+    sys.argv = sys_argv
+    try:
+        ret = _profiler_main()
+    except Exception as e:  # pylint: disable=broad-except, invalid-name
+        ret = 1
+        sys.stderr.write(f"{e}")
+    sys.argv = old_sys_argv
+    return ret
+
+
 _NAME2PYAPI_FUNC = {
     "aipuopt": ("Optimizer", _aipuopt_pyapi),
     "aipugb": ("GBuilder", _aipugb_pyapi),
     "aipugsim": ("GSim", _aipugsim_pyapi),
     "aipurun": ("GBuilder", _aipurun_pyapi),
+    "aipu_profiler": ("Profiler", _aipuprofiler_pyapi),
 }
 
 

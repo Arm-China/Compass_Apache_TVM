@@ -7,7 +7,7 @@ from collections.abc import Iterable
 import numpy as np
 from tvm import ir, relay, tir, nd
 from tvm.relay.op.contrib.aipu_compass import CODEGEN_CUSTOM_OP_DICT
-from tvm.relay.backend.contrib.aipu_compass.config import AipuCompassConfig
+from tvm.relay.backend.contrib.aipu_compass import AipuCompassBasicConfig
 from tvm.relay.op.contrib.aipu_compass.pattern_table import (
     get_activation_str,
     unpack_commutative_args,
@@ -345,7 +345,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         self._expr2qnn_params = dict()
 
     def gen(self, func):
-        if AipuCompassConfig.get().common.get("compat_quantized_model") == "true":
+        if AipuCompassBasicConfig.get().common.get("compat_quantized_model") == "true":
             self._expr2qnn_params = SetQnnParams().get_qnn_params_dict(func)
         self.visit(func)
         ir_bin = bytearray()
@@ -624,7 +624,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             outputs = [func.body]
         out_names = [self._expr2var_name[expr] for expr in outputs]
 
-        compat_quantized_model = AipuCompassConfig.get().common.get(
+        compat_quantized_model = AipuCompassBasicConfig.get().common.get(
             "compat_quantized_model", "false"
         )
 
@@ -693,6 +693,8 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             self._gen_qnn_hardswish(call)
         elif _is_composite_op(call.op, "aipu_compass.Softplus"):
             self._gen_softplus(call)
+        elif _is_composite_op(call.op, "aipu_compass.Gelu"):
+            self._gen_gelu(call)
         elif _is_composite_op(call.op, "aipu_compass.MeanVarianceNormalization"):
             self._gen_mean_variance_norm(call)
         elif _is_composite_op(call.op, "aipu_compass.LayerNorm0"):
@@ -1252,6 +1254,9 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         useless_out = len(output_shapes) - len(output_names)
         for i in range(useless_out):
             output_names.append("useless_out_" + str(self._get_layer_idx()) + str(i))
+            if output_scales and output_zps:
+                output_scales.append(output_scales[0])
+                output_zps.append(output_zps[0])
 
         self._ir_text += textwrap.dedent(
             f"""
@@ -1266,6 +1271,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             layer_top_type=[{", ".join(output_types)}]"""
         )
         if output_scales and output_zps:
+            assert len(output_scales) == len(output_zps) == len(output_names)
             self._ir_text += textwrap.dedent(
                 f"""
                 layer_top_scale={output_scales}
@@ -1627,7 +1633,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             biases_size={bias_nbytes}
             biases_shape={[int(x) for x in bias_ttype.shape if x != 1] or [1]}
             num_output={output_shape[-1]}
-            with_activation={"NONE"}
+            with_activation=NONE
             """
         )
 
@@ -1686,7 +1692,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             biases_zp_size={biases_zp_nbytes}
             biases_zp_shape={_verify_shape(biases_zp.checked_type.shape)}
             num_output={int(output_shape[-1])}
-            with_activation={"NONE"}
+            with_activation=NONE
             """
         )
 
@@ -1719,7 +1725,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             biases_size={bias_nbytes}
             biases_shape={[int(x) for x in bias_ttype.shape if x != 1] or [1]}
             num_output={output_shape[-1]}
-            with_activation={"NONE"}
+            with_activation=NONE
             """
         )
 
@@ -2658,7 +2664,18 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         self._ir_text += textwrap.dedent(
             f"""
             method={"SOFTPLUS"}
-                """
+            """
+        )
+
+    def _gen_gelu(self, gelu):
+        body = gelu.op.body
+        param = body.args[0].args[0]
+        self._gen_basic_layer_items("Activation", param, gelu)
+        self._ir_text += textwrap.dedent(
+            f"""
+            method={"GELU"}
+            approximate={"TANH"}
+            """
         )
 
     def _gen_reverse_sequence(self, reverse_sequence):
@@ -3620,18 +3637,43 @@ class CodeGenAipuCompass(relay.ExprFunctor):
 
     def _gen_decode_box(self, call):
         attrs = call.attrs
-        weight = call.args[2]
-        weight_dtype = weight.checked_type.dtype
-        weight_shape = weight.checked_type.shape
-        weight_offset, weight_nbytes = self._get_offset_nbytes(weight)
+        ycenter, xcenter, ha_data, wa_data = call.args[2:]
+        # ycenter
+        ycenter_dtype = ycenter.checked_type.dtype
+        ycenter_shape = ycenter.checked_type.shape
+        ycenter_offset, ycenter_nbytes = self._get_offset_nbytes(ycenter)
+        # xcenter
+        xcenter_dtype = xcenter.checked_type.dtype
+        xcenter_shape = xcenter.checked_type.shape
+        xcenter_offset, xcenter_nbytes = self._get_offset_nbytes(xcenter)
+        # ha_data
+        ha_dtype = ha_data.checked_type.dtype
+        ha_shape = ha_data.checked_type.shape
+        ha_offset, ha_nbytes = self._get_offset_nbytes(ha_data)
+        # wa_data
+        wa_dtype = wa_data.checked_type.dtype
+        wa_shape = wa_data.checked_type.shape
+        wa_offset, wa_nbytes = self._get_offset_nbytes(wa_data)
 
         self._gen_basic_layer_items("DecodeBox", call.args[:2], call)
         self._ir_text += textwrap.dedent(
             f"""
-            weights_type={weight_dtype}
-            weights_offset={weight_offset}
-            weights_size={weight_nbytes}
-            weights_shape={_verify_shape(weight_shape)}
+            ycenter_type={ycenter_dtype}
+            ycenter_offset={ycenter_offset}
+            ycenter_size={ycenter_nbytes}
+            ycenter_shape={_verify_shape(ycenter_shape)}
+            xcenter_type={xcenter_dtype}
+            xcenter_offset={xcenter_offset}
+            xcenter_size={xcenter_nbytes}
+            xcenter_shape={_verify_shape(xcenter_shape)}
+            ha_type={ha_dtype}
+            ha_offset={ha_offset}
+            ha_size={ha_nbytes}
+            ha_shape={_verify_shape(ha_shape)}
+            wa_type={wa_dtype}
+            wa_offset={wa_offset}
+            wa_size={wa_nbytes}
+            wa_shape={_verify_shape(wa_shape)}
             image_width={int(attrs.image_width)}
             image_height={int(attrs.image_height)}
             max_box_num={int(attrs.max_box_num)}

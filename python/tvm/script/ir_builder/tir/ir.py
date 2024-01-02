@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """IRBuilder for TIR"""
+#
+# This file has been modified by Arm China team.
+#
 
 import functools
 import inspect
@@ -196,6 +199,9 @@ def arg(name: str, obj: Union[Var, Buffer]) -> Union[Var, Buffer]:
     res : Union[Var, Buffer]
         The argument.
     """
+    if isinstance(obj, tir.Pointer):
+        _ffi_api.PtrArg(name, obj.begin if obj.buffer is None else obj.buffer)
+        return obj
     return _ffi_api.Arg(name, obj)  # type: ignore[attr-defined] # pylint: disable=no-member
 
 
@@ -1275,6 +1281,10 @@ def buffer_store(
     indices : List[Union[PrimExpr, slice]]
         The indices location to be stored.
     """
+    if isinstance(buffer, tir.Pointer):
+        buffer.accessible_check()
+        buffer = buffer.buffer
+
     from tvm.arith import Analyzer  # pylint: disable=import-outside-toplevel
 
     if not isinstance(indices, (list, tuple, ir.Array)):
@@ -1284,11 +1294,12 @@ def buffer_store(
     for index in indices:
         if isinstance(index, slice):
             step = 1 if index.step is None else index.step
-            lanes = Analyzer().simplify((index.stop - index.start + step - 1) // step)
+            start = 0 if index.start is None else index.start
+            lanes = Analyzer().simplify((index.stop - start + step - 1) // step)
             if lanes == 1:
-                expr_indices.append(index.start)
+                expr_indices.append(start)
             else:
-                expr_indices.append(ramp(index.start, step, int(lanes)))
+                expr_indices.append(ramp(start, step, int(lanes)))
         else:
             expr_indices.append(index)
     if isinstance(value, bool) and buffer.dtype == "bool":
@@ -1805,6 +1816,7 @@ pow = _op_wrapper(_tir_op.pow)  # pylint: disable=redefined-builtin
 q_multiply_shift = _op_wrapper(_tir_op.q_multiply_shift)
 q_multiply_shift_per_axis = _op_wrapper(_tir_op.q_multiply_shift_per_axis)
 ret = _op_wrapper(_tir_op.ret)
+Break = _op_wrapper(_tir_op.Break)
 round = _op_wrapper(_tir_op.round)  # pylint: disable=redefined-builtin
 rsqrt = _op_wrapper(_tir_op.rsqrt)
 shift_left = _op_wrapper(_tir_op.shift_left)
@@ -2064,6 +2076,7 @@ __all__ = [
     "q_multiply_shift",
     "q_multiply_shift_per_axis",
     "ret",
+    "Break",
     "reinterpret",
     "round",
     "rsqrt",

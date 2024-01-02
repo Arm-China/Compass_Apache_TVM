@@ -144,6 +144,7 @@ class Buffer(Object, Scriptable):
         begin = (begin,) if isinstance(begin, (int, PrimExpr)) else begin
         return _ffi_api.BufferVStore(self, begin, value)  # type: ignore
 
+    @property
     def scope(self):
         """Return the storage scope associated with this buffer.
         Returns
@@ -225,6 +226,25 @@ class Buffer(Object, Scriptable):
                 else:
                     expr_indices.append(index)
             return BufferLoad(self, expr_indices)
+
+    def addr_of(self, indices):
+        """Obtain a pointer that point to the address of the element on the given indices.
+
+        Parameters
+        ----------
+        indices : Union[int, PrimExpr, Tuple[int, PrimExpr], List[int, PrimExpr]]
+            The indices of the element in the buffer.
+
+        Returns
+        -------
+        ret: tir.Pointer
+            The result pointer instance.
+        """
+        from .pointer import Pointer  # pylint: disable=import-outside-toplevel
+
+        indices = tuple(indices) if isinstance(indices, (tuple, list)) else (indices,)
+        indices = indices + (0,) * (len(self.shape) - len(indices))
+        return Pointer(self.dtype, self.scope, self.data, self.offset_of(indices)[0])
 
 
 def decl_buffer(

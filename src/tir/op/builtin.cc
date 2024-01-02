@@ -50,6 +50,10 @@ TIR_DEFINE_BUILTIN_FUNC(ret)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kControlJump))
     .set_num_inputs(1);
 
+TIR_DEFINE_BUILTIN_FUNC(Break)
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kControlJump))
+    .set_num_inputs(0);
+
 TIR_DEFINE_BUILTIN_FUNC(likely)
     .set_num_inputs(1)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kExprAnnotation))
@@ -164,6 +168,9 @@ TIR_DEFINE_BUILTIN_FUNC(prefetch).set_attr<TCallEffectKind>("TCallEffectKind",
 TIR_DEFINE_BUILTIN_FUNC(tvm_access_ptr)
     .set_num_inputs(5)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kSpecialCallArg));
+
+TIR_DEFINE_BUILTIN_FUNC(pointer).set_num_inputs(4).set_attr<TCallEffectKind>(
+    "TCallEffectKind", Integer(CallEffectKind::kSpecialCallArg));
 
 TIR_DEFINE_BUILTIN_FUNC(tvm_static_handle)
     .set_num_inputs(0)
@@ -362,6 +369,9 @@ TIR_DEFINE_BUILTIN_FUNC(assume)
 TIR_DEFINE_BUILTIN_FUNC(undef)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kReadState))
     .set_num_inputs(0);
+
+TIR_DEFINE_BUILTIN_FUNC(reassign).set_num_inputs(2).set_attr<TCallEffectKind>(
+    "TCallEffectKind", Integer(CallEffectKind::kUpdateState));
 
 TIR_DEFINE_BUILTIN_FUNC(start_profile_intrinsic)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure));

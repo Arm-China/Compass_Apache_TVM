@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 /*!
  * \file remove_no_op.cc
@@ -213,7 +216,8 @@ class NoOpRemover : public arith::IRMutatorWithAnalyzer {
     // A write whose destination is known to already contain the
     // values to be written is a no-op.
     // PrimExpr stores_existing_value = store->value == BufferLoad(store->buffer, store->indices);
-    PrimExpr stores_existing_value = store->value - BufferLoad(store->buffer, store->indices) == 0;
+    PrimExpr stores_existing_value =
+        store->value - BufferLoad(store->buffer, store->indices) == make_zero(store->value->dtype);
     if (touch_pattern_.has_value()) {
       Stmt context_arg = context_ ? GetRef<Stmt>(context_) : Stmt(store);
       stores_existing_value =

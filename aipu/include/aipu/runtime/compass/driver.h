@@ -69,6 +69,7 @@ class AipuDriver {
   std::string target_;
   std::map<uint32_t, uint64_t> shared_inputs_pa;
   std::map<uint32_t, uint64_t> shared_outputs_pa;
+  std::vector<aipu_share_buf_t> shared_outputs_buf;
   // The size of the Data Tightly Coupled Memory, used by AIPU simulator.
   std::string umd_dtcm_sz_;
 };

@@ -1186,9 +1186,17 @@ def clear_traceback(func):
 
 def run_op_case(work_dir, case_file_path, target):
     """
-    work_dir:
-    case_file_path: the dir that include all the file aipurun need.
-    the files is graph.def, weight.bin, input0.bin, input1.bin ...
+    Parameters
+    ----------
+    work_dir : str
+        the dir in which all operations in this function are executed.
+
+    case_file_path : str
+        the dir that include all the file aipurun need.
+        the files is graph.def, weight.bin, input0.bin, input1.bin ...
+
+    target : str
+
     """
     files = os.listdir(case_file_path)
     assert "graph.def" in files, "graph not found!"
@@ -1196,9 +1204,9 @@ def run_op_case(work_dir, case_file_path, target):
     assert "input0.bin" in files, "input bin not found!"
     graph_path = os.path.join(case_file_path, "graph.def")
     weight_path = os.path.join(case_file_path, "weight.bin")
-    inputs = [i for i in files if "input" in i]
-    inputs = [os.path.join(case_file_path, i) for i in inputs]
-    inputs = ",".join(inputs)
+    inputs = ",".join([os.path.join(case_file_path, i) for i in files if "input" in i])
+    stage_info = lambda x: print(f"[DSL OP Test]: {'='*20}Stage {x}{'='*20}")
+    stage_info("1(aipurun) Start")
     # Run DSL OP
     cmd = ["aipurun", graph_path, "-w", weight_path, "-i", inputs, "--target", target]
     # disable passes
@@ -1225,6 +1233,8 @@ def run_op_case(work_dir, case_file_path, target):
     # run aipurun
     aipu_builder.check_call_aipu_tool(cmd, work_dir=work_dir)
     assert "output.bin" in os.listdir(work_dir), "can not found output!"
+    stage_info("1(aipurun) End")
+    stage_info("2(executor) Start")
     # Run Gt
     cur_dir = os.getcwd()
     try:
@@ -1233,6 +1243,8 @@ def run_op_case(work_dir, case_file_path, target):
         gts = exeutor.forward()
     finally:
         os.chdir(cur_dir)
+    stage_info("2(executor) End")
+    stage_info("3(compare) Start")
     # Check Results
     for i, gt in enumerate(gts):
         out_bin = "output.bin" if i == 0 else f"output.bin{i}"
@@ -1242,3 +1254,4 @@ def run_op_case(work_dir, case_file_path, target):
         if cos_dis > 0.99:
             return
         tvm.testing.assert_allclose(output, gt)
+    stage_info("3(compare) End")

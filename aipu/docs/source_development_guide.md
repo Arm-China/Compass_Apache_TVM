@@ -207,6 +207,7 @@ So you need to download the following datasets and extract them to the same dire
     http://images.cocodataset.org/annotations/annotations_trainval2017.zip
     http://images.cocodataset.org/zips/val2017.zip
     http://host.robots.ox.ac.uk:8080/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar
+    https://www.image-net.org/download.php
 For example, after downloading the dataset, extract it to `/path/to/dataset`, then set `ZHOUYI_DATASET_HOME` to `/path/to/dataset`
     export ZHOUYI_DATASET_HOME="/path/to/dataset"
 ```

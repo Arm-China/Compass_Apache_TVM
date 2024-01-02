@@ -47,6 +47,12 @@ namespace builtin {
  * \brief Return value.
  */
 TVM_DLL const Op& ret();
+
+/*!
+ * \brief Return value.
+ */
+TVM_DLL const Op& Break();
+
 /*!
  * \brief Reinterpret the value using the target type.
  */
@@ -271,6 +277,21 @@ TVM_DLL const Op& prefetch();
  *  }
  */
 TVM_DLL const Op& tvm_access_ptr();
+
+/*!
+ * \brief Create a expression that represent pointer.
+ *
+ * The begin expression represents a base memory address, its data type can be
+ * different with the pointer. The offset expression represents a offset from
+ * the base memory address, in unit of data type of the pointer, the concrete
+ * address that the pointer represents is ((dtype*)begin + offset).
+ *
+ *  Handle pointer(PrimExpr dtype, String scope, PrimExpr begin,
+ *                 PrimExpr offset) {
+ *    return (scope dtype.dtype()*)begin + offset;
+ *  }
+ */
+TVM_DLL const Op& pointer();
 
 /*!
  * \brief Create a function local static handle that iniitalizes to nullptr.
@@ -816,6 +837,14 @@ TVM_DLL const Op& assume();
  * altered as a result of optimizations.
  */
 TVM_DLL const Op& undef();
+
+/*!
+ * \brief Create a expression that represent reassignment for the given variable.
+ *
+ * The opposite of reassignment is definition, it is represented by let statement
+ * in TIR. This Op need to be used with the help of evaluate statement.
+ */
+TVM_DLL const Op& reassign();
 
 /*!
  * \brief Profiling intrinsic

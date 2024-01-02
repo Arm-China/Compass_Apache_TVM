@@ -14,7 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+#
+# This file has been modified by Arm China team.
+#
 import sys
 import pytest
 
@@ -2669,8 +2671,9 @@ def match_buffer_region():
                     with T.block():
                         vii = T.axis.S(4, ii)
                         D = T.match_buffer(C[vii * 4 : vii * 4 + 4, 0, 0:4], (4, 1, 4))
-                        for i, j in T.grid(4, 4):
-                            B[0] += D[i, 0, j]
+                        # Change name because py sim cannot support duplicate name.(CTV-1139)
+                        for iii, jjj in T.grid(4, 4):
+                            B[0] += D[iii, 0, jjj]
 
     return match_buffer_region
 

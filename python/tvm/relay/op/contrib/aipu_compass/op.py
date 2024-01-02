@@ -131,10 +131,8 @@ def gen_anchor_box(feature_map_):
             total_xcenter_a = np.concatenate([total_xcenter_a, xcenter_a])
             total_ha = np.concatenate([total_ha, height_a])
             total_wa = np.concatenate([total_wa, width_a])
-    anchor_box = np.stack([total_ycenter_a, total_xcenter_a, total_ha, total_wa], axis=1).astype(
-        np.float32
-    )
-    return anchor_box
+
+    return total_ycenter_a, total_xcenter_a, total_ha, total_wa
 
 
 @tvm.register_func("relay.op.contrib.aipu_compass.gruv3_rel")
@@ -730,9 +728,12 @@ def decode_box(
     result : relay.Expr
         The computed result.
     """
-    weights_data = gen_anchor_box(feature_map)
-    weights = relay.const(weights_data, weights_data.dtype)
-    params = [scores, boxes, weights]
+    ycenter, xcenter, ha_data, wa_data = gen_anchor_box(feature_map)
+    ycenter = relay.const(ycenter, "float32")
+    xcenter = relay.const(xcenter, "float32")
+    ha_data = relay.const(ha_data, "float32")
+    wa_data = relay.const(wa_data, "float32")
+    params = [scores, boxes, ycenter, xcenter, ha_data, wa_data]
     attrs = {
         "image_width": image_width,
         "image_height": image_height,
@@ -757,4 +758,4 @@ def register_op(op_name, input_num, rel_func):
 
 register_op("contrib.aipu_compass.detection_output", 3, _detection_output_type_rel)
 register_op("contrib.aipu_compass.nms", 4, _nms_type_rel)
-register_op("contrib.aipu_compass.decode_box", 3, _decode_box_rel)
+register_op("contrib.aipu_compass.decode_box", 6, _decode_box_rel)
