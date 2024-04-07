@@ -71,6 +71,8 @@ enum class StorageRank {
   kLsram = 35,
   /*! \brief gsram scope memory*/
   kGsram = 36,
+  /*! \brief constant scope memory*/
+  kConstant = 37,
   /*! \brief mma scope memory of matrix_a */
   kMMAMatrixA = 9,
   /*! \brief mma scope memory of matrix_b */
@@ -131,6 +133,8 @@ struct StorageScope {
         return "lsram" + tag;
       case StorageRank::kGsram:
         return "gsram" + tag;
+      case StorageRank::kConstant:
+        return "constant" + tag;
       case StorageRank::kMMAMatrixA:
         return "m16n8k8.matrixA" + tag;
       case StorageRank::kMMAMatrixB:
@@ -180,6 +184,9 @@ struct StorageScope {
     } else if (s.compare(0, 5, "gsram") == 0) {
       r.rank = StorageRank::kGsram;
       r.tag = s.substr(5, std::string::npos);
+    } else if (s.compare(0, 8, "constant") == 0) {
+      r.rank = StorageRank::kConstant;
+      r.tag = s.substr(8, std::string::npos);
     } else if (s.compare(0, 7, "amx.tmm") == 0) {
       r.rank = StorageRank::kAMXTMM;
       r.tag = s.substr(7, std::string::npos);

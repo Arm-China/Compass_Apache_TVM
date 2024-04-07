@@ -18,7 +18,6 @@
 from typing import Callable, Optional, Union, List, Dict
 from statistics import median
 import json
-import warnings
 import numpy as np  # type: ignore
 
 import tvm
@@ -48,15 +47,13 @@ def generate_input_data(
     """
     if input_dtype.startswith("float"):
         return np.random.uniform(size=input_shape).astype(input_dtype)
-    if low is None or high is None:
-        warnings.warn(
-            f"Model input value range for shape {input_shape} of {input_dtype} is not set!"
-        )
     range_map = {
         "uint8": (0, 255),
         "int8": (-128, 127),
         "int32": (0, 10000),
+        "uint32": (0, 10000),
         "int64": (0, 10000),
+        "uint64": (0, 10000),
     }
     if input_dtype in range_map:
         _low, _high = range_map[input_dtype]

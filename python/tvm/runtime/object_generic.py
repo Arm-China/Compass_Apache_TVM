@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Common implementation of object generic related logic"""
+#
+# This file has been modified by Arm China team.
+#
 # pylint: disable=unused-import, invalid-name
 from numbers import Number, Integral
 from tvm._ffi.base import string_types
@@ -111,6 +114,8 @@ def convert(value, span=None):
 
 
 def _scalar_type_inference(value):
+    from tvm.target import Target  # pylint: disable=import-outside-toplevel
+
     if hasattr(value, "dtype"):
         dtype = str(value.dtype)
     elif isinstance(value, bool):
@@ -127,6 +132,8 @@ def _scalar_type_inference(value):
             dtype = "int32"
         else:
             dtype = "int64"
+            if Target.current() and Target.current().kind.name == "aipu":
+                dtype = "uint32"
     else:
         raise NotImplementedError(f"Cannot automatically inference the type. value={value}")
     return dtype

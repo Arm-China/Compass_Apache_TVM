@@ -28,7 +28,6 @@ from typing import Sequence
 import numpy as np
 
 import tvm
-import tvm._ffi
 from tvm._ffi.base import _LIB, check_call, c_str, string_types, _RUNTIME_ONLY
 from tvm._ffi.libinfo import find_include_path
 from .packed_func import PackedFunc, PackedFuncHandle, _set_class_module
@@ -308,6 +307,10 @@ class Module(object):
         """
         return (self.get_property_mask() & ModulePropertyMask.DSO_EXPORTABLE) != 0
 
+    def clear_imports(self):
+        """Remove all imports of the module."""
+        _ffi_api.ModuleClearImports(self)
+
     def save(self, file_name, fmt=""):
         """Save the module to file.
 
@@ -460,7 +463,16 @@ class Module(object):
     def _collect_dso_modules(self):
         return self._collect_from_import_tree(lambda m: m.is_dso_exportable)
 
-    def export_library(self, file_name, fcompile=None, addons=None, workspace_dir=None, **kwargs):
+    def export_library(
+        self,
+        file_name,
+        *,
+        fcompile=None,
+        fpack_imports=None,
+        addons=None,
+        workspace_dir=None,
+        **kwargs,
+    ):
         """
         Export the module and all imported modules into a single device library.
 
@@ -487,6 +499,16 @@ class Module(object):
             If fcompile has attribute object_format, will compile host library
             to that format. Otherwise, will use default format "o".
 
+        fpack_imports: function(mod: runtime.Module, is_system_lib: bool, symbol_prefix: str,
+                                workspace_dir: str) -> str
+            Function used to pack imported modules from `mod` into a file suitable for passing
+            to fcompile as an input file. The result can be a C source, or an .o object file,
+            or any other file that the fcompile function can handle. The function returns the
+            name of the created file.
+
+            If not provided, the imported modules will be serialized either via packing to an
+            LLVM module, or to a C source file.
+
         workspace_dir : str, optional
             The path of the directory used to create the intermediate
             artifacts when exporting the module.
@@ -507,7 +529,7 @@ class Module(object):
             raise RuntimeError("Cannot call export_library in runtime only mode")
         # Extra dependencies during runtime.
         from pathlib import Path
-        from tvm.contrib import cc as _cc, tar as _tar, utils as _utils
+        from tvm.contrib import cc as _cc, tar as _tar, utils as _utils, tvmjs as _tvmjs
 
         if isinstance(file_name, Path):
             file_name = str(file_name)
@@ -561,7 +583,7 @@ class Module(object):
                             object_format = "cu"
                     has_c_module = True
                 else:
-                    assert module.type_key == "llvm" or module.type_key == "static_library"
+                    assert module.is_dso_exportable
                     global_object_format = object_format = "o"
 
             path_obj = os.path.join(workspace_dir, f"lib{index}.{object_format}")
@@ -575,6 +597,8 @@ class Module(object):
         if not fcompile:
             if file_name.endswith(".tar"):
                 fcompile = _tar.tar
+            elif file_name.endswith(".wasm"):
+                fcompile = _tvmjs.create_tvmjs_wasm
             else:
                 fcompile = _cc.create_shared
 
@@ -589,7 +613,10 @@ class Module(object):
         if self.imported_modules:
             pack_lib_prefix = system_lib_prefix if system_lib_prefix else ""
 
-            if enabled("llvm") and llvm_target_string:
+            if fpack_imports is not None:
+                path_out = fpack_imports(self, is_system_lib, pack_lib_prefix, workspace_dir)
+                files.append(path_out)
+            elif enabled("llvm") and llvm_target_string:
                 path_obj = os.path.join(
                     workspace_dir, f"{pack_lib_prefix}devc.{global_object_format}"
                 )

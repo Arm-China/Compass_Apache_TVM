@@ -281,7 +281,7 @@ TVM_DLL size_t CalculateWorkspaceBytes(const PrimFunc& func,
 
 /*!
  * \brief Calculate the allocated memory per scope in bytes needed inside the TIR PrimFunc
- * \param func The TIR PrimFunc for which the the allocated memory size to be calculated
+ * \param func The TIR PrimFunc for which the allocated memory size to be calculated
  * \return Allocated memory size per scope in bytes inside the PrimFunc returned as a Map with
  * key "main" and a Map of allocated sizes as values.
  */
@@ -289,7 +289,7 @@ TVM_DLL tvm::Map<String, tvm::Map<String, Integer>> CalculateAllocatedBytes(cons
 
 /*!
  * \brief Calculate the allocated memory per scope in bytes for each function inside the module
- * \param mod The IRModule for which the the allocated memory size has to be calculated
+ * \param mod The IRModule for which the allocated memory size has to be calculated
  * \return Allocated memory size per scope in bytes for each function in the IRModule returned as a
            Map with function names as keys and a Map of allocated sizes as values.
  */
@@ -307,12 +307,39 @@ TVM_DLL Map<Buffer, Optional<Stmt>> DetectBufferAccessLCA(const PrimFunc& func);
 
 /*!
  * \brief Verify if the given TIR is well-formed. The verification includes:
- *        - Check if expressions not contain vars that is defined outside the block.
+ *
+ * - All variables are defined prior to their point of use.
+ *
+ * - No variables are used outside of the scope of their definition.
+ *
+ * - Each variable has a single point of definition.
+ *
+ * - Expressions within a tir::Block may not reference variables
+ *   defined outside the block.  For example, for a block with iter
+ *   vars `vi, vj = T.axis.remap('SS', [i,j])`, the statement
+ *   `B[i,j] = A[i,j]` would be ill-formed, because it uses the loop
+ *   variables `i` and `j` instead of the block variables `vi` and
+ *   `vj`.
+ *
  * \param func The PrimFunc to be verified.
  * \param assert_mode The indicator if it raises an error when the function is not well-formed.
  * \return Whether it is a well-formed TIR function.
  */
 TVM_DLL bool VerifyWellFormed(const PrimFunc& func, bool assert_mode = true);
+
+/*!
+ * \brief Verify if the TIR in the given IRMOdule is well-formed.
+ *
+ * In addition to the checks performed for each PrimFunc (see above),
+ * the following checks are performed:
+ *
+ * - The same TIR variable may not be defined in more than one function
+ *
+ * \param mod The IRModule to be verified.
+ * \param assert_mode The indicator if it raises an error when the function is not well-formed.
+ * \return Whether it is a well-formed TIR module.
+ */
+TVM_DLL bool VerifyWellFormed(const IRModule& mod, bool assert_mode = true);
 
 /*!
  * \brief Find the entry function of the given IRModule, i.e, functions marked by

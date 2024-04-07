@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 """The TensorIR schedule class"""
+import inspect
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from tvm._ffi import register_object as _register_object
@@ -268,26 +269,24 @@ class Schedule(Object):
         """
         return _ffi_api.ScheduleForkSeed(self)  # type: ignore # pylint: disable=no-member
 
-    def show(self, style: Optional[str] = None, black_format: bool = True) -> None:
+    def show(self, *args, **kwargs) -> None:
         """A sugar for print highlighted TVM script.
 
-        Parameters
-        ----------
-        style : str, optional
-
-            Pygmentize printing style, auto-detected if None.  See
-            `tvm.script.highlight.cprint` for more details.
-
-        black_format: bool
-
-            If true (default), use the formatter Black to format the TVMScript
+        All parameters are forwarded to the underlying `Module.show`
+        and `Trace.show` methods.
         """
         mod = self.mod
         if mod is not None:
-            mod.show(style=style, black_format=black_format)
+            mod.show(*args, **kwargs)
+
         trace = self.trace
         if trace is not None:
-            trace.show(style=style, black_format=black_format)
+            # Trace.show only supports the style and black_format arguments
+            param_binding = inspect.signature(mod.show).bind(*args, **kwargs)
+            param_binding.apply_defaults()
+            bound_args = param_binding.arguments
+
+            trace.show(style=bound_args["style"], black_format=bound_args["black_format"])
 
     ########## Lookup ##########
 
@@ -810,6 +809,114 @@ class Schedule(Object):
         # that there is at most one None in `factors`
         return list(
             _ffi_api.ScheduleSplit(  # type: ignore # pylint: disable=no-member
+                self, loop, factors, preserve_unit_iters
+            )
+        )
+
+    @type_checked
+    def loop_partition(
+        self,
+        loop: LoopRV,
+        factors: List[Union[int, ExprRV, None]],
+        preserve_unit_iters: bool = True,
+    ) -> List[LoopRV]:
+        """Partition a loop into a list of consecutive loops. It requires:
+        1) The loop can't have annotation or thread binding.
+        Predicates may be added to ensure the total loop numbers keeps unchanged.
+        In `factors`, at most one of the factors can be None,
+        which will be automatically inferred.
+
+        Parameters
+        ----------
+        loop : LoopRV
+            The loop to be partition
+
+        factors: List[Union[int, ExprRV, None]]
+            The partitioning factors
+            Potential inputs are:
+            - None
+            - ExprRV
+            - Positive constant integers
+
+        preserve_unit_iters : bool
+            Whether or not to preserve unit iterators in block bindings
+
+        Returns
+        -------
+        partition_loops : List[LoopRV]
+            The new loops after partition
+
+        Examples
+        --------
+
+        Before partition, in TensorIR, the IR is:
+
+        .. code-block:: python
+
+            @T.prim_func
+            def before_partition(a: T.handle, b: T.handle) -> None:
+                A = T.match_buffer(a, (128, 128))
+                B = T.match_buffer(b, (128, 128))
+                for i, j in T.grid(128, 128):
+                    with T.block("B"):
+                        vi, vj = T.axis.remap("SS", [i, j])
+                        B[vi, vj] = A[vi, vj] * 2.0
+
+        Create the schedule and do partition:
+
+        .. code-block:: python
+
+            sch = tir.Schedule(before_partition)
+            i, j = sch.get_loops(sch.get_block("B"))
+            sch.partition(i, factors=[2, 64])
+            print(sch.mod["main"].script())
+
+        After applying partition, the IR becomes:
+
+        .. code-block:: python
+
+            def after_partition(a: T.handle, b: T.handle) -> None:
+                A = T.match_buffer(a, (128, 128))
+                B = T.match_buffer(b, (128, 128))
+                # the original loop is partition into 3 loops
+                with T.block("root"):
+                    T.reads()
+                    T.writes()
+                    with T.block("B_i_common"):
+                        T.reads()
+                        T.writes()
+                        with T.block("B_i0_partition"):
+                            T.reads()
+                            T.writes()
+                            for i0, j in T.grid(2, 128):
+                                with T.block("B_i0"):
+                                    vi, vj = T.axis.remap("SS", [i0, j])
+                                    T.reads(A[0:2, 0:128])
+                                    T.writes(B[0:2, 0:128])
+                                    B[vi, vj] = A[vi, vj] * T.float32(2)
+                        with T.block("B_i1_partition"):
+                            T.reads()
+                            T.writes()
+                            for i1 in range(2, 66):
+                                for j in range(128):
+                                    with T.block("B_i1"):
+                                        vi, vj = T.axis.remap("SS", [i1, j])
+                                        T.reads(A[2:66, 0:128])
+                                        T.writes(B[2:66, 0:128])
+                                        B[vi, vj] = A[vi, vj] * T.float32(2)
+                        with T.block("B_partition_2"):
+                            T.reads()
+                            T.writes()
+                            for i2 in range(66, 128):
+                                for j in range(128):
+                                    with T.block("B_i2"):
+                                        vi, vj = T.axis.remap("SS", [i2, j])
+                                        T.reads(A[66:128, 0:128])
+                                        T.writes(B[66:128, 0:128])
+                                        B[vi, vj] = A[vi, vj] * T.float32(2)
+        """
+        return list(
+            _ffi_api.ScheduleLoopPartition(  # type: ignore # pylint: disable=no-member
                 self, loop, factors, preserve_unit_iters
             )
         )
@@ -1617,7 +1724,7 @@ class Schedule(Object):
         storage_scope: str,
     ) -> List[BlockRV]:
         """Create blocks that reads & write a buffer region into a cache block.
-        It requires the the target block both read & write the target buffer.
+        It requires the target block both read & write the target buffer.
         Mainly for inplace operation.
 
         Parameters
@@ -3593,7 +3700,7 @@ class Schedule(Object):
 
             sch = tir.Schedule(before_pad_einsum, debug_mask="all")
             block = sch.get_block("C_shared")
-            sch.pad_einsum(block, [0, 1, 1])
+            sch.pad_einsum(block, [32, 32, 32])
             print(sch.mod["main"].script())
 
         After applying decompose-padding, the IR becomes:

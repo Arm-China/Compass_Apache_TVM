@@ -131,6 +131,12 @@ class MinRPCReturns : public MinRPCReturnInterface {
     io_->Exit(static_cast<int>(code));
   }
 
+  void WriteObject(void* obj) { this->ThrowError(RPCServerStatus::kUnknownTypeCode); }
+  uint64_t GetObjectBytes(void* obj) {
+    this->ThrowError(RPCServerStatus::kUnknownTypeCode);
+    return 0;
+  }
+
   template <typename T>
   void Write(const T& data) {
     static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
@@ -200,7 +206,8 @@ class MinRPCExecute : public MinRPCExecInterface {
         ret_tcode[1] = kTVMBytes;
         ret_handler_->ReturnPackedSeq(ret_value, ret_tcode, 2);
         TVMByteArrayFree(reinterpret_cast<TVMByteArray*>(ret_value[1].v_handle));  // NOLINT(*)
-      } else if (rv_tcode == kTVMPackedFuncHandle || rv_tcode == kTVMModuleHandle) {
+      } else if (rv_tcode == kTVMPackedFuncHandle || rv_tcode == kTVMModuleHandle ||
+                 rv_tcode == kTVMObjectHandle) {
         ret_tcode[1] = kTVMOpaqueHandle;
         ret_handler_->ReturnPackedSeq(ret_value, ret_tcode, 2);
       } else {
@@ -746,6 +753,20 @@ class MinRPCServer {
     static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                   "need to be trival");
     return ReadRawBytes(data, sizeof(T) * count);
+  }
+
+  void ReadObject(int* tcode, TVMValue* value) {
+    // handles RPCObject in minRPC
+    // NOTE: object needs to be supported by C runtime
+    // because minrpc's restriction of C only
+    // we only handle RPCObjectRef
+    uint32_t type_index;
+    Read(&type_index);
+    MINRPC_CHECK(type_index == kRuntimeRPCObjectRefTypeIndex);
+    uint64_t object_handle;
+    Read(&object_handle);
+    tcode[0] = kTVMObjectHandle;
+    value[0].v_handle = reinterpret_cast<void*>(object_handle);
   }
 
  private:

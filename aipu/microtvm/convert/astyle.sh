@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 
 for f in $(find ../ -name '*.c' -or -name '*.cpp' -or -name '*.h' -or -name '*.hpp' -type f)
 do

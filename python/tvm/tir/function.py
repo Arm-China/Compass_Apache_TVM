@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=unrecognized-inline-option
 """Function data types."""
+#
+# This file has been modified by Arm China team.
+#
 
 import collections
 import inspect
@@ -403,6 +406,8 @@ class IndexMap(Object):
         final_indices = []
         axis_separators = []
 
+        if isinstance(mapping, Var):
+            mapping = (mapping,)
         try:
             iter(mapping)
             is_iterable = True

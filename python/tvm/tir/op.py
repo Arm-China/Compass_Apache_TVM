@@ -19,13 +19,13 @@
 #
 # This file has been modified by Arm China team.
 #
-import warnings
 from typing import Any, Optional
 
 import tvm._ffi
 from tvm.ir import Array, Op, PrimExpr
 from tvm.ir.base import Span
 from tvm.runtime import const, convert
+from tvm import DataType, can_implicit_convert
 
 from . import _ffi_api
 from .buffer import Buffer
@@ -254,7 +254,7 @@ def call_llvm_intrin(dtype, name, *args, span=None):
        The name of the llvm intrinsic function.
 
     args : list
-       Poistional arguments.
+       Positional arguments.
 
     span : Optional[Span]
         The location of this operator in the source code.
@@ -274,7 +274,7 @@ def call_llvm_intrin(dtype, name, *args, span=None):
     else:
         llvm_id = name
     if llvm_id == 0:
-        warnings.warn(f"Unknown llvm intrinsic function {name}, falling back to 0")
+        raise ValueError(f"Unknown llvm intrinsic function {name}")
     return call_intrin(
         dtype,
         Op.get("tir.call_llvm_intrin"),
@@ -296,7 +296,7 @@ def call_llvm_pure_intrin(dtype, name, *args, span=None):
        The name of the llvm intrinsic function.
 
     args : list
-       Poistional arguments.
+       Positional arguments.
 
     span : Optional[Span]
         The location of this operator in the source code.
@@ -316,7 +316,7 @@ def call_llvm_pure_intrin(dtype, name, *args, span=None):
     else:
         llvm_id = name
     if llvm_id == 0:
-        warnings.warn(f"Unknown llvm intrinsic function {name}, falling back to 0")
+        raise ValueError(f"Unknown llvm intrinsic function {name}")
     return call_intrin(
         dtype,
         Op.get("tir.call_llvm_pure_intrin"),
@@ -459,6 +459,64 @@ def reassign(var, value):
         The call expression.
     """
     return call_intrin("void", "tir.reassign", var, value)
+
+
+def _vector_element_check(var, idx):
+    assert DataType(var.dtype).is_vector, "Only support get or set element from a vector variable."
+    assert isinstance(idx, int) or (
+        isinstance(idx, PrimExpr) and DataType(idx.dtype).is_integer_scalar
+    ), "The index value must be a scalar integer."
+
+
+def vector_get_element(var, idx):
+    """Create a expression that represent get element from the given vector variable.
+
+    Parameters
+    ----------
+    var : Var
+        The vector variable that will be got element from.
+
+    idx: Union[int, PrimExpr]
+        The index of the target element.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    _vector_element_check(var, idx)
+    return call_intrin(DataType(var.dtype).element_of, "tir.vector_get_element", var, idx)
+
+
+def vector_set_element(var, idx, value):
+    """Create a expression that represent set element to the given vector variable.
+
+    This Op need to be used with the help of evaluate statement.
+
+    Parameters
+    ----------
+    var : Var
+        The vector variable that will be set element to.
+
+    idx: Union[int, PrimExpr]
+        The index of the target element.
+
+    value: PrimExpr
+        The value that will assign to the target element of the vector variable.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    _vector_element_check(var, idx)
+    value = convert(value)
+    elem_dtype = DataType(var.dtype).element_of
+    assert can_implicit_convert(value.dtype, elem_dtype), (
+        f'Type mismatch assignment: "{elem_dtype}" vs. "{value.dtype}", need to do '
+        "the explicit type conversion for the right hand side(i.e., new value).",
+    )
+    return call_intrin("void", "tir.vector_set_element", var, idx, value)
 
 
 def call_tir(global_var: tvm.ir.GlobalVar, *args):
@@ -626,6 +684,23 @@ def tvm_thread_allreduce(*freduce_args):
         The call expression.
     """
     return call_intrin("handle", "tir.tvm_thread_allreduce", *freduce_args)
+
+
+def tvm_thread_invariant(cond):
+    """Mark condition as thread invariant.
+
+    Parameters
+    ----------
+    cond : Expr
+        The condition.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    assert isinstance(cond, PrimExpr)
+    return call_intrin(cond.dtype, "tir.tvm_thread_invariant", cond)
 
 
 def tvm_storage_sync(storage_scope):
@@ -1116,7 +1191,6 @@ def ptx_mma(
     saturate : bool
         The optional saturation at the output.
 
-
     operator : Optional[Literal["xor", "and"]]
         The 1-bit operator.
 
@@ -1388,7 +1462,7 @@ def ptx_ldmatrix(dtype, trans, num, type, local_ptr, local_offset, smem_ptr, sme
 
 
 def ptx_cp_async(dtype, shared_ptr, shared_offset, global_ptr, global_offset, bytes):
-    """TVM intrinsic for ptx async copy from global to shared memory
+    """TVM intrinsic for ptx async copy from global to shared memory using cp.async
     https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-async
 
     Parameters
@@ -1421,6 +1495,52 @@ def ptx_cp_async(dtype, shared_ptr, shared_offset, global_ptr, global_offset, by
     )
 
 
+def ptx_cp_async_bulk(
+    dtype, shared_ptr, shared_offset, global_ptr, global_offset, bytes, barrier_id
+):
+    """TVM intrinsic for ptx async copy from global to shared memory using cp.async.bulk
+    https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-async-bulk
+
+    Parameters
+    ----------
+    dtype : str
+       The data type of the result.
+
+    shared_ptr : Var
+        The shared memory pointer variable.
+
+    shared_offset : Expr
+        The offset of shared memory pointer.
+
+    global_ptr : Var
+        The global memory pointer variable.
+
+    global_offset : Expr
+        The offset of global memory pointer.
+
+    bytes : int
+        The data size to copy.
+
+    barrier_id : int
+        The ID of the barrier shared memory pointer.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin(
+        dtype,
+        "tir.ptx_cp_async_bulk",
+        shared_ptr,
+        shared_offset,
+        global_ptr,
+        global_offset,
+        bytes,
+        barrier_id,
+    )
+
+
 def ptx_commit_group():
     """TVM intrinsic for ptx async copy commit
     https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-async-commit-group
@@ -1448,6 +1568,115 @@ def ptx_wait_group(num):
         The call expression.
     """
     return call_intrin("", "tir.ptx_wait_group", num)
+
+
+def ptx_cp_async_barrier(barrier_id):
+    """TVM intrinsic for ptx async copy barrier using cp.async.mbarrier.arrive
+    https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-cp-async-mbarrier-arrive
+
+    Parameters
+    ----------
+    barrier_id : int
+        The ID of the barrier shared memory pointer.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("", "tir.ptx_cp_async_barrier", barrier_id)
+
+
+def ptx_init_barrier_thread_count(barrier_id, thread_count):
+    """TVM intrinsic for ptx barrier initialization of thread count using mbarrier.init
+    https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-init
+
+    Parameters
+    ----------
+    barrier_id : int
+        The ID of the barrier shared memory pointer.
+
+    thread_count : int
+        Number of threads expected to arrive at the barrier.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("", "tir.ptx_init_barrier_thread_count", barrier_id, thread_count)
+
+
+def ptx_arrive_barrier(barrier_id):
+    """TVM intrinsic for ptx barrier arrival using mbarrier.arrive
+    https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-arrive
+
+    Parameters
+    ----------
+    barrier_id : int
+        The ID of the barrier shared memory pointer.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("", "tir.ptx_arrive_barrier", barrier_id)
+
+
+def ptx_arrive_barrier_expect_tx(barrier_id, byte_count):
+    """TVM intrinsic for ptx barrier arrival with expect tx using mbarrier.arrive.expect_tx
+    https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-arrive
+    https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-expect-tx-operation
+
+    Parameters
+    ----------
+    barrier_id : int
+        The ID of the barrier shared memory pointer.
+
+    byte_count : int
+        Increases the tx count of the mbarrier object to track completion of
+        addtional async transactions.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("", "tir.ptx_arrive_barrier_expect_tx", barrier_id, byte_count)
+
+
+def ptx_wait_barrier(barrier_id):
+    """TVM intrinsic for ptx barrier wait using mbarrier.try_wait
+    https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#parallel-synchronization-and-communication-instructions-mbarrier-test-wait-mbarrier-try-wait
+
+    Parameters
+    ----------
+    barrier_id : int
+        The ID of the barrier shared memory pointer.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("", "tir.ptx_wait_barrier", barrier_id)
+
+
+def create_barriers(barrier_count):
+    """TVM intrinsic to create N barriers
+
+    Parameters
+    ----------
+    barrier_count : int
+        The number of barriers to create.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("", "tir.create_barriers", barrier_count)
 
 
 def vectorlow(dtype, vec):
@@ -3096,10 +3325,16 @@ def comm_reducer(fcombine, fidentity, name="reduce"):
         if isinstance(axis, (tvm.tir.IterVar, list, tuple)):
             assert not args
             return _make_reduce(expr, axis, where, init)
+
         if where is None:
             assert not args
+            assert init is None
             return _reduce_directly(expr, axis)
-        return _reduce_directly(expr, axis, where, *args)
+        elif init is None:
+            assert not args
+            return _reduce_directly(expr, axis, where)
+        else:
+            return _reduce_directly(expr, axis, where, init, *args)
 
     doc_str = """Create a {0} expression over axis.
 
@@ -3193,6 +3428,85 @@ def TVMBackendFreeWorkspace(device_type, device_id, ptr):
         The call expression.
     """
     return call_intrin("int32", "tir.TVMBackendFreeWorkspace", device_type, device_id, ptr)
+
+
+def anylist_getitem(list_handle, index):
+    """Returns an item from any list.
+    list_handle: Var
+        The handle to anylist
+    index : int
+        The index
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("handle", "tir.anylist_getitem", list_handle, index)
+
+
+def anylist_resetitem(list_handle, index):
+    """Reset an item from any list.
+    list_handle: Var
+        The handle to anylist
+    index : int
+        The index
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("int", "tir.anylist_resetitem", list_handle, index)
+
+
+def anylist_setitem_call_packed(list_handle, index, func_name, *args):
+    """Set anylist item by result of packed call.
+    list_handle: Var
+        The handle to anylist
+    index : int
+        The index
+    func_name: str
+        The name of the function to be called.
+    args:
+        Extra arguments
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin(
+        "int", "tir.anylist_setitem_call_packed", list_handle, index, func_name, *args
+    )
+
+
+def anylist_setitem_call_cpacked(list_handle, index, func_name, *args):
+    """Set anylist item by result of packed call.
+    list_handle: Var
+        The handle to anylist
+    index : int
+        The index
+    func_name: str
+        The name of the function to be called.
+    args:
+        Extra arguments
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin(
+        "int", "tir.anylist_setitem_call_cpacked", list_handle, index, func_name, *args
+    )
+
+
+def vscale():
+    """Get the target's vscale value. It will be lowered to llvm.vscale intrinsic
+    (https://llvm.org/docs/LangRef.html#llvm-vscale-intrinsic)
+    Returns
+    -------
+    call : PrimExpr
+        Call to the vscale intrinsic
+    """
+    return call_intrin("int32", "tir.vscale")
 
 
 # pylint: disable=unnecessary-lambda

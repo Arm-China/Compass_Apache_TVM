@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/include/aipu/runtime/compass/driver.h
  */
@@ -12,6 +12,7 @@
 #include <tvm/runtime/data_type.h>
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -42,7 +43,6 @@ class AipuDriver {
   AipuDriver();
   ~AipuDriver();
   void Init(const std::string& aipu_bin, const std::string& work_dir, const std::string& target,
-            uint64_t* shared_inputs_pa, uint64_t* shared_outputs_pa,
             const std::string& umd_dtcm_sz);
   void SetInputs(const std::vector<DLTensor*>& inputs);
   void Run();
@@ -51,10 +51,12 @@ class AipuDriver {
   std::vector<ParamInfo> GetParamInfo(bool is_input);
   void DeinitGraphJob();
 
-  // Internal supporting.
- private:
+  void MarkOutputShared(int* outputs_fds);
+  void SetInputShared(int* inputs_fds);
   void MarkOutputShared(uint64_t* outputs_pa);
   void SetInputShared(uint64_t* inputs_pa);
+  // Internal supporting.
+ private:
   void ConfigEnvItems();
   void ConfigGlobal(bool is_profile);
   void ConfigGraphItems();
@@ -67,8 +69,8 @@ class AipuDriver {
   uint64_t graph_id_ = 0;
   std::string work_dir_;
   std::string target_;
-  std::map<uint32_t, uint64_t> shared_inputs_pa;
-  std::map<uint32_t, uint64_t> shared_outputs_pa;
+  std::set<uint32_t> shared_inputs_idx;
+  std::set<uint32_t> shared_outputs_idx;
   std::vector<aipu_share_buf_t> shared_outputs_buf;
   // The size of the Data Tightly Coupled Memory, used by AIPU simulator.
   std::string umd_dtcm_sz_;

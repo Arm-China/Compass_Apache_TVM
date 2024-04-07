@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/runtime/compass/driver.cc
  */
 #include <aipu/runtime/compass/basic_config.h>
 #include <aipu/runtime/compass/driver.h>
 #include <aipu/runtime/utils.h>
+#include <tvm/runtime/ndarray.h>
 
 #include <mutex>
 
@@ -62,8 +63,7 @@ AipuDriver::AipuDriver() {
 }
 
 void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
-                      const std::string& target, uint64_t* shared_inputs_pa,
-                      uint64_t* shared_outputs_pa, const std::string& umd_dtcm_sz) {
+                      const std::string& target, const std::string& umd_dtcm_sz) {
   work_dir_ = work_dir;
   target_ = target;
   umd_dtcm_sz_ = umd_dtcm_sz;
@@ -94,26 +94,24 @@ void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
   status_ = aipu_create_job(ctx_, graph_id_, &job_id_, &job_cfg_);
   AIPU_DRIVER_HANDLE_ERROR(status_);
 
-  // If input from shared memory physical address, set it.
-  if (shared_inputs_pa != nullptr) {
-    SetInputShared(shared_inputs_pa);
-  }
-
-  if (shared_outputs_pa != nullptr) {
-    MarkOutputShared(shared_outputs_pa);
-  }
-
   ConfigJobItems();
   return;
 }
 
 void AipuDriver::SetInputs(const std::vector<DLTensor*>& inputs) {
   for (uint32_t i = 0; i < inputs.size(); ++i) {
-    if (shared_inputs_pa.find(i) != shared_inputs_pa.end()) {
+    if (shared_inputs_idx.find(i) != shared_inputs_idx.end()) {
       continue;
     }
     ICHECK(inputs[i]->data != nullptr);
-    status_ = aipu_load_tensor(ctx_, job_id_, i, inputs[i]->data);
+
+    DLTensor* in_tensor = inputs[i];
+    NDArray nd_arr = NDArray::FromExternalDLTensor(*in_tensor);
+    if (in_tensor->device.device_type != kDLCPU) {
+      nd_arr = NDArray::NewFromDLTensor(in_tensor, Device{kDLCPU, 0});
+    }
+
+    status_ = aipu_load_tensor(ctx_, job_id_, i, nd_arr->data);
     AIPU_DRIVER_HANDLE_ERROR(status_);
   }
   return;
@@ -121,11 +119,22 @@ void AipuDriver::SetInputs(const std::vector<DLTensor*>& inputs) {
 
 void AipuDriver::GetOutputs(const std::vector<DLTensor*>& outputs) {
   for (uint32_t i = 0; i < outputs.size(); ++i) {
-    if (shared_outputs_pa.find(i) != shared_outputs_pa.end()) {
+    if (shared_outputs_idx.find(i) != shared_outputs_idx.end()) {
       continue;
     }
-    status_ = aipu_get_tensor(ctx_, job_id_, AIPU_TENSOR_TYPE_OUTPUT, i, outputs[i]->data);
+
+    DLTensor* out_tensor = outputs[i];
+    NDArray nd_arr = NDArray::FromExternalDLTensor(*out_tensor);
+    if (out_tensor->device.device_type != kDLCPU) {
+      nd_arr = NDArray::NewFromDLTensor(out_tensor, Device{kDLCPU, 0});
+    }
+
+    status_ = aipu_get_tensor(ctx_, job_id_, AIPU_TENSOR_TYPE_OUTPUT, i, nd_arr->data);
     AIPU_DRIVER_HANDLE_ERROR(status_);
+
+    if (out_tensor->device.device_type != kDLCPU) {
+      nd_arr.CopyTo(out_tensor);
+    }
   }
   return;
 }
@@ -180,10 +189,11 @@ void AipuDriver::SetInputShared(uint64_t* inputs_pa) {
   if (inputs_pa == nullptr) {
     return;
   }
-  shared_inputs_pa.clear();
+  shared_inputs_idx.clear();
   uint32_t count = 0;
   aipu_tensor_type_t tensor_type = AIPU_TENSOR_TYPE_INPUT;
   aipu_get_tensor_count(ctx_, graph_id_, tensor_type, &count);
+
   for (uint32_t idx = 0; idx < count; idx++) {
     if (inputs_pa[idx] != 0) {
       aipu_shared_tensor_info_t shared_tensor_info;
@@ -194,22 +204,50 @@ void AipuDriver::SetInputShared(uint64_t* inputs_pa) {
       shared_tensor_info.pa = inputs_pa[idx];
       shared_tensor_info.shared_case_type = AIPU_SHARE_BUF_IN_ONE_PROCESS;
       AIPU_DRIVER_HANDLE_ERROR(aipu_specify_iobuf(ctx_, job_id_, &shared_tensor_info));
-      shared_inputs_pa[idx] = inputs_pa[idx];
+      shared_inputs_idx.insert(idx);
     }
   }
-  return;
+#endif
+}
+
+void AipuDriver::SetInputShared(int* inputs_fds) {
+#ifndef __QNX__
+  if (inputs_fds == nullptr) {
+    return;
+  }
+  shared_inputs_idx.clear();
+  uint32_t count = 0;
+  aipu_tensor_type_t tensor_type = AIPU_TENSOR_TYPE_INPUT;
+  aipu_get_tensor_count(ctx_, graph_id_, tensor_type, &count);
+  // if fd which means it is dma buf
+  for (uint32_t idx = 0; idx < count; idx++) {
+    if (inputs_fds[idx] > 0) {
+      aipu_shared_tensor_info_t shared_tensor_info;
+      memset(&shared_tensor_info, 0, sizeof(shared_tensor_info));
+
+      shared_tensor_info.type = AIPU_TENSOR_TYPE_INPUT;
+      shared_tensor_info.tensor_idx = idx;
+      shared_tensor_info.dmabuf_fd = inputs_fds[idx];
+      shared_tensor_info.shared_case_type = AIPU_SHARE_BUF_DMABUF;
+      shared_tensor_info.offset_in_dmabuf = 0;
+      AIPU_DRIVER_HANDLE_ERROR(aipu_specify_iobuf(ctx_, job_id_, &shared_tensor_info));
+      shared_inputs_idx.insert(idx);
+    }
+  }
 #endif
 }
 
 void AipuDriver::MarkOutputShared(uint64_t* outputs_pa) {
 #ifndef __QNX__
+  // shared_outputs_idx
   if (outputs_pa == nullptr) {
     return;
   }
-  shared_outputs_pa.clear();
+  shared_outputs_idx.clear();
   uint32_t count = 0;
   aipu_tensor_type_t tensor_type = AIPU_TENSOR_TYPE_OUTPUT;
   aipu_get_tensor_count(ctx_, graph_id_, tensor_type, &count);
+
   for (uint32_t idx = 0; idx < count; idx++) {
     if (outputs_pa[idx] != 0xFFFFFFFFFFFFFFFF) {
       aipu_tensor_desc_t desc;
@@ -231,7 +269,35 @@ void AipuDriver::MarkOutputShared(uint64_t* outputs_pa) {
       shared_tensor_info.shared_case_type = AIPU_SHARE_BUF_IN_ONE_PROCESS;
       AIPU_DRIVER_HANDLE_ERROR(aipu_specify_iobuf(ctx_, job_id_, &shared_tensor_info));
       outputs_pa[idx] = shared_buf.pa;
-      shared_outputs_pa[idx] = outputs_pa[idx];
+      shared_outputs_idx.insert(idx);
+    }
+  }
+#endif
+}
+
+void AipuDriver::MarkOutputShared(int* outputs_fds) {
+#ifndef __QNX__
+  // shared_outputs_idx
+  if (outputs_fds == nullptr) {
+    return;
+  }
+  shared_outputs_idx.clear();
+  uint32_t count = 0;
+  aipu_tensor_type_t tensor_type = AIPU_TENSOR_TYPE_OUTPUT;
+  aipu_get_tensor_count(ctx_, graph_id_, tensor_type, &count);
+
+  for (uint32_t idx = 0; idx < count; idx++) {
+    if (outputs_fds[idx] > 0) {
+      aipu_shared_tensor_info_t shared_tensor_info;
+      memset(&shared_tensor_info, 0, sizeof(shared_tensor_info));
+
+      shared_tensor_info.type = AIPU_TENSOR_TYPE_OUTPUT;
+      shared_tensor_info.tensor_idx = idx;
+      shared_tensor_info.dmabuf_fd = outputs_fds[idx];
+      shared_tensor_info.shared_case_type = AIPU_SHARE_BUF_DMABUF;
+      shared_tensor_info.offset_in_dmabuf = 0;
+      AIPU_DRIVER_HANDLE_ERROR(aipu_specify_iobuf(ctx_, job_id_, &shared_tensor_info));
+      shared_outputs_idx.insert(idx);
     }
   }
 #endif

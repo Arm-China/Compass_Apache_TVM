@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Sink operator "transpose" to make more optimization space."""
 from tvm import ir, relay
 
@@ -166,6 +166,8 @@ class TransposeSinker(relay.ExprMutator):
                 and not relay.ty.is_dynamic(call.checked_type)
             ):
                 axis = args[0].attrs.axis
+                dims = len(post.attrs.axes)
+                axis = axis if axis >= 0 else axis + dims
                 axes = post.attrs.axes
                 new_axes = []
                 for i in axes:

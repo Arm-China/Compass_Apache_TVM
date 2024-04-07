@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 import binascii
 import argparse
 import os

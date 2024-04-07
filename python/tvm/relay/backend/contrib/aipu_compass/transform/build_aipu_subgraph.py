@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 # pylint: disable=too-many-nested-blocks
 """Build all the AIPU subgraphs."""
 import re
@@ -23,7 +23,9 @@ class QuantInfo:
 def _create_quant_info_list(layers, param_names):
     ret = [None] * len(param_names)
     for layer in layers:
-        for line in layer.split():
+        for line in layer.split("\n"):
+            if len(line) == 0:
+                continue
             key, value = (x.strip() for x in line.split("="))
             if key == "layer_top":
                 names = [x.strip() for x in value.strip("[]").split(",")]
@@ -286,7 +288,15 @@ class BuildAipuSubgraph:
 
         # 1. Build all AIPU subgraphs, and change each AIPU subgraph according to quantization.
         quant_info = dict()
+        pattern_items = []
         for gvar, func in ir_mod.functions.items():
+            if gvar.name_hint.startswith("tvmgen_default_aipu_compass_main_"):
+                pattern_items.append((gvar, func))
+        # Sorted by gvar name_hint and self._builder.build in this order.
+        sorted_pattern_items = sorted(
+            pattern_items, key=lambda item: int(item[0].name_hint.split("_")[-1])
+        )
+        for gvar, func in sorted_pattern_items:
             if not hasattr(func.attrs, "Compiler") or func.attrs.Compiler != "aipu_compass":
                 continue
             new_ir_mod[gvar], in_quant_info, out_quant_info = self._builder.build(func)
@@ -296,6 +306,7 @@ class BuildAipuSubgraph:
 
             # Do type inference once a new function is updated into the IRModule.
             new_ir_mod = relay.transform.InferType()(new_ir_mod)
+
         # 2. Inject necessary quantization or type conversion nodes in caller.
         new_ir_mod["main"] = ir_mod["main"]
         bypass_dequant_dict = dict()

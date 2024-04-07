@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 # pylint: disable=unused-import
 """Interface with package AIPUBuilder."""
 import os
@@ -23,7 +23,6 @@ try:
     from AIPUBuilder.Optimizer import plugins as _
     from AIPUBuilder.Optimizer.framework import QUANTIZE_DATASET_DICT as _DATASET_DICT
     from AIPUBuilder.Optimizer.framework import QUANTIZE_METRIC_DICT as _METRIC_DICT
-    from AIPUBuilder.executor import GtForward
 except ImportError:
     from tvm.aipu import logger
 
@@ -113,7 +112,7 @@ _NAME2PYAPI_FUNC = {
     "aipuopt": ("Optimizer", _aipuopt_pyapi),
     "aipugb": ("GBuilder", _aipugb_pyapi),
     "aipugsim": ("GSim", _aipugsim_pyapi),
-    "aipurun": ("GBuilder", _aipurun_pyapi),
+    "aipurun": ("AIPURun", _aipurun_pyapi),
     "aipu_profiler": ("Profiler", _aipuprofiler_pyapi),
 }
 

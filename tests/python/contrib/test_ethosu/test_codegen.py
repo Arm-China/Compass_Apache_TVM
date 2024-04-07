@@ -1170,6 +1170,22 @@ def test_tflite_concat(shapes, axis, accel_type):
     infra.compare_tvm_with_tflite(concat_func, shapes, accel_type, enable_cascader=False)
 
 
+def test_tflite_unstack_concat():
+    np.random.seed(0)
+    shapes = [(2, 4, 16)]
+    axis = 1
+    accel_type = "ethos-u55-256"
+
+    @tf.function
+    def concat_func(input):
+        inputs = tf.unstack(input)
+        inputs.reverse()
+        op = tf.concat(inputs, axis)
+        return op
+
+    infra.compare_tvm_with_tflite(concat_func, shapes, accel_type, enable_cascader=False)
+
+
 def test_tflite_concat_with_reused_args():
     np.random.seed(0)
     shapes = [(1, 1, 24, 1), (1, 1, 24, 1), (1, 1, 10, 1), (1, 1, 68, 1)]
@@ -1233,6 +1249,7 @@ def test_tflite_split(accel_type, ifm_shape, num_or_size_splits, axis):
     [
         [(1, 8, 8, 3), 1.0, 0, 1.0, 0],
         [(1, 20, 30, 3), 1.345, 34, 0.32, -23],
+        [(1, 1, 4, 8), 0.0078125, 0, 0.00997, -30],
     ],
 )
 def test_ethosu_requantize(accel_type, ifm_shape, ifm_scale, ifm_zp, ofm_scale, ofm_zp):
@@ -1565,6 +1582,30 @@ def test_tflite_fully_connected(
 
 
 @pytest.mark.parametrize("accel_type", ["ethos-u55-256", "ethos-u65-256"])
+@pytest.mark.parametrize("ifm_shape", [(1, 16), (4, 8)])
+@pytest.mark.parametrize("ofm_channels", [8, 32])
+@pytest.mark.parametrize("activation_function", ["NONE", "RELU"])
+def test_tflite_matmul(
+    accel_type,
+    ifm_shape,
+    ofm_channels,
+    activation_function,
+):
+    np.random.seed(0)
+
+    @tf.function
+    def matmul(x, y):
+        x = tf.matmul(x, y, transpose_b=True)
+        if activation_function == "RELU":
+            x = tf.nn.relu(x)
+        return x
+
+    infra.compare_tvm_with_tflite(
+        matmul, [ifm_shape, [ofm_channels, ifm_shape[-1]]], accel_type, enable_cascader=False
+    )
+
+
+@pytest.mark.parametrize("accel_type", ["ethos-u55-256", "ethos-u65-256"])
 def test_tflite_subtract_sigmoid(accel_type):
     np.random.seed(0)
     ifm_shape = [1, 6, 8, 4]
@@ -1580,6 +1621,57 @@ def test_tflite_subtract_sigmoid(accel_type):
         [ifm_shape, ifm_shape],
         accel_type,
         enable_cascader=is_u55_accel_type(accel_type),
+    )
+
+
+@pytest.mark.parametrize("accel_type", ["ethos-u55-256", "ethos-u65-256"])
+@pytest.mark.parametrize(
+    "ifm_shape,ofm_channels,fract_size,tolerance",
+    [[(1, 16), 8, 15, 0.001], [(2, 8), 16, 14, 0.001], [(4, 8), 16, 12, 0.001]],
+)
+def test_ethosu_matmul_fixed_point(accel_type, ifm_shape, ofm_channels, fract_size, tolerance):
+    np.random.seed(0)
+    dtype = "int16"
+    weights_shape = (ofm_channels, ifm_shape[1])
+
+    def create_model():
+        ifm = relay.var("ifm", shape=ifm_shape, dtype=dtype)
+        ifm2 = relay.var("ifm2", shape=weights_shape, dtype=dtype)
+        ifm_fixed_point = relay.cast(ifm, "int32")
+        ifm2_fixed_point = relay.cast(ifm2, "int32")
+        ifm_fixed_point = relay.fixed_point_multiply(ifm_fixed_point, 2**31 - 1, 0)
+        ifm2_fixed_point = relay.fixed_point_multiply(ifm2_fixed_point, 2**31 - 1, 0)
+        dense = relay.nn.dense(ifm_fixed_point, ifm2_fixed_point)
+        dense = relay.fixed_point_multiply(dense, 1, 16)
+        dense = relay.cast(dense, dtype)
+        return tvm.IRModule.from_expr(relay.Function([ifm, ifm2], dense))
+
+    def convert_to_fixed_point(arr, fract_size):
+        fract_fact = 0b1 << fract_size
+        return np.array(arr * fract_fact, dtype=np.int16)
+
+    cpu_mod = create_model()
+    ethosu_mod = partition_for_ethosu(cpu_mod)
+
+    input_data = {
+        "ifm": np.random.uniform(-0.5, 0.5, size=ifm_shape),
+        "ifm2": np.random.uniform(-0.5, 0.5, size=weights_shape),
+    }
+    input_data = {
+        "ifm": convert_to_fixed_point(input_data["ifm"], fract_size),
+        "ifm2": convert_to_fixed_point(input_data["ifm2"], fract_size),
+    }
+    output_data = generate_ref_data(cpu_mod, input_data)
+    output_data = {"output": output_data["output"].astype("int16")}
+    tolerance = convert_to_fixed_point(tolerance, fract_size)
+
+    infra.compare_ethosu_with_reference(
+        ethosu_mod,
+        input_data,
+        output_data,
+        accel_type,
+        enable_cascader=False,
+        output_tolerance=tolerance,
     )
 
 

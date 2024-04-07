@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Provide the data and functions required by testing."""
 from tvm.aipu.utils import get_rpc_session
 from .testing import (
@@ -20,7 +20,6 @@ from .testing import (
     calc_l1_norm,
     calc_l1_norm_with_golden,
     calc_cos_distance,
-    run_op_case,
 )
 from .gen_model_inputs import (
     get_imagenet_input,

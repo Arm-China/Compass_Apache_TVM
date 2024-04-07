@@ -27,8 +27,19 @@
 namespace tvm {
 namespace runtime {
 
+// Forward declare TVM Object to use `Object*` in RPC protocol.
+class Object;
+
 /*! \brief The current RPC procotol version. */
 constexpr const char* kRPCProtocolVer = "0.8.0";
+
+/*!
+ * \brief type index of kRuntimeRPCObjectRefTypeIndex
+ * \note this needs to be kept consistent with runtime/object.h
+ * but we explicitly declare it here because minrpc needs to be minimum dep
+ * only c C API
+ */
+constexpr const int kRuntimeRPCObjectRefTypeIndex = 9;
 
 // When tvm.rpc.server.GetCRTMaxPacketSize global function is not registered.
 const uint64_t kRPCMaxTransferSizeBytesDefault = UINT64_MAX;
@@ -193,6 +204,8 @@ struct RPCReference {
     void WriteArray(const T* value, size_t num) {
       num_bytes_ += sizeof(T) * num;
     }
+
+    void WriteObject(Object* obj) { num_bytes_ += channel_->GetObjectBytes(obj); }
 
     void ThrowError(RPCServerStatus status) { channel_->ThrowError(status); }
 
@@ -364,6 +377,10 @@ struct RPCReference {
           channel->WriteArray(bytes->data, len);
           break;
         }
+        case kTVMObjectHandle: {
+          channel->WriteObject(static_cast<Object*>(value.v_handle));
+          break;
+        }
         default: {
           channel->ThrowError(RPCServerStatus::kUnknownTypeCode);
           break;
@@ -459,6 +476,10 @@ struct RPCReference {
         }
         case kTVMDLTensorHandle: {
           value.v_handle = ReceiveDLTensor(channel);
+          break;
+        }
+        case kTVMObjectHandle: {
+          channel->ReadObject(&tcodes[i], &value);
           break;
         }
         default: {

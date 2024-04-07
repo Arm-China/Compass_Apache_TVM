@@ -28,11 +28,11 @@ from tensorflow import keras as tf_keras
 # prevent Keras from using up all gpu memory
 import keras
 
+import pytest
 import tvm
 from tvm import relay
 from tvm.contrib import graph_executor
 import tvm.testing
-import pytest
 
 if tf.executing_eagerly():
     GPUS = tf.config.experimental.list_physical_devices("GPU")
@@ -177,6 +177,14 @@ class TestKeras:
         keras_model = keras_mod.models.Model([data1, data2], out)
         verify_keras_frontend(keras_model, layout="NHWC")
         verify_keras_frontend(keras_model, layout="NCHW")
+        # test axis at last dimension
+        data1 = keras_mod.layers.Input(shape=(1, 2, 2))
+        data2 = keras_mod.layers.Input(shape=(1, 2, 3))
+        merge_func = keras_mod.layers.Concatenate(axis=3)
+        out = merge_func([data1, data2])
+        keras_model = keras_mod.models.Model([data1, data2], out)
+        verify_keras_frontend(keras_model, layout="NHWC")
+        verify_keras_frontend(keras_model, layout="NCHW")
 
     def test_forward_merge_dot(self, keras_mod):
         """test_forward_merge_dot"""
@@ -274,6 +282,16 @@ class TestKeras:
         # RNN dense
         data = keras_mod.layers.Input(shape=(1, 32))
         x = keras_mod.layers.Dense(32, activation="relu", kernel_initializer="uniform")(data)
+        keras_model = keras_mod.models.Model(data, x)
+        verify_keras_frontend(keras_model, need_transpose=False)
+
+        data = keras_mod.layers.Input(shape=(120, 2560), name="image_set")
+        x = keras_mod.layers.Dense(1, activation="linear", name="e")(data)
+        keras_model = keras_mod.models.Model(data, x)
+        verify_keras_frontend(keras_model, need_transpose=False)
+
+        data = keras_mod.layers.Input(shape=(10, 12, 2560), name="image_set")
+        x = keras_mod.layers.Dense(32, activation="linear", name="e")(data)
         keras_model = keras_mod.models.Model(data, x)
         verify_keras_frontend(keras_model, need_transpose=False)
 
@@ -568,6 +586,9 @@ class TestKeras:
             keras_mod.layers.SimpleRNN(
                 units=16, return_state=False, activation="tanh", use_bias=False
             ),
+            keras_mod.layers.SimpleRNN(
+                units=16, return_state=False, activation="tanh", go_backwards=True
+            ),
             keras_mod.layers.GRU(
                 units=16,
                 return_state=False,
@@ -582,6 +603,15 @@ class TestKeras:
                 activation="tanh",
                 reset_after=False,
                 use_bias=False,
+            ),
+            keras_mod.layers.GRU(
+                units=16,
+                return_state=False,
+                recurrent_activation="sigmoid",
+                activation="tanh",
+                reset_after=False,
+                use_bias=False,
+                go_backwards=True,
             ),
         ]
         for rnn_func in rnn_funcs:
@@ -628,6 +658,20 @@ class TestKeras:
 
         keras_model = resnet50_mod(
             include_top=True, weights="imagenet", input_shape=(224, 224, 3), classes=1000
+        )
+        verify_keras_frontend(keras_model, layout=layout)
+
+    def test_forward_inception_v3(self, keras_mod, layout="NCHW"):
+        """test_forward_inception_v3"""
+        if hasattr(keras_mod.applications, "InceptionV3"):
+            # Keras 2.4.x and older
+            inception_v3_mod = keras_mod.applications.InceptionV3
+        else:
+            # Keras 2.6.x and newer
+            inception_v3_mod = keras_mod.applications.inception_v3.InceptionV3
+
+        keras_model = inception_v3_mod(
+            include_top=True, weights=None, input_shape=(299, 299, 3), classes=1000
         )
         verify_keras_frontend(keras_model, layout=layout)
 
@@ -825,6 +869,16 @@ class TestKeras:
         )
         verify_keras_frontend(dense_model, need_transpose=False)
 
+    def test_simplernn_with_infertype(self, keras_mod):
+        """This test case is from https://github.com/apache/tvm/issues/14868"""
+        input_shape = (2, 2, 2)
+        x = keras_mod.layers.Input(shape=input_shape[1:], dtype="float32")
+        layer = keras_mod.layers.SimpleRNN(units=4)
+        y = layer(x)
+        model = keras_mod.models.Model(x, y)
+        mod, _ = relay.frontend.from_keras(model, {model.input_names[0]: input_shape})
+        relay.transform.InferType()(mod)
+
 
 if __name__ == "__main__":
     for k in [keras, tf_keras]:
@@ -855,6 +909,8 @@ if __name__ == "__main__":
         sut.test_forward_xception(keras_mod=k)
         sut.test_forward_resnet50(keras_mod=k)
         sut.test_forward_resnet50(keras_mod=k, layout="NHWC")
+        sut.test_forward_inception_v3(keras_mod=k)
+        sut.test_forward_inception_v3(keras_mod=k, layout="NHWC")
         sut.test_forward_mobilenet(keras_mod=k)
         sut.test_forward_mobilenet(keras_mod=k, layout="NHWC")
         sut.test_forward_conv3d(keras_mod=k)
@@ -867,3 +923,4 @@ if __name__ == "__main__":
         sut.test_forward_repeat_vector(keras_mod=k)
         sut.test_forward_l2_normalize(keras_mod=k)
         sut.test_forward_time_distributed(keras_mod=k)
+        sut.test_simplernn_with_infertype(keras_mod=k)

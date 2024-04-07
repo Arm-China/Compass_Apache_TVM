@@ -223,7 +223,7 @@ class CodeGenNVPTX : public CodeGenLLVM {
 // corresponding nvvm intrinsic. Return true if the match is successful.
 static bool GetWarpShuffleIntrinsic(const CallNode* op, llvm::Intrinsic::ID* id) {
   // Only 32 bit data type is supported.
-  if (op->dtype.is_vector() || op->dtype.bits() != 32) {
+  if (op->dtype.is_fixed_length_vector() || op->dtype.bits() != 32) {
     return false;
   }
 
@@ -345,9 +345,12 @@ runtime::Module BuildNVPTX(IRModule mod, Target target) {
   ICHECK(tm->addPassesToEmitFile(pass, dest_ptx, nullptr, llvm::TargetMachine::CGFT_AssemblyFile) ==
          0)
       << "Cannot emit target CGFT_ObjectFile";
-#else
+#elif TVM_LLVM_VERSION <= 170
   ICHECK(tm->addPassesToEmitFile(pass, dest_ptx, nullptr, llvm::CGFT_AssemblyFile) == 0)
       << "Cannot emit target CGFT_ObjectFile";
+#else
+  ICHECK(tm->addPassesToEmitFile(pass, dest_ptx, nullptr, llvm::CodeGenFileType::AssemblyFile) == 0)
+      << "Cannot emit target CodeGenFileType::ObjectFile";
 #endif
   pass.run(*module);
   std::string ptx(data_ptx.begin(), data_ptx.end());

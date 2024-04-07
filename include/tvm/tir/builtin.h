@@ -463,6 +463,12 @@ TVM_DLL const Op& tvm_check_return();
 TVM_DLL const Op& tvm_thread_context();
 
 /*!
+ * \brief Mark a condition to be thread invariant.
+ *  This means the condition must be the same for all threads.
+ */
+TVM_DLL const Op& tvm_thread_invariant();
+
+/*!
  * \brief Lowered version of call packed, the space of value and
  *  type codes are explicitly allocated.
  *
@@ -696,13 +702,27 @@ TVM_DLL const Op& ptx_mma_sp();
 TVM_DLL const Op& ptx_ldmatrix();
 
 /*!
- * \brief tvm intrinsics for ptx async copy from global to shared memory
+ * \brief tvm intrinsics for ptx async copy from global to shared memory using cp.async
  *
- * void ptx_cp_async(Var shared_ptr, Expr shared_offset, Var global_ptr, Expr global_offset, size_t
- * bytes);
- *
+ * void ptx_cp_async(Var shared_ptr,
+ *                   Expr shared_offset,
+ *                   Var global_ptr,
+ *                   Expr global_offset,
+ *                   size_t bytes);
  */
 TVM_DLL const Op& ptx_cp_async();
+
+/*!
+ * \brief tvm intrinsics for ptx async copy from global to shared memory using cp.async.bulk
+ *
+ * void ptx_cp_async(Var shared_ptr,
+ *                   Expr shared_offset,
+ *                   Var global_ptr,
+ *                   Expr global_offset,
+ *                   size_t bytes,
+ *                   int barrier_id);
+ */
+TVM_DLL const Op& ptx_cp_async_bulk();
 
 /*!
  * \brief tvm intrinsics for ptx async copy commit and wait.
@@ -713,6 +733,54 @@ TVM_DLL const Op& ptx_cp_async();
  */
 TVM_DLL const Op& ptx_commit_group();
 TVM_DLL const Op& ptx_wait_group();
+
+/*!
+ * \brief tvm intrinsics for ptx async copy barrier using cp.async.mbarrier.arrive
+ *
+ * ptx_cp_async_barrier(int barrier_id)
+ *
+ */
+TVM_DLL const Op& ptx_cp_async_barrier();
+
+/*!
+ * \brief tvm intrinsics for ptx barrier initialization of thread count using mbarrier.init
+ *
+ * ptx_init_barrier_thread_count(int barrier_id, int thread_count)
+ *
+ */
+TVM_DLL const Op& ptx_init_barrier_thread_count();
+
+/*!
+ * \brief tvm intrinsics for ptx barrier arrival using mbarrier.arrive
+ *
+ * ptx_arrive_barrier(int barrier_id)
+ *
+ */
+TVM_DLL const Op& ptx_arrive_barrier();
+
+/*!
+ * \brief tvm intrinsic for ptx barrier arrival with expect tx using mbarrier.arrive.expect_tx
+ *
+ * ptx_arrive_barrier_expect_tx(int barrier_id, int byte_count)
+ *
+ */
+TVM_DLL const Op& ptx_arrive_barrier_expect_tx();
+
+/*!
+ * \brief tvm intrinsics for ptx barrier wait using mbarrier.try_wait
+ *
+ * ptx_wait_barrier(int barrier_id)
+ *
+ */
+TVM_DLL const Op& ptx_wait_barrier();
+
+/*!
+ * \brief tvm intrinsics to create N barriers
+ *
+ * ptx_wait_barrier(int barrier_count)
+ *
+ */
+TVM_DLL const Op& create_barriers();
 
 /*!
  * \brief tvm intrinsic for storing the result of PTX MMA into a destination pointer.
@@ -855,6 +923,56 @@ TVM_DLL const Op& start_profile_intrinsic();
  * \brief Profiling intrinsic
  */
 TVM_DLL const Op& end_profile_intrinsic();
+
+/*!
+ * \brief Get a item from any list and return it.
+ *
+ *  Any anylist_getitem(Handle anylist,
+ *                      int index)
+ *     return anylist[index];
+ *  }
+ *
+ * \note This intrinsic is only applicable when appearing
+ *       in call_packed and anylist_setitem_call_packed.
+ */
+TVM_DLL const Op& anylist_getitem();
+
+/*!
+ * \brief Reset and clear a item in any list.
+ *
+ *  void anylist_resetitem(Handle anylist,
+ *                         int index)
+ *    anylist[index] = nullptr;
+ *  }
+ *
+ * \note This intrinsic is only applicable when appearing
+ *       in call_packed and anylist_setitem_call_packed.
+ */
+TVM_DLL const Op& anylist_resetitem();
+
+/*!
+ * \brief Set an item into any list by running packed function call.
+ *
+ *  void anylist_setitem_call_packed(Handle anylist,
+ *                                   int index,
+ *                                   name, *args)
+ *
+ *    anylist[index] = call_packed(name, *args)
+ *  }
+ *  \note This intrinsic can be used in combination with anylist_getitem.
+ */
+TVM_DLL const Op& anylist_setitem_call_packed();
+
+/*!
+ * \brief Same as anylist_setitem_call_packed but use C calling convention.
+ */
+TVM_DLL const Op& anylist_setitem_call_cpacked();
+
+/*!
+ * \brief Get the target's vscale value. It will be lowered to llvm.vscale intrinsic
+ * (https://llvm.org/docs/LangRef.html#llvm-vscale-intrinsic)
+ */
+TVM_DLL const Op& vscale();
 
 /*! \brief The kind of structure field info used in intrinsic */
 enum TVMStructFieldKind : int {

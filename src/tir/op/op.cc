@@ -34,6 +34,7 @@
 #include <cmath>
 // Centralized header for constant folders.
 #include "../../arith/const_fold.h"
+#include "../../arith/scalable_expression.h"
 #include "../../target/datatype/registry.h"
 
 namespace tvm {
@@ -141,20 +142,79 @@ PrimExpr low_true_pred(PrimExpr n, int lanes, Span span) {
   return tir::Call(DataType::Bool(lanes), tir::builtin::low_true_pred(), {n, lanes}, span);
 }
 
+bool WithinRange(PrimExpr imm, DataType dtype) {
+  dtype = dtype.element_of();
+  int64_t value = Downcast<IntImm>(imm)->value;
+  int64_t dtype_min = Downcast<IntImm>(min_value(dtype))->value;
+  int64_t dtype_max = Downcast<IntImm>(max_value(dtype))->value;
+  if (dtype_min <= value && value <= dtype_max) {
+    return true;
+  }
+  return false;
+}
+
+void TryNarrowImmType(PrimExpr& lhs, PrimExpr& rhs) {
+  DataType ltype = lhs->dtype;
+  DataType rtype = rhs->dtype;
+
+  // Only handle the situation that all operands are integers, and one's bits greater than another.
+  if (ltype.bits() == rtype.bits()) return;
+  if (!((ltype.is_int() || ltype.is_uint()) && (ltype.is_int() || ltype.is_uint()))) return;
+
+  if (lhs->IsInstance<IntImmNode>() && !rhs->IsInstance<IntImmNode>() && WithinRange(lhs, rtype)) {
+    lhs = cast(rtype, lhs);
+    return;
+  }
+
+  if (!lhs->IsInstance<IntImmNode>() && rhs->IsInstance<IntImmNode>() && WithinRange(rhs, ltype)) {
+    rhs = cast(ltype, rhs);
+    return;
+  }
+}
+
+void BroadcastToMatchLanes(PrimExpr& op_a, PrimExpr& op_b) {  // NOLINT(*)
+  DataType dtype_a = op_a.dtype();
+  DataType dtype_b = op_b.dtype();
+
+  if (!dtype_a.is_scalable_or_fixed_length_vector() &&
+      dtype_b.is_scalable_or_fixed_length_vector()) {
+    if (dtype_b.is_scalable_vector()) {
+      op_a = tir::Broadcast(
+          op_a, tir::Mul(dtype_b.vscale_factor(), Call(DataType::Int(32), builtin::vscale(), {})));
+    } else {
+      op_a = tir::Broadcast(op_a, dtype_b.lanes());
+    }
+  }
+}
+
 // The public function with a quick checking path.
 void BinaryOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {  // NOLINT(*)
   CHECK(lhs.defined()) << "ValueError: `lhs` is null in the binary operator";
   CHECK(rhs.defined()) << "ValueError: `rhs` is null in the binary operator";
   if (lhs.dtype() == rhs.dtype()) return;
+
+  if (Target::Current().defined() && Target::Current()->kind->name == "aipu") {
+    TryNarrowImmType(lhs, rhs);
+  }
+
+  BroadcastToMatchLanes(lhs, rhs);
+  BroadcastToMatchLanes(rhs, lhs);
+
   DataType ltype = lhs.dtype();
   DataType rtype = rhs.dtype();
-  if (ltype.lanes() == 1 && rtype.lanes() != 1) {
-    lhs = tir::Broadcast(lhs, rtype.lanes());
-  } else if (rtype.lanes() == 1 && ltype.lanes() != 1) {
-    rhs = tir::Broadcast(rhs, ltype.lanes());
+
+  ICHECK(ltype.is_scalable_vector() == rtype.is_scalable_vector())
+      << "Can't match scalable and fixed length vectors";
+
+  bool lanes_match = false;
+
+  if (ltype.is_scalable_vector()) {
+    lanes_match = ltype.vscale_factor() == rtype.vscale_factor();
   } else {
-    ICHECK(ltype.lanes() == rtype.lanes()) << "Cannot match type " << ltype << " vs " << rtype;
+    lanes_match = ltype.lanes() == rtype.lanes();
   }
+
+  ICHECK(lanes_match) << "Cannot match type " << ltype << " vs " << rtype;
   if (lhs.dtype() == rhs.dtype()) return;
 
   ltype = lhs.dtype();
@@ -336,10 +396,14 @@ PrimExpr cast(const DataType& t, PrimExpr value, Span span) {
   if (value.dtype() == t) return value;
   // const fold IntImm as they are used in index computations
   if (t.lanes() == 1) {
-    if (const IntImmNode* op = value.as<IntImmNode>()) {
-      return make_const(t, op->value, op->span);
-    } else if (const FloatImmNode* op = value.as<FloatImmNode>()) {
-      return make_const(t, op->value, op->span);
+    try {
+      if (const IntImmNode* op = value.as<IntImmNode>()) {
+        return make_const(t, op->value, op->span);
+      } else if (const FloatImmNode* op = value.as<FloatImmNode>()) {
+        return make_const(t, op->value, op->span);
+      }
+    } catch (const runtime::Error& e) {
+      ;  // Indicate the cast node can't be optimized out.
     }
     if (value.dtype().is_handle()) {
       const CallNode* call = value.as<CallNode>();
@@ -352,7 +416,7 @@ PrimExpr cast(const DataType& t, PrimExpr value, Span span) {
     return tir::Cast(t, value, span);
   } else {
     DataType vtype = t.element_of();
-    if (value.dtype().lanes() == 1) {
+    if (!value.dtype().is_scalable_or_fixed_length_vector()) {
       // manually unroll cast
       if (value.dtype() != vtype) {
         if (const IntImmNode* op = value.as<IntImmNode>()) {
@@ -363,11 +427,25 @@ PrimExpr cast(const DataType& t, PrimExpr value, Span span) {
           value = tir::Cast(vtype, value, span);
         }
       }
-      return tir::Broadcast(value, t.lanes(), span);
-    } else {
-      ICHECK(value.dtype().lanes() == t.lanes());
+      if (t.is_scalable_vector()) {
+        return tir::Broadcast(
+            value, tir::Mul(t.vscale_factor(), Call(DataType::Int(32), builtin::vscale(), {})),
+            span);
+      } else {
+        return tir::Broadcast(value, t.lanes(), span);
+      }
+    } else { /* value is a vector */
+      ICHECK(value.dtype().is_scalable_vector() == t.is_scalable_vector());
+
+      bool lanes_match = false;
+      if (value.dtype().is_scalable_vector()) {
+        lanes_match = value.dtype().vscale_factor() == t.vscale_factor();
+      } else {
+        lanes_match = value.dtype().lanes() == t.lanes();
+      }
+      ICHECK(lanes_match);
       if (const auto* broadcast = value.as<tir::BroadcastNode>()) {
-        return tir::Broadcast(cast(vtype, broadcast->value, span), t.lanes(), span);
+        return tir::Broadcast(cast(vtype, broadcast->value, span), broadcast->lanes, span);
       } else if (const auto* ramp = value.as<tir::RampNode>()) {
         if (t.is_int() || t.is_uint()) {
           // only cast to index data type can be folded to ramp
@@ -560,6 +638,7 @@ PrimExpr operator==(PrimExpr a, PrimExpr b) { return equal(a, b); }
 PrimExpr equal(PrimExpr a, PrimExpr b, Span span) {
   BinaryOpMatchTypes(a, b, span);
   if (auto ret = arith::TryConstFold<tir::EQ>(a, b)) return ret.value();
+  if (arith::IsVScaleCall(a) && arith::IsVScaleCall(b)) return true;
   return tir::EQ(a, b, span);
 }
 
@@ -735,6 +814,32 @@ TVM_REGISTER_GLOBAL("tir.bitwise_not").set_body_typed([](PrimExpr a, Span span) 
 PrimExpr pow(PrimExpr x, PrimExpr y, Span span) {
   BinaryOpMatchTypes(x, y, span);
   ICHECK(x.dtype().is_float()) << "power only applies to float";
+
+  // If we detect pow(x, 3), suggest using x * x * x
+  if (y.dtype().is_int()) {
+    using tir::IntImmNode;
+    const IntImmNode* px = y.as<IntImmNode>();
+    if (px) {
+      if (px->value >= 3) {
+        LOG(WARNING)
+            << "Detected pow(x, y) where y >= 3, it is recommended to avoid this as it may lead to "
+               "uninteded behaviors when x < 0. Perhaps with `x * x * x ...` or "
+               "`pow(x, 2) * pow(x, 2) ...`.";
+      }
+    }
+  } else if (y.dtype().is_float()) {
+    using tir::FloatImmNode;
+    const FloatImmNode* fx = y.as<FloatImmNode>();
+    if (fx) {
+      if (fx->value >= 3.0) {
+        LOG(WARNING)
+            << "Detected pow(x, y) where y >= 3, it is recommended to avoid this as it may lead to "
+               "uninteded behaviors when x < 0. Perhaps with `x * x * x ...` or "
+               "`pow(x, 2) * pow(x, 2) ...`.";
+      }
+    }
+  }
+
   static auto op = Op::Get("tir.pow");
   return tir::Call(x.dtype(), op, {x, y}, span);
 }

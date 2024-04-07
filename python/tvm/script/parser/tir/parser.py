@@ -18,15 +18,16 @@
 #
 # This file has been modified by Arm China team.
 #
-
 import contextlib
 from functools import partial
 from typing import Any
+import numpy as np
 
 import tvm
-from tvm.ir import GlobalVar, PrimType
+from tvm.ir import GlobalVar, PrimType, PointerType
 from tvm.tir import Buffer, IterVar, PrimExpr, Var
-from tvm.tir import Let, StringImm, Pointer, convert_to_prim_expr, cast, reassign
+from tvm.tir import Let, StringImm, Pointer, convert_to_prim_expr
+from tvm.tir import reassign, vector_set_element
 
 from ...ir_builder import ir as I
 from ...ir_builder import tir as T
@@ -153,6 +154,20 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         res = value.__enter__()
         IRBuilder.name(var_name, res)
         return res
+    elif isinstance(value, np.ndarray):
+        u8_data = value.view("uint8")
+        dtype = str(value.dtype)
+        alloc_const_frame = T.allocate_const(u8_data, dtype="uint8", extents=u8_data.shape)
+        alloc_const_frame.add_callback(partial(alloc_const_frame.__exit__, None, None, None))
+        u8_buffer_var = alloc_const_frame.__enter__()
+        u8_var_name = "u8_" + var_name
+        IRBuilder.name(u8_var_name, u8_buffer_var)
+        u8_ptr = Pointer(dtype, "constant", u8_buffer_var, 0)
+        new_var = Var(var_name, PointerType(PrimType(dtype), "constant"))
+        frame = T.LetStmt(u8_ptr, var=new_var)
+        frame.add_callback(partial(frame.__exit__, None, None, None))
+        frame.__enter__()
+        return tvm.tir.decl_buffer(value.shape, dtype, var_name, new_var)
     elif isinstance(value, (Buffer, IterVar)) or (
         isinstance(value, Var) and not self.var_table.exist(value)
     ):
@@ -170,6 +185,11 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         frame.__enter__()
         return var
     elif isinstance(value, Pointer):
+        # The object created on the right side of the equal sign has no name,
+        # so bind a name to it, please refer to Interface "S.alloc".
+        if isinstance(value.begin, Var) and value.begin.name == "":
+            IRBuilder.name(f"{var_name}_buf", value.begin)
+
         defined_vars = _get_defined_vars_in_prim_func(self.var_table)
         if var_name in defined_vars:
             ptr = defined_vars[var_name]
@@ -187,6 +207,12 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         frame.add_callback(partial(frame.__exit__, None, None, None))
         frame.__enter__()
         return ptr
+    elif isinstance(value, str):
+        self.report_error(
+            node,
+            "Cannot define String in prim func, please define outside the prim func.",
+        )
+        return None
     else:
         value = tvm.runtime.convert(value)
         value = convert_to_prim_expr(value)  # Convert the auxiliary node, e.g., BufferRegion.
@@ -197,14 +223,12 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         # the same name, then treat it as a definition, otherwise treat is as a assignment.
         if var_name in defined_vars:
             var = defined_vars[var_name]
-            if not tvm.can_implicit_convert(value.dtype, var.dtype):
+            if value.dtype != var.dtype:
                 self.report_error(
                     node,
                     f'Type mismatch assignment: "{var.dtype}" vs. "{value.dtype}", need to do '
                     "the explicit type conversion for the right hand side(i.e., new value).",
                 )
-            if value.dtype != var.dtype:
-                value = cast(value, var.dtype)
 
         frame = T.LetStmt(value, var=var)
         frame.add_callback(partial(frame.__exit__, None, None, None))
@@ -366,7 +390,11 @@ def visit_assign(self: Parser, node: doc.Assign) -> None:
                 indices.append(self.eval_expr(index))
         else:
             indices = self.eval_expr(lhs.slice)
-        T.buffer_store(self.eval_expr(lhs.value), rhs, indices)
+        target = self.eval_expr(lhs.value)
+        if isinstance(target, Var):
+            T.evaluate(vector_set_element(target, indices, rhs))
+        else:
+            T.buffer_store(target, rhs, indices)
     else:
         self.eval_assign(target=lhs, source=rhs, bind_value=bind_assign_value)
 
@@ -491,6 +519,8 @@ def visit_function_def(self: Parser, node: doc.FunctionDef) -> None:
     self.function_annotations = None
     with self.var_table.with_frame():
         self.var_table.add("range", T.serial)
+        self.var_table.add("max", T.max)
+        self.var_table.add("min", T.min)
         with T.prim_func(is_private=privacy):
             T.func_name(node.name)
             if node.returns is not None:
@@ -524,6 +554,11 @@ def visit_function_def(self: Parser, node: doc.FunctionDef) -> None:
                     param = T.arg(arg.arg, ann)
                     self.var_table.add(arg.arg, param)
                 self.visit_body(node.body)
+            if node.returns is None and self.ret_value is not None:
+                raise RuntimeError(
+                    f"The function {node.name} don't have return type while have return value."
+                )
+            self.ret_value = None
     self.function_annotations = supplied_annotation
 
 
@@ -545,6 +580,13 @@ def visit_tvm_annotation(self: Parser, node: doc.expr):
     return annotation
 
 
+def _get_func_str(func):
+    if isinstance(func, doc.Attribute):
+        return f"{func.value.id}.{func.attr}"
+    assert isinstance(func, doc.Name)
+    return func.id
+
+
 @dispatch.register(token="tir", type_name="Expr")
 def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
     """The expr statement visiting method for tir.
@@ -557,6 +599,12 @@ def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
     node : doc.Expr
         The doc AST Expr node.
     """
+    if isinstance(node.value, doc.Call):
+        func_str = _get_func_str(node.value.func)
+        if func_str in ("pdb.set_trace", "set_trace", "breakpoint"):
+            return
+        if func_str == "print":
+            self.report_error(node, 'The built-in "print" isn\'t supported, please use "S.printf".')
 
     res = self.eval_expr(node.value)
     if res is None:
@@ -568,7 +616,7 @@ def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
         T.evaluate(res)
     elif isinstance(res, (int, bool)):
         T.evaluate(tvm.tir.const(res))
-    elif isinstance(res, tvm.relay.Call) and not res.args:
+    elif isinstance(res, (tvm.relay.Call, tvm.relax.Call)) and not res.args:
         # Using GlobalVar.__call__ with no arguments is ambiguous, as
         # each IR has a different function Call representation.  If
         # this occurs, convert to the TIR representation.
@@ -644,7 +692,8 @@ def visit_return(self: Parser, node: doc.Return) -> None:
         The doc AST return node.
     """
     if node.value is not None:
-        T.evaluate(T.ret(self.eval_expr(node.value)))
+        self.ret_value = self.eval_expr(node.value)
+        T.evaluate(T.ret(self.ret_value))
         return
     T.evaluate(T.ret(None))
 

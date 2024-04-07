@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """The Relay IR namespace contains AIPU Compass extended transform passes."""
 from .transform import *
 from .simplify_pad import SimplifyPad

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """AIPU Compass IR codegen of Relay."""
 import os
 import textwrap
@@ -2543,7 +2543,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             f"""
             method=CLIP
             clip_min={attrs.a_min}
-            clip_max={"%.f" % float(attrs.a_max)}
+            clip_max={attrs.a_max}
             """
         )
 

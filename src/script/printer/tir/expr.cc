@@ -137,7 +137,7 @@ TVM_STATIC_IR_FUNCTOR(IRDocsifier, vtable)
       return TIR(d, "Ramp")->Call({
           d->AsDoc<ExprDoc>(ramp->base, ramp_p->Attr("base")),
           d->AsDoc<ExprDoc>(ramp->stride, ramp_p->Attr("stride")),
-          LiteralDoc::Int(ramp->lanes, ramp_p->Attr("lanes")),
+          d->AsDoc<ExprDoc>(ramp->lanes, ramp_p->Attr("lanes")),
       });
     });
 
@@ -146,7 +146,7 @@ TVM_STATIC_IR_FUNCTOR(IRDocsifier, vtable)
       return TIR(d, "Broadcast")
           ->Call({
               d->AsDoc<ExprDoc>(bc->value, bc_p->Attr("value")),
-              LiteralDoc::Int(bc->lanes, bc_p->Attr("lanes")),
+              d->AsDoc<ExprDoc>(bc->lanes, bc_p->Attr("lanes")),
           });
     });
 
@@ -249,6 +249,31 @@ TVM_STATIC_IR_FUNCTOR(IRDocsifier, vtable)
         if (dtype_locations.count(op)) {
           dtype_print_location =
               static_cast<tir::ScriptDtypePrintLocation>(dtype_locations[op].IntValue());
+        }
+        if (name == "call_llvm_pure_intrin" || name == "call_llvm_intrin") {
+          int n_args = call->args.size();
+          int64_t id = call->args[0].as<IntImmNode>()->value;
+          auto f_llvm_lookup_intrinsic_name =
+              tvm::runtime::Registry::Get("target.llvm_get_intrinsic_name");
+
+          Array<ExprDoc> args;
+          args.reserve(n_args + 1);
+          if (dtype_print_location == tir::ScriptDtypePrintLocation::kFirst) {
+            args.push_back(LiteralDoc::DataType(call->dtype, call_p->Attr("dtype")));
+          }
+
+          for (int i = 0; i < n_args; ++i) {
+            if ((i == 0) && (f_llvm_lookup_intrinsic_name)) {
+              String name = (*f_llvm_lookup_intrinsic_name)(id);
+              args.push_back(LiteralDoc::Str(name.c_str(), call_p->Attr("args")->ArrayIndex(i)));
+            } else {
+              args.push_back(d->AsDoc<ExprDoc>(call->args[i], call_p->Attr("args")->ArrayIndex(i)));
+            }
+          }
+          if (dtype_print_location == tir::ScriptDtypePrintLocation::kLast) {
+            args.push_back(LiteralDoc::DataType(call->dtype, call_p->Attr("dtype")));
+          }
+          return prefix->Call(args);
         }
       } else if (call->op.as<GlobalVarNode>()) {
         prefix = d->AsDoc<ExprDoc>(call->op, call_p->Attr("op"));

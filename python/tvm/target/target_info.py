@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Various information about AIPU configuration."""
 import tvm
 from tvm import runtime
@@ -35,10 +35,6 @@ class AIPUInfo(runtime.Object):
         return _ffi_api.AIPUInfo_Get(canonicalize_target(target))
 
     @property
-    def is_z2(self):
-        return self.generation == 2
-
-    @property
     def is_x1(self):
         return self.generation == 3
 
@@ -47,12 +43,20 @@ class AIPUInfo(runtime.Object):
         return self.generation == 4
 
     @property
+    def is_x3(self):
+        return self.generation == 5
+
+    @property
     def is_v1(self):
-        return self.is_z2 or self.is_x1
+        return self.is_x1
 
     @property
     def is_v2(self):
         return self.is_x2
+
+    @property
+    def is_v3(self):
+        return self.is_x3
 
     @property
     def tec_count(self):

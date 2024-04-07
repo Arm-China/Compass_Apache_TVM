@@ -38,3 +38,22 @@ target_link_libraries(pipeline_deploy PUBLIC
 )
 
 add_definitions(-DDMLC_USE_LOGGING_LIBRARY=<tvm/runtime/logging.h>)
+
+add_executable(dmabuf_deploy dmabuf_deploy.cc)
+target_include_directories(dmabuf_deploy PUBLIC
+  ${TVM_ROOT}/include
+  ${TVM_ROOT}/aipu/include
+  ${TVM_ROOT}/3rdparty/dlpack/include
+  ${TVM_ROOT}/3rdparty/dmlc-core/include
+)
+
+set(TVM_RUNTIME_LIB_DIR ${TVM_ROOT}/build)
+# Here set AIPU_DRIVER_LIB_DIR
+set(AIPU_DRIVER_LIB_DIR ${AIPU_DRIVER_LIB_DIR})
+target_link_libraries(dmabuf_deploy PUBLIC
+  "-ltvm_runtime -lpthread -lm"
+  "-L${TVM_RUNTIME_LIB_DIR} -L${AIPU_DRIVER_LIB_DIR}"
+  "-Wl,-rpath,${TVM_RUNTIME_LIB_DIR}"
+)
+
+add_definitions(-DDMLC_USE_LOGGING_LIBRARY=<tvm/runtime/logging.h>)

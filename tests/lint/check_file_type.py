@@ -35,6 +35,8 @@ ALLOW_EXTENSION = {
     "g4",
     "gradle",
     "js",
+    "cjs",
+    "mjs",
     "tcl",
     "scala",
     "java",
@@ -47,6 +49,7 @@ ALLOW_EXTENSION = {
     "pyd",
     "pyx",
     "cu",
+    "cuh",
     "bat",
     # relay text format
     "rly",
@@ -136,6 +139,7 @@ ALLOW_SPECIFIC_FILE = {
     "apps/wasm-standalone/wasm-graph/.cargo/config",
     # html for demo purposes
     "web/apps/browser/rpc_server.html",
+    "web/apps/browser/rpc_plugin.html",
     # images are normally not allowed
     # discuss with committers before add more images
     "apps/android_rpc/app/src/main/res/mipmap-hdpi/ic_launcher.png",
@@ -208,6 +212,10 @@ def filename_allowed(name):
         return True
 
     if name in ALLOW_SPECIFIC_FILE:
+        return True
+
+    # aipu_dsl_doc/*.jpg
+    if name.startswith("aipu/docs/dsl/_static/") and name.endswith(".jpg"):
         return True
 
     return False

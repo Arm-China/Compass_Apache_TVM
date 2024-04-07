@@ -24,9 +24,10 @@ import inspect
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import Any, Callable, Dict, List, Optional, Set, Union
-import numpy as np
-from tvm._ffi.base import TVMError
 
+import numpy as np
+
+from tvm._ffi.base import TVMError
 from tvm.error import DiagnosticError
 from tvm.ir import GlobalVar
 
@@ -261,7 +262,7 @@ class VarTable:
             The value of variable.
 
         allow_shadowing : bool
-            The options of whether variable shadowing allwed for this variable.
+            The options of whether variable shadowing allowed for this variable.
         """
         # Skip if the key and value are equal to those in the var_table
         if self.name2value[var] and isinstance(self.name2value[var][-1], type(value)):
@@ -347,6 +348,7 @@ class Parser(doc.NodeVisitor):
     dispatch_tokens: List[str]
     function_annotations: Optional[Dict[str, Dict[str, Any]]]
     var_table: VarTable
+    inside_function: bool  # whether we are within a function
 
     def __init__(
         self,
@@ -357,6 +359,8 @@ class Parser(doc.NodeVisitor):
         self.dispatch_tokens = ["default"]
         self.function_annotations = function_annotations
         self.var_table = VarTable()
+        self.ret_value = None
+        self.inside_function = False
 
     def parse(self, extra_vars: Optional[Dict[str, Any]] = None) -> Any:
         """The main parse method for parser.
@@ -396,7 +400,7 @@ class Parser(doc.NodeVisitor):
         Parameters
         ----------
         token : str
-            The dispathing token.
+            The dispatching token.
 
         Returns
         -------
@@ -404,10 +408,17 @@ class Parser(doc.NodeVisitor):
             The context with new dispatching token.
         """
 
+        self.dispatch_tokens.append(token)
+        enter_func = dispatch.get(token=token, type_name="enter_token", default=lambda *args: None)
+        context = enter_func(self)
+
         def pop_token():
+            exit_func = dispatch.get(
+                token=token, type_name="exit_token", default=lambda *args: None
+            )
+            exit_func(self, context)
             self.dispatch_tokens.pop()
 
-        self.dispatch_tokens.append(token)
         return _deferred(pop_token)
 
     def eval_expr(
@@ -491,12 +502,12 @@ class Parser(doc.NodeVisitor):
             The value binding method when assigning the values to variables.
 
         allow_shadowing : bool
-            The options of whether variable shadowing allwed for assignment.
+            The options of whether variable shadowing allowed for assignment.
 
         Returns
         -------
         res : Dict[str, Any]
-            The dirctionary of assignment result.
+            The dictionary of assignment result.
         """
         if self._duplicate_lhs_check(target) is True:
             self.report_error(target, "Duplicate vars assigned.")
@@ -526,7 +537,18 @@ class Parser(doc.NodeVisitor):
             msg = "KeyError: " + str(err)
         else:
             msg = str(err)
-        self.diag.error(node, msg)
+
+        try:
+            self.diag.error(node, msg)
+        except Exception as diag_err:
+            # Calling self.diag.error is guaranteed to throw an
+            # exception.  When shown to a user, this error should
+            # reference the point of error within the provided
+            # TVMScript.  However, when caught in pdb, the full
+            # traceback should be available for debugging.
+            if isinstance(err, Exception):
+                diag_err = diag_err.with_traceback(err.__traceback__)
+            raise diag_err
 
     def visit(self, node: doc.AST) -> None:
         """The general visiting method.
@@ -548,6 +570,10 @@ class Parser(doc.NodeVisitor):
         if not isinstance(node, doc.AST):
             return
         name = node.__class__.__name__.split(".")[-1]
+
+        if name in ("Import", "ImportFrom"):
+            return  # Ignore the import statements, they maybe needed by PySim.
+
         if name in DEFAULT_VISIT:
             func = self.generic_visit
         else:
@@ -602,19 +628,12 @@ class Parser(doc.NodeVisitor):
             The doc FunctionDef node.
         """
         token = self.get_dispatch_token(node)
-        current_token = self.dispatch_tokens[-1]
         func = dispatch.get(token=token, type_name="FunctionDef", default=None)
         if func is None:
             self.report_error(node, "The parser does not understand the decorator")
-        pre_func = dispatch.get(
-            token=current_token, type_name="pre_token_switch", default=_do_nothing
-        )
-        post_func = dispatch.get(
-            token=current_token, type_name="post_token_switch", default=_do_nothing
-        )
-        pre_func(self, node)
+        _dispatch(self, "pre_visit_local_function")(self, node)
         _dispatch_wrapper(func)(self, node)
-        post_func(self, node)
+        _dispatch(self, "post_visit_local_function")(self, node)
 
     def visit_tvm_declare_function(self, node: doc.FunctionDef) -> GlobalVar:
         token = self.get_dispatch_token(node)
@@ -735,7 +754,7 @@ class Parser(doc.NodeVisitor):
         Parameters
         ----------
         node : doc.Expr
-            The doc AST exprssion node.
+            The doc AST expression node.
 
         Returns
         -------
@@ -818,3 +837,23 @@ class Parser(doc.NodeVisitor):
             The visiting result.
         """
         return _dispatch(self, "Break")(self, node)
+
+    def visit_Nonlocal(self, node: doc.Nonlocal) -> Any:  # pylint: disable=invalid-name
+        """The general nonlocal visiting method.
+
+        Parameters
+        ----------
+        node : doc.Nonlocal
+            The doc AST nonlocal node.
+
+        Returns
+        -------
+        res : Any
+            The visiting result.
+
+        Returns
+        -------
+        res : Any
+            The visiting result.
+        """
+        return _dispatch(self, "Nonlocal")(self, node)

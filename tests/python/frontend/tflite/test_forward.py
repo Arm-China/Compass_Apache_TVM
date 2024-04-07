@@ -1004,7 +1004,13 @@ def test_forward_l2_pool2d():
 
 
 def _test_tflite2_quantized_convolution(
-    input_shape, kernel_shape, filters, padding="valid", data_format=None, int_quant_dtype=tf.int8
+    input_shape,
+    kernel_shape,
+    filters,
+    padding="valid",
+    data_format=None,
+    int_quant_dtype=tf.int8,
+    groups=1,
 ):
     """One iteration of TFLite2 quantized convolution with given shapes and attributes"""
     data_format = "channels_last" if data_format == "NHWC" else "channels_first"
@@ -1018,6 +1024,7 @@ def _test_tflite2_quantized_convolution(
         activation=tf.nn.relu,
         padding=padding,
         data_format=data_format,
+        groups=groups,
     )(data_in)
     keras_model = tf.keras.models.Model(data_in, conv)
 
@@ -1077,6 +1084,32 @@ def test_forward_quantized_convolution():
             12,
             data_format="NCWH",
             int_quant_dtype=int_quant_dtype,
+        )
+
+        _test_tflite2_quantized_convolution(
+            (64, 2, 28, 28),
+            (1, 1),
+            12,
+            data_format="NCWH",
+            int_quant_dtype=int_quant_dtype,
+        )
+
+        _test_tflite2_quantized_convolution(
+            (1, 16, 10, 10),
+            (3, 3),
+            2,
+            data_format="NCWH",
+            int_quant_dtype=int_quant_dtype,
+            groups=2,
+        )
+
+        _test_tflite2_quantized_convolution(
+            (2, 32, 28, 28),
+            (1, 1),
+            16,
+            data_format="NCWH",
+            int_quant_dtype=int_quant_dtype,
+            groups=8,
         )
 
 
@@ -2384,7 +2417,7 @@ def test_all_unary_elemwise():
     _test_forward_unary_elemwise(_test_floor)
     _test_forward_unary_elemwise(_test_exp)
     _test_forward_unary_elemwise(_test_log, negative=False)
-    _test_forward_unary_elemwise(_test_square)
+    _test_forward_unary_elemwise(_test_square, int_quant_dtype=tf.int8)
     _test_forward_unary_elemwise(_test_sin)
     _test_forward_unary_elemwise(_test_neg)
     _test_forward_unary_elemwise(_test_sqrt, negative=False)
@@ -2406,7 +2439,7 @@ def test_all_unary_elemwise():
         # from the converter that we need to provide a custom Tan operator
         # implementation.
         # _test_forward_unary_elemwise(_test_tan)
-        _test_forward_unary_elemwise(_test_elu, quantized=False)
+        _test_forward_unary_elemwise(_test_elu)
 
 
 #######################################################################
@@ -2422,6 +2455,7 @@ def _test_elemwise(
     qnn_op=None,
     same_qnn_params=False,
     comparison_op=False,
+    exclude_zero_point=False,
 ):
     """One iteration of elemwise"""
 
@@ -2449,6 +2483,16 @@ def _test_elemwise(
             if same_qnn_params:
                 inq0_min, inq0_max = (out_min, out_max)
                 inq1_min, inq1_max = (out_min, out_max)
+
+            if exclude_zero_point:
+                if inq1_max == inq1_min:
+                    raise ZeroDivisionError("Input range is 0.")
+
+                # only compute for rhs.
+                quant_scale = 255 / (inq1_max - inq1_min)
+                zero_point = int(round(-inq1_min * quant_scale))
+                data[1][data[1] == zero_point] += 1
+                data[1][data[1] == 0] += 1
 
             # fake_quant will keep the tensors in float32 until the conversion in the session
             inq_data = [
@@ -2580,9 +2624,17 @@ def _test_mul(data, fused_activation_function=None, quantized=False, qnn_op=None
 # ------
 
 
-def _test_div(data, fused_activation_function=None):
+def _test_div(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of divide"""
-    return _test_elemwise(math_ops.divide, data, fused_activation_function)
+    return _test_elemwise(
+        math_ops.divide,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+        exclude_zero_point=True,
+    )
 
 
 #######################################################################
@@ -2590,9 +2642,16 @@ def _test_div(data, fused_activation_function=None):
 # -----
 
 
-def _test_pow(data):
+def _test_pow(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of power"""
-    return _test_elemwise(math_ops.pow, data)
+    return _test_elemwise(
+        math_ops.pow,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+    )
 
 
 #######################################################################
@@ -2642,9 +2701,17 @@ def _test_greater(data, fused_activation_function=None, quantized=False, qnn_op=
 # -------------
 
 
-def _test_greater_equal(data):
+def _test_greater_equal(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of greater_equal"""
-    return _test_elemwise(math_ops.greater_equal, data)
+    return _test_elemwise(
+        math_ops.greater_equal,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+        comparison_op=True,
+    )
 
 
 #######################################################################
@@ -2652,9 +2719,17 @@ def _test_greater_equal(data):
 # ----
 
 
-def _test_less(data):
+def _test_less(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of less"""
-    return _test_elemwise(math_ops.less, data)
+    return _test_elemwise(
+        math_ops.less,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+        comparison_op=True,
+    )
 
 
 #######################################################################
@@ -2662,9 +2737,17 @@ def _test_less(data):
 # ----------
 
 
-def _test_less_equal(data):
+def _test_less_equal(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of less_equal"""
-    return _test_elemwise(math_ops.less_equal, data)
+    return _test_elemwise(
+        math_ops.less_equal,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+        comparison_op=True,
+    )
 
 
 #######################################################################
@@ -2690,9 +2773,17 @@ def _test_equal(data, fused_activation_function=None, quantized=False, qnn_op=No
 # ---------
 
 
-def _test_not_equal(data):
+def _test_not_equal(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of not_equal"""
-    return _test_elemwise(math_ops.not_equal, data)
+    return _test_elemwise(
+        math_ops.not_equal,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+        comparison_op=True,
+    )
 
 
 #######################################################################
@@ -2717,9 +2808,17 @@ def _test_squared_difference(data, fused_activation_function=None, quantized=Fal
 # ------------
 
 
-def _test_floor_divide(data):
+def _test_floor_divide(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of floor_div"""
-    return _test_elemwise(math_ops.floordiv, data)
+    return _test_elemwise(
+        math_ops.floordiv,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+        exclude_zero_point=True,
+    )
 
 
 #######################################################################
@@ -2727,9 +2826,16 @@ def _test_floor_divide(data):
 # ---------
 
 
-def _test_floor_mod(data):
+def _test_floor_mod(data, fused_activation_function=None, quantized=False, qnn_op=None):
     """One iteration of floor_mod"""
-    return _test_elemwise(math_ops.floormod, data)
+    return _test_elemwise(
+        math_ops.floormod,
+        data,
+        fused_activation_function,
+        quantized,
+        qnn_op,
+        same_qnn_params=True,
+    )
 
 
 def _test_forward_elemwise(testop):
@@ -2773,18 +2879,26 @@ def _test_elemwise_qnn_out_range(qnn_op):
         _test_add: (-150, 150),
         _test_sub: (-150, 150),
         _test_mul: (-5e3, 5e3),
+        _test_div: (-150, 150),
         _test_maximum: (-112, 111),
         _test_minimum: (-128, 127),
         _test_equal: (-150, 150),
         _test_greater: (-150, 150),
         _test_squared_difference: (0, 65025),
+        _test_floor_divide: (-150, 150),
+        _test_less: (-150, 150),
+        _test_floor_mod: (-150, 150),
+        _test_not_equal: (-150, 150),
+        _test_pow: (0, 3),
+        _test_less_equal: (-150, 150),
+        _test_greater_equal: (-150, 150),
     }
 
     return qnn_out_range[qnn_op]
 
 
 def test_all_elemwise():
-    """All_elewise"""
+    """All_elemwise"""
     _test_forward_elemwise(_test_add)
     _test_forward_elemwise_quantized(_test_add)
     _test_forward_elemwise(partial(_test_add, fused_activation_function="RELU"))
@@ -2802,7 +2916,9 @@ def test_all_elemwise():
     _test_forward_elemwise(_test_div)
     _test_forward_elemwise(partial(_test_div, fused_activation_function="RELU"))
     _test_forward_elemwise(partial(_test_div, fused_activation_function="RELU6"))
+    _test_forward_elemwise_quantized(_test_div)
     _test_forward_elemwise(_test_pow)
+    _test_forward_elemwise_quantized(_test_pow)
     _test_forward_elemwise(_test_maximum)
     _test_forward_elemwise_quantized(_test_maximum)
     _test_forward_elemwise(_test_minimum)
@@ -2813,15 +2929,25 @@ def test_all_elemwise():
     _test_forward_elemwise(_test_squared_difference)
     _test_forward_elemwise_quantized(_test_squared_difference, np.int8)
     _test_forward_elemwise(_test_greater_equal)
+    _test_forward_elemwise_quantized(_test_greater_equal)
     _test_forward_elemwise(_test_less)
+    _test_forward_elemwise_quantized(_test_less)
     _test_forward_elemwise(_test_less_equal)
+    _test_forward_elemwise_quantized(_test_less_equal)
     _test_forward_elemwise(_test_equal)
     # The test case need TensorFlow version >= 2.6.5
     # _test_forward_elemwise_quantized(_test_equal)
     _test_forward_elemwise(_test_not_equal)
+    _test_forward_elemwise_quantized(_test_not_equal)
     if package_version.parse(tf.VERSION) >= package_version.parse("1.14.0"):
         _test_forward_elemwise(_test_floor_divide)
+        _test_forward_elemwise_quantized(_test_floor_divide)
         _test_forward_elemwise(_test_floor_mod)
+        # This test of quantized floor mod is currently disabled due
+        # to flaky CI failures in main, failing approximately 45% of
+        # the time.
+        #
+        # _test_forward_elemwise_quantized(_test_floor_mod)
 
 
 #######################################################################
@@ -3315,7 +3441,13 @@ def _test_pad(data, mode="CONSTANT", quantized=False):
                 inq_data[0], ops.convert_to_tensor(data[1], dtype=data[1].dtype), mode=mode
             )
             compare_tflite_with_tvm(
-                [data[0]], ["inq_0:0"], inq_data, [out], quantized=True, input_range=input_range
+                [data[0]],
+                ["inq_0:0"],
+                inq_data,
+                [out],
+                quantized=True,
+                input_range=input_range,
+                experimental_new_converter=True,
             )
         else:
             out = array_ops.pad(
@@ -3384,6 +3516,22 @@ def test_forward_pad():
             np.array([[1, 1], [2, 2]], dtype=np.int32),
         ],
         quantized=True,
+    )
+    _test_pad(
+        [
+            np.arange(0, 256, dtype=np.uint8).reshape((1, 256)),
+            np.array([[1, 1], [2, 2]], dtype=np.int32),
+        ],
+        quantized=True,
+        mode="SYMMETRIC",
+    )
+    _test_pad(
+        [
+            np.arange(0, 256, dtype=np.uint8).reshape((1, 256)),
+            np.array([[0, 0], [2, 2]], dtype=np.int32),
+        ],
+        quantized=True,
+        mode="REFLECT",
     )
 
 

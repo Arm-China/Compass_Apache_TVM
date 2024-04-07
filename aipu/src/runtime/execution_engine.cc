@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/runtime/execution_engine.cc
  */
@@ -128,9 +128,9 @@ VmExecutionEngineObj::VmExecutionEngineObj(Module executable, const std::vector<
   auto arg_setter = TVMArgsSetter(values.data(), type_codes.data());
   for (size_t i = 0; i < updated_devices.size(); ++i) {
     Device dev = RemoveRPCSessionMask(updated_devices[i]);
-    arg_setter(i, static_cast<int>(dev.device_type));
-    arg_setter(i + 1, dev.device_id);
-    arg_setter(i + 2, static_cast<int>(vm::AllocatorType::kPooled));
+    arg_setter(i * 3, static_cast<int>(dev.device_type));
+    arg_setter(i * 3 + 1, dev.device_id);
+    arg_setter(i * 3 + 2, static_cast<int>(AllocatorType::kPooled));
   }
   auto args = TVMArgs(values.data(), type_codes.data(), arg_cnt);
   TVMRetValue ret_value;

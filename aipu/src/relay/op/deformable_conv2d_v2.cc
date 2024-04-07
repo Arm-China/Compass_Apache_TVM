@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/relay/op/matrix_band_part.cc
  * \brief Operator definitions for MatrixBandPart.

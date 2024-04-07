@@ -347,13 +347,14 @@ ForFrame ThreadBinding(PrimExpr start, PrimExpr stop, String thread,
   PrimExpr extent = arith::Analyzer().Simplify(stop - start);
   ObjectPtr<ForFrameNode> n = make_object<ForFrameNode>();
   int bits = std::max(min.dtype().bits(), extent.dtype().bits());
-  n->vars = {Var("v", DataType(min.dtype().code(), bits, 1))};
+  DataType dtype = DataType(min.dtype().code(), bits, 1);
+  n->vars = {Var("v", dtype)};
   n->doms = {Range::FromMinExtent(min, extent)};
-  n->f_make_for_loop = [annotations, thread](Array<Var> vars, Array<Range> doms, Stmt body) -> For {
+  n->f_make_for_loop = [annotations, thread, dtype](Array<Var> vars, Array<Range> doms,
+                                                    Stmt body) -> For {
     ICHECK_EQ(vars.size(), 1);
     ICHECK_EQ(doms.size(), 1);
-    IterVar iter_var(Range(nullptr), Var("iter", DataType::Int(32)), IterVarType::kThreadIndex,
-                     thread);
+    IterVar iter_var(Range(nullptr), Var("iter", dtype), IterVarType::kThreadIndex, thread);
     return For(vars[0], doms[0]->min, doms[0]->extent, ForKind::kThreadBinding, body, iter_var,
                annotations.value_or(Map<String, ObjectRef>()));
   };
@@ -520,11 +521,44 @@ Var EnvThread(String thread_tag) {
 
 void BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices) {
   runtime::DataType buffer_dtype = buffer->dtype;
-  int index_lanes = indices.size() ? indices.back().dtype().lanes() : 1;
-  runtime::DataType lhs_dtype = buffer_dtype.with_lanes(buffer_dtype.lanes() * index_lanes);
+  bool is_index_scalable = indices.empty() ? false : indices.back().dtype().is_scalable_vector();
+  bool is_buffer_dtype_scalable = buffer_dtype.is_scalable_vector();
+
+  ICHECK(!(is_index_scalable && is_buffer_dtype_scalable))
+      << "Index dtype and buffer dtype can't both be scalable.";
+
+  int index_lanes;
+  if (indices.empty()) {
+    index_lanes = 1;
+  } else if (is_index_scalable) {
+    index_lanes = indices.back().dtype().vscale_factor();
+  } else {
+    index_lanes = indices.back().dtype().lanes();
+  }
+
+  int buffer_lanes = is_buffer_dtype_scalable ? buffer_dtype.vscale_factor() : buffer_dtype.lanes();
+
+  runtime::DataType lhs_dtype;
+  if (is_buffer_dtype_scalable || is_index_scalable) {
+    lhs_dtype = buffer_dtype.with_scalable_vscale_factor(buffer_lanes * index_lanes);
+  } else {
+    lhs_dtype = buffer_dtype.with_lanes(buffer_dtype.lanes() * index_lanes);
+  }
+
   runtime::DataType rhs_dtype = value->dtype;
+
   if (lhs_dtype != rhs_dtype) {
-    if (lhs_dtype.lanes() != rhs_dtype.lanes()) {
+    ICHECK(lhs_dtype.is_scalable_vector() == rhs_dtype.is_scalable_vector())
+        << "Can't mix scalable and fixed length vectors in a statement";
+
+    bool lanes_match = false;
+    if (lhs_dtype.is_scalable_vector()) {
+      lanes_match = lhs_dtype.vscale_factor() == rhs_dtype.vscale_factor();
+    } else {
+      lanes_match = lhs_dtype.lanes() == rhs_dtype.lanes();
+    }
+
+    if (!lanes_match) {
       LOG(FATAL) << "TypeError: Incompatible types in BufferStore"
                  << ": LHS is `" << lhs_dtype << "`, RHS is `" << rhs_dtype
                  << "`, indexing lanes: " << index_lanes;
@@ -737,6 +771,53 @@ TVM_REGISTER_GLOBAL("script.ir_builder.tir.min")
     .set_body_typed([](PrimExpr a, PrimExpr b) -> PrimExpr { return tvm::min(a, b); });
 TVM_REGISTER_GLOBAL("script.ir_builder.tir.max")
     .set_body_typed([](PrimExpr a, PrimExpr b) -> PrimExpr { return tvm::max(a, b); });
+
+TVM_REGISTER_GLOBAL("script.ir_builder.IRBuilderFindFrame")
+    .set_body_typed([](IRBuilder builder, String kind) -> Optional<IRBuilderFrame> {
+      if (kind == "prim_func") {
+        if (Optional<PrimFuncFrame> x = builder->FindFrame<PrimFuncFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "block") {
+        if (Optional<BlockFrame> x = builder->FindFrame<BlockFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "block_init") {
+        if (Optional<BlockInitFrame> x = builder->FindFrame<BlockInitFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "for") {
+        if (Optional<ForFrame> x = builder->FindFrame<ForFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "let") {
+        if (Optional<LetFrame> x = builder->FindFrame<LetFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "allocate") {
+        if (Optional<AllocateFrame> x = builder->FindFrame<AllocateFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "while") {
+        if (Optional<WhileFrame> x = builder->FindFrame<WhileFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "if") {
+        if (Optional<IfFrame> x = builder->FindFrame<IfFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "then") {
+        if (Optional<ThenFrame> x = builder->FindFrame<ThenFrame>()) return x.value();
+        return NullOpt;
+      }
+      if (kind == "else") {
+        if (Optional<ElseFrame> x = builder->FindFrame<ElseFrame>()) return x.value();
+        return NullOpt;
+      }
+
+      LOG(FATAL) << "Unsupported frame kind: \"" << kind << "\".";
+    });
+
 }  // namespace tir
 }  // namespace ir_builder
 }  // namespace script

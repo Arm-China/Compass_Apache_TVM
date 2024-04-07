@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/runtime/compass_pipeline.cc
  */
@@ -64,8 +64,9 @@ Array<Module> ReconfigCompassModuleWithSharedInfo(const Array<Module>& modules,
   for (uint32_t idx = 0; idx < size; idx++) {
     const auto& shared_info = shared_infos[idx];
     auto lib = ret[idx];
-    auto fp = lib.GetFunction("compass_drvier_reinit_with_shared", true);
-    if (fp != nullptr) {
+    auto set_inp_fp = lib.GetFunction("compass_set_input_shared", true);
+    auto mark_out_fp = lib.GetFunction("compass_mark_output_shared", true);
+    if (set_inp_fp != nullptr && mark_out_fp != nullptr) {
       std::vector<uint64_t> inputs, outputs;
       inputs.resize(shared_info.first.size());
       outputs.resize(shared_info.second.size());
@@ -96,7 +97,8 @@ Array<Module> ReconfigCompassModuleWithSharedInfo(const Array<Module>& modules,
       input_arr.CopyFromBytes(inputs.data(), inputs.size() * sizeof(uint64_t));
       output_arr.CopyFromBytes(outputs.data(), outputs.size() * sizeof(uint64_t));
 
-      fp(input_arr, output_arr);
+      set_inp_fp(input_arr);
+      mark_out_fp(output_arr);
       for (uint32_t id = 0; id < shared_info.second.size(); id++) {
         const std::string& out_name = shared_info.second[id];
         if (out_name != "not_shared") {

@@ -28,6 +28,7 @@
 #include <tvm/runtime/container/adt.h>
 #include <tvm/runtime/profiling.h>
 #include <tvm/runtime/registry.h>
+#include <tvm/target/codegen.h>
 
 #include <algorithm>
 #include <unordered_map>
@@ -297,6 +298,16 @@ uint64_t StructuralHash::operator()(const ObjectRef& object) const {
   return SHashHandlerDefault().Hash(object, false);
 }
 
+void SHashHandlerIgnoreNDArray::DispatchSHash(const ObjectRef& object, bool map_free_vars) {
+  ICHECK(object.defined());
+  if (auto ndarray = object.as<runtime::NDArray::Container>()) {
+    SHashReducer hash_reduce(this, map_free_vars);
+    NDArrayHash(ndarray, &hash_reduce, false);
+  } else {
+    SHashHandlerDefault::DispatchSHash(object, map_free_vars);
+  }
+}
+
 // SEQualReduce traits for runtime containers.
 struct StringObjTrait {
   static constexpr const std::nullptr_t VisitAttrs = nullptr;
@@ -359,6 +370,22 @@ struct ADTObjTrait {
 };
 
 TVM_REGISTER_REFLECTION_VTABLE(runtime::ADTObj, ADTObjTrait);
+
+struct ModuleNodeTrait {
+  static constexpr const std::nullptr_t VisitAttrs = nullptr;
+  static constexpr const std::nullptr_t SHashReduce = nullptr;
+  static constexpr const std::nullptr_t SEqualReduce = nullptr;
+};
+
+TVM_REGISTER_REFLECTION_VTABLE(runtime::ModuleNode, ModuleNodeTrait)
+    .set_creator([](const std::string& blob) {
+      runtime::Module rtmod = codegen::DeserializeModuleFromBytes(blob);
+      return RefToObjectPtr::Get(rtmod);
+    })
+    .set_repr_bytes([](const Object* n) -> std::string {
+      const auto* rtmod = static_cast<const runtime::ModuleNode*>(n);
+      return codegen::SerializeModuleToBytes(GetRef<runtime::Module>(rtmod), /*export_dso*/ false);
+    });
 
 void NDArrayHash(const runtime::NDArray::Container* arr, SHashReducer* hash_reduce,
                  bool hash_data) {

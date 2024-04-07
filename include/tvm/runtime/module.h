@@ -224,6 +224,10 @@ class TVM_DLL ModuleNode : public Object {
    * \return The corresponding function.
    */
   const PackedFunc* GetFuncFromEnv(const String& name);
+
+  /*! \brief Clear all imports of the module. */
+  void ClearImports() { imports_.clear(); }
+
   /*! \return The module it imports from */
   const std::vector<Module>& imports() const { return imports_; }
 
@@ -237,6 +241,11 @@ class TVM_DLL ModuleNode : public Object {
   /*! \brief Returns true if this module is 'DSO exportable'. */
   bool IsDSOExportable() const {
     return (GetPropertyMask() & ModulePropertyMask::kDSOExportable) != 0;
+  }
+
+  /*! \brief Returns true if this module is 'Binary Serializable'. */
+  bool IsBinarySerializable() const {
+    return (GetPropertyMask() & ModulePropertyMask::kBinarySerializable) != 0;
   }
 
   /*!

@@ -40,6 +40,7 @@ from tvm import relay
 from tvm.contrib import graph_executor, utils
 from tvm.relay.frontend.common import infer_type
 from tvm.relay.build_module import bind_params_by_name
+from tvm.relax.frontend.onnx import from_onnx
 from relay.utils.tag_span import _create_span, _set_span, _verify_structural_equal_with_span
 
 import onnx
@@ -3350,6 +3351,15 @@ def test_convtranspose(target, dev):
         #     repeat(1, dims),
         #     auto_pad="SAME_UPPER",
         # )
+        # Convolution with default stride
+        verify_convtranspose_with_padding(
+            (1, 1) + repeat(5, dims),
+            (1, 1) + repeat(3, dims),
+            2 * repeat(1, dims),
+            repeat(3, dims),
+            None,
+            repeat(1, dims),
+        )
         # Convolution with dilation
         # TODO(mbrookhart): Relay doesn't currently support convtranspose with dilation
         # verify_convtranspose_with_padding(
@@ -5160,6 +5170,101 @@ def test_if(target, dev):
 
 
 @tvm.testing.parametrize_targets
+def test_graph_input_use_in_if(target, dev):
+    """test_graph_input_use_in_if"""
+
+    def verify_if(num_nested, cond):
+        # return "graph input" if cond is True, else return constant(-1).
+
+        input_tensor = helper.make_tensor_value_info("graph_input", TensorProto.FLOAT, [1])
+        output_tensor = helper.make_tensor_value_info("graph_output", TensorProto.FLOAT, [1])
+        constant_node = make_constant_node("const_val", TensorProto.FLOAT, [1], [-1])
+        cond_tensor = helper.make_tensor_value_info("cond", TensorProto.BOOL, [1])
+        inner_if_node = None
+        for i in range(num_nested):
+            identity_node = helper.make_node(
+                "Identity",
+                inputs=["const_val"],
+                outputs=[f"const{i}"],
+                name=f"depth{i}'th else identity",
+            )
+            else_branch = helper.make_graph(
+                [identity_node],
+                f"else{i}_body",
+                inputs=[],
+                outputs=[helper.make_tensor_value_info(f"const{i}", TensorProto.FLOAT, [1])],
+            )
+            out_name = f"if_output{i}" if i != (num_nested - 1) else "graph_output"
+
+            if i == 0:
+                identity_node = helper.make_node(
+                    "Identity",
+                    inputs=["graph_input"],
+                    outputs=[f"input_identity{i}"],
+                    name=f"depth{i}'th then identity",
+                )
+                then_branch = helper.make_graph(
+                    [identity_node],
+                    f"then{i}_body",
+                    inputs=[],
+                    outputs=[
+                        helper.make_tensor_value_info(f"input_identity{i}", TensorProto.FLOAT, [1])
+                    ],
+                )
+                if_node = helper.make_node(
+                    "If",
+                    inputs=["cond"],
+                    outputs=[out_name],
+                    then_branch=then_branch,
+                    else_branch=else_branch,
+                    name=f"depth{i}'s If node",
+                )
+                inner_if_node = if_node
+            else:
+                then_branch = helper.make_graph(
+                    [inner_if_node],
+                    f"then{i}_body",
+                    inputs=[],
+                    outputs=[
+                        helper.make_tensor_value_info(f"if_output{i-1}", TensorProto.FLOAT, [1])
+                    ],
+                )
+                if_node = helper.make_node(
+                    "If",
+                    inputs=["cond"],
+                    outputs=[out_name],
+                    then_branch=then_branch,
+                    else_branch=else_branch,
+                    name=f"depth{i}'s If node",
+                )
+                inner_if_node = if_node
+        graph_nodes = [constant_node, inner_if_node]
+        graph = helper.make_graph(
+            graph_nodes,
+            "input_use_in_if_test",
+            inputs=[input_tensor, cond_tensor],
+            outputs=[output_tensor],
+        )
+        model = helper.make_model(graph, producer_name="input_use_in_if_test")
+
+        verify_with_ort_with_inputs(
+            model,
+            [np.array([3.0], dtype="float32"), np.array([cond])],
+            dtype="float32",
+            use_vm=True,
+            opset=14,
+            target=target,
+            dev=dev,
+        )
+
+    # Confirm that if works with cond as an array or scalar.
+    verify_if(num_nested=1, cond=True)
+    verify_if(num_nested=1, cond=False)
+    verify_if(num_nested=2, cond=True)
+    verify_if(num_nested=2, cond=False)
+
+
+@tvm.testing.parametrize_targets
 def test_size(target, dev):
     """test_size"""
 
@@ -5292,6 +5397,67 @@ def test_softplus(target, dev):
     # More fancy case.
     input_data = np.random.randn(1, 32, 32, 3).astype("float32")
     verify_softplus(input_data)
+
+
+def test_load_cumsum():
+    """test_load_cumsum"""
+
+    def create_cumsum_model():
+        input_shape = [2, 3]
+
+        graph = helper.make_graph(
+            [
+                helper.make_node("CumSum", inputs=["X", "axis"], outputs=["Y"]),
+            ],
+            "cumsum_graph",
+            inputs=[
+                helper.make_tensor_value_info("X", onnx.TensorProto.DOUBLE, input_shape),
+                helper.make_tensor_value_info("axis", onnx.TensorProto.INT32, [1], "axis"),
+            ],
+            outputs=[helper.make_tensor_value_info("Y", onnx.TensorProto.DOUBLE, input_shape)],
+        )
+        return helper.make_model(graph)
+
+    from_onnx(create_cumsum_model())
+
+
+def test_load_trilu():
+    """test_load_trilu"""
+
+    def create_trilu_model():
+        input_shape = [2, 3, 3]
+
+        graph = helper.make_graph(
+            [
+                helper.make_node("Trilu", inputs=["x", "k"], outputs=["y"]),
+            ],
+            "trilu_graph",
+            inputs=[
+                helper.make_tensor_value_info("x", onnx.TensorProto.DOUBLE, input_shape),
+                helper.make_tensor_value_info("k", onnx.TensorProto.INT32, [1], "k"),
+            ],
+            outputs=[helper.make_tensor_value_info("y", onnx.TensorProto.DOUBLE, input_shape)],
+        )
+        return helper.make_model(graph)
+
+    def create_trilu_model_const_k():
+        input_shape = [2, 3, 3]
+
+        graph = helper.make_graph(
+            [
+                make_constant_node("k", onnx.TensorProto.INT32, [1], [1]),
+                helper.make_node("Trilu", inputs=["x", "k"], outputs=["y"]),
+            ],
+            "trilu_graph",
+            inputs=[
+                helper.make_tensor_value_info("x", onnx.TensorProto.DOUBLE, input_shape),
+            ],
+            outputs=[helper.make_tensor_value_info("y", onnx.TensorProto.DOUBLE, input_shape)],
+        )
+        return helper.make_model(graph)
+
+    from_onnx(create_trilu_model())
+    from_onnx(create_trilu_model_const_k())
 
 
 @tvm.testing.parametrize_targets

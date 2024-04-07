@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=invalid-name, import-outside-toplevel
+#
+# This file has been modified by Arm China team.
+#
 """ Functions to convert quantized torch models to QNN """
 
 import numpy as np

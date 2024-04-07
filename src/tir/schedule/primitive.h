@@ -210,6 +210,18 @@ TVM_DLL Array<StmtSRef> Split(ScheduleState self, const StmtSRef& loop_sref,
                               const Array<PrimExpr>& factors, bool preserve_unit_iters);
 
 /*!
+ * Partition a loop into a list of consecutive loops. It requires:
+ * 1) The loop can't have annotation or thread binding.
+ * \param self The state of the schedule
+ * \param loop_sref The sref to the loop being partition
+ * \param factors The partitioning factors
+ * \param preserve_unit_iters Whether or not to preserve unit iterators in block bindings
+ * \return An array of srefs to the loops after partitioning
+ */
+TVM_DLL Array<StmtSRef> LoopPartition(ScheduleState self, const StmtSRef& loop_sref,
+                                      const Array<PrimExpr>& factors, bool preserve_unit_iters);
+
+/*!
  * \brief Merge a list of loops into one. The loops under their LCA requires:
  * 1) Under the same scope
  * 2) Can't have annotations or thread bindings
@@ -303,7 +315,7 @@ TVM_DLL void Vectorize(ScheduleState self, const StmtSRef& loop_sref);
  * \param loop_sref The sref of the loop to be bound to the thread axis
  * \param thread_axis The thread axis to be bound to the loop
  */
-TVM_DLL void Bind(ScheduleState self, const StmtSRef& loop_sref, const IterVar& thread_axis);
+TVM_DLL void Bind(ScheduleState self, const StmtSRef& loop_sref, const String& thread_axis);
 /*!
  * \brief Unroll the input loop. It requires nothing
  * \param self The state of the schedule
@@ -374,7 +386,7 @@ TVM_DLL StmtSRef ReindexCacheWrite(ScheduleState self, const StmtSRef& block_sre
 /*!
  *!
  * \brief Create 2 blocks that read&write a buffer region into a read/write cache.
- * It requires the the target block both read & write the target buffer.
+ * It requires the target block both read & write the target buffer.
  * \param self The state of the schedule
  * \param block_sref The target block operates on the target buffer.
  * \param read_buffer_index The index of the buffer in block's read region.

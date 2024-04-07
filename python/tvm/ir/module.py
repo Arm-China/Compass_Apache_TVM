@@ -18,13 +18,19 @@
 #
 # This file has been modified by Arm China team.
 #
+from __future__ import annotations
+
+from typing import Dict, Union
+
 import tvm._ffi
 from tvm._ffi.base import string_types
 from tvm.runtime import Scriptable
+from tvm.runtime.object import Object
 
 from . import _ffi_api
 from . import expr as _expr
 from . import type as _ty
+from .attrs import DictAttrs
 from .base import Node
 
 
@@ -40,7 +46,7 @@ class IRModule(Node, Scriptable):
         Map of global var to BaseFunc
     """
 
-    def __init__(self, functions=None, type_definitions=None, attrs=None):
+    def __init__(self, functions=None, type_definitions=None, attrs=None, global_infos=None):
         if functions is None:
             functions = {}
         elif isinstance(functions, dict):
@@ -66,14 +72,31 @@ class IRModule(Node, Scriptable):
 
         attrs = None if not attrs else attrs
         if attrs is not None:
-            attrs = ast.literal_eval(str(attrs))
             attrs = tvm.ir.make_node("DictAttrs", **attrs)
+        if global_infos is None:
+            global_infos = {}
         self.__init_handle_by_constructor__(
             _ffi_api.IRModule,
             functions,
             type_definitions,
             attrs,
+            global_infos,
         )
+
+    def clone(self) -> "IRModule":
+        return _ffi_api.Module_Clone(self)
+
+    def functions_items(self):
+        """Get items in self.functions.items() in alphabetical order.
+
+        Returns
+        -------
+        items: List[Tuple[GlobalVar, Function]]
+            The functions items.
+        """
+        items = list(self.functions.items())
+        items.sort(key=lambda item: str(item[0].name_hint))
+        return items
 
     def __setitem__(self, var, val):
         """Add a mapping to the module.
@@ -121,6 +144,12 @@ class IRModule(Node, Scriptable):
             return _ffi_api.Module_Lookup(self, var)
         return _ffi_api.Module_LookupDef(self, var)
 
+    def __delitem__(self, var: Union[str, _expr.GlobalVar]):
+        _ffi_api.Module_Remove(self, var)
+
+    def __contains__(self, var: Union[str, _expr.GlobalVar]) -> bool:
+        return _ffi_api.Module_Contains(self, var)
+
     def update(self, other):
         """Insert functions in another Module to current one.
 
@@ -147,6 +176,19 @@ class IRModule(Node, Scriptable):
             The function to be inserted.
         """
         return _ffi_api.Module_UpdateFunction(self, var, func)
+
+    def update_global_info(self, name, global_info):
+        """Update global info in the module
+
+        Parameters
+        ----------
+        name: str
+            The name for the global info.
+
+        global_info: List[GlobalInfo]
+            The global info to be updated.
+        """
+        return _ffi_api.Module_UpdateGlobalInfo(self, name, global_info)
 
     def get_global_var(self, name):
         """Get a global variable in the function by name.
@@ -320,6 +362,36 @@ class IRModule(Node, Scriptable):
         if isinstance(var, string_types):
             var = self.get_global_var(var)
         return _ffi_api.Module_Remove(self, var)
+
+    def without_attr(self, attr_key: str) -> "IRModule":
+        """Copy the IRModule and remove an attribute key and its associated value.
+        Parameters
+        ----------
+        attr_key : str
+            The attribute key.
+        Returns
+        -------
+        mod : IRModule
+            A new copy of the IRModule without the attribute
+        """
+
+        return _ffi_api.Module_WithoutAttr(self, attr_key)
+
+    def with_attrs(self, attr_map: Union[DictAttrs, Dict[str, Object]]) -> "IRModule":
+        """Copy the IRModule and add the given attribute map to it.
+        Parameters
+        ----------
+        attr_map: Union[DictAttrs, Dict[str, Object]]
+            The attribute map
+        Returns
+        -------
+        mod : IRModule
+            A new copy of the IRModule with the attribute
+        """
+        if isinstance(attr_map, tvm.ir.DictAttrs):
+            attr_map = attr_map._dict()
+
+        return _ffi_api.Module_WithAttrs(self, attr_map)
 
     def astext(self, show_meta_data=True, annotate=None):
         """Get the text format of the expression.

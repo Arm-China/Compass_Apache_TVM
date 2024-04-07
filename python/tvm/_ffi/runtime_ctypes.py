@@ -194,15 +194,13 @@ class DataType(ctypes.Structure):
         # pylint: disable=import-outside-toplevel
         if self.bits == 0 and self.lanes == 0:
             return "void"
-        if self.bits == 1 and self.lanes == 1:
-            return "bool"
         if self.type_code in DataType.CODE2STR:
             type_name = DataType.CODE2STR[self.type_code]
         else:
             import tvm.runtime._ffi_api
 
             type_name = "custom[%s]" % tvm.runtime._ffi_api._datatype_get_type_name(self.type_code)
-        x = "%s%d" % (type_name, self.bits)
+        x = "%s%d" % (type_name, self.bits) if type_name != "uint" or self.bits != 1 else "bool"
         if self.lanes != 1:
             x += "x%d" % self.lanes
         return x
@@ -266,6 +264,18 @@ class DataType(ctypes.Structure):
     @property
     def is_vector(self):
         return self.lanes > 1
+
+    @property
+    def is_bool_vector(self):
+        return self.is_bool and self.is_vector
+
+    @property
+    def is_integer_scalar(self):
+        return self.is_integer and self.is_scalar
+
+    @property
+    def is_float_scalar(self):
+        return self.is_float and self.is_scalar
 
     def with_lanes(self, lanes):
         self_lanes = self.lanes
@@ -605,6 +615,20 @@ class Device(ctypes.Structure):
         """
         return self._GetDeviceAttr(self.device_type, self.device_id, 13)
 
+    @property
+    def total_global_memory(self):
+        """Return size of the total global memory.
+
+        Supported devices include CUDA/ROCm/Metal/OpenCL.
+
+        Returns
+        -------
+        total_global_memory : int or None
+            Return the global memory available on device in bytes.
+            Return None if the device does not support this feature.
+        """
+        return self._GetDeviceAttr(self.device_type, self.device_id, 14)
+
     def texture_spatial_limit(self):
         """Returns limits for textures by spatial dimensions
 
@@ -732,7 +756,7 @@ def can_implicit_convert(src_dtype, dst_dtype):
 
     if (
         src_dtype.lanes != dst_dtype.lanes
-        or (not src_dtype.is_scalar and dst_dtype.bits < src_dtype.bits)
+        or (src_dtype.is_vector and dst_dtype.bits < src_dtype.bits)
         or (dst_dtype.is_integer and src_dtype.is_float)
     ):
         return False

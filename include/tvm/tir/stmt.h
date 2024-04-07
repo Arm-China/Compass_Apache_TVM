@@ -71,7 +71,7 @@ class LetStmtNode : public StmtNode {
  public:
   /*! \brief The variable. */
   Var var;
-  /*! \brief The value to be binded. */
+  /*! \brief The value to be bound. */
   PrimExpr value;
   /*! \brief The body block. */
   Stmt body;
@@ -787,7 +787,7 @@ class SeqStmt : public Stmt {
     }
 
     // If the argument is a single SeqStmt argument with no
-    // flattening or unwrapping required required, then we may
+    // flattening or unwrapping required, then we may
     // return the SeqStmt as-is.
     if constexpr (sizeof...(seq_args) == 1) {
       if (auto opt = Flattener::AsSeqStmt(std::forward<Args>(seq_args)...)) {
@@ -885,7 +885,7 @@ class SeqStmt : public Stmt {
 };
 
 /*!
- * \brief IfThenElse statment.
+ * \brief IfThenElse statement.
  */
 class IfThenElseNode : public StmtNode {
  public:
@@ -960,7 +960,7 @@ enum class ForKind : int {
 };
 
 /*!
- * \brief A for loop, with poissible type annotations.
+ * \brief A for loop, with possible type annotations.
  *
  * \code
  *
@@ -1399,7 +1399,7 @@ namespace attr {
 constexpr const char* thread_extent = "thread_extent";
 /*! \brief Mark launching of a virtual thread. */
 constexpr const char* virtual_thread = "virtual_thread";
-/*! \brief Mark region is processed by a co-proccesor */
+/*! \brief Mark region is processed by a co-processor */
 constexpr const char* coproc_scope = "coproc_scope";
 /*!
  * \brief Mark region creates coprocessor micro ops,

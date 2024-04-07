@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Configuration processing of AIPU Compass."""
 import os
 import uuid
@@ -79,6 +79,10 @@ class AipuCompassConfig(tvm.Object):
         filename = f'{self.common["executor"]}_{framework}_{model_name}.so'
         return os.path.join(self.common["output_dir"], filename)
 
+    @property
+    def optimizer(self):
+        return self.optimizers["0"]  # Get the first Optimizer section of the configuration.
+
 
 class AipuCompassFunctionConfig:
     """Collection of various information used to process an AIPU Compass
@@ -124,7 +128,9 @@ class AipuCompassFunctionConfig:
 
     def gen_optimizer_config_file(self, extra_cfg=None):
         """Generate the configuration file used by "aipuopt"."""
-        opt_cfg = dict(AipuCompassConfig.get().optimizer)
+        optimizers = AipuCompassConfig.get().optimizers
+        idx_str = self.func_name.split("_")[-1]
+        opt_cfg = dict(optimizers[idx_str if idx_str in optimizers else "0"])
         # Generate the configuration file of AIPU optimizer and write to disk.
         ir_path = self.gsim_float_ir_path if self.use_gsim_float else self.compass_ir_path
         opt_cfg["graph"], opt_cfg["bin"] = tuple(os.path.basename(x) for x in ir_path)
@@ -208,7 +214,7 @@ def _get_simulator_path(target_major_mark):
     raise RuntimeError("Can't find AIPU Simulator.")
 
 
-def _check_cfg(common, parser, optimizer, gbuilder, runtime):
+def _check_cfg(common, parser, optimizers, gbuilder):
     def check(items, keys, name):
         for k in keys:
             if k in items:
@@ -216,13 +222,12 @@ def _check_cfg(common, parser, optimizer, gbuilder, runtime):
 
     check(["mode", "use_aqt"], common.keys(), "Common")
     check(["detection_postprocess", "model_domain", "output_dir"], parser.keys(), "Parser")
-    check(
-        ["graph", "bin", "quant_precision", "quant_ir_name", "model_name", "output_dir"],
-        optimizer.keys(),
-        "Optimizer",
-    )
+
+    useless_items = ("graph", "bin", "quant_precision", "quant_ir_name", "model_name", "output_dir")
+    for idx_str, optimizer in optimizers.items():
+        check(useless_items, optimizer.keys(), f"Optimizer_{idx_str}")
+
     check(["random-init", "inputs", "outputs"], gbuilder.keys(), "Gbuilder")
-    check([], runtime.keys(), "Runtime")
 
 
 def _update_and_check_parser(parser, cfg_dir):
@@ -265,22 +270,21 @@ def config_aipu_compass(config):
     common = dict(cfg_parser["Common"]) if "Common" in cfg_parser else dict()
     parser = dict(cfg_parser["Parser"]) if "Parser" in cfg_parser else dict()
 
-    if "Optimizer" in cfg_parser:
-        optimizer = dict(cfg_parser["Optimizer"])
-    elif "AutoQuantizationTool" in cfg_parser:
-        optimizer = dict(cfg_parser["AutoQuantizationTool"])
-    else:
-        optimizer = dict()
+    optimizers = {"0": {}}
+    for name, section in cfg_parser.items():
+        if name.startswith("Optimizer") or name.startswith("AutoQuantizationTool"):
+            optimizers[name.split("_")[1] if "_" in name else "0"] = dict(section)
+
     gbuilder = dict(cfg_parser["GBuilder"]) if "GBuilder" in cfg_parser else dict()
     runtime = dict(cfg_parser["Runtime"]) if "Runtime" in cfg_parser else dict()
     # Lower the keys of all sections.
-    for section in (common, parser, optimizer, gbuilder, runtime):
+    for section in (common, parser, gbuilder, runtime) + tuple(optimizers.values()):
         for k, v in tuple(section.items()):
             section.pop(k)
             section[k.lower()] = v
 
     # 2. check all section for useless config items or not configured.
-    _check_cfg(common, parser, optimizer, gbuilder, runtime)
+    _check_cfg(common, parser, optimizers, gbuilder)
 
     # 3. Update and check "common" section.
     if os.path.isfile(config):
@@ -355,7 +359,7 @@ def config_aipu_compass(config):
 
     value = common.get("without_batch_dim", None)
     if not value:
-        value = optimizer.get("without_batch_dim", None)
+        value = optimizers["0"].get("without_batch_dim", None)
     value_from_env = os.environ.get("AIPU_TVM_WITHOUT_BATCH_DIM", None)
     if value_from_env:
         value = value_from_env
@@ -402,15 +406,17 @@ def config_aipu_compass(config):
 
     # 5. Update and check "optimizer" section.
     removed_params = ["quant_precision"]
-    for key in removed_params:
-        optimizer.pop(key, None)
-    for key in ("calibration_data", "opt_config", "statistic_file", "data", "label"):
-        if key in optimizer:
-            optimizer[key] = os.path.abspath(os.path.expanduser(os.path.expandvars(optimizer[key])))
-    value_from_env = os.environ.get("AIPU_TVM_OPTIMIZER_SAVE_STATISTIC_INFO", None)
-    if value_from_env:
-        optimizer["save_statistic_info"] = value_from_env
-    optimizer.setdefault("cast_dtypes_for_lib", "true")
+    for _, optimizer in optimizers.items():
+        for key in removed_params:
+            optimizer.pop(key, None)
+        for key in ("calibration_data", "opt_config", "statistic_file", "data", "label"):
+            if key in optimizer:
+                new_value = os.path.abspath(os.path.expanduser(os.path.expandvars(optimizer[key])))
+                optimizer[key] = new_value
+        value_from_env = os.environ.get("AIPU_TVM_OPTIMIZER_SAVE_STATISTIC_INFO", None)
+        if value_from_env:
+            optimizer["save_statistic_info"] = value_from_env
+        optimizer.setdefault("cast_dtypes_for_lib", "true")
 
     # 6. Update and check "gbuilder" section.
     value = gbuilder.get("target", None)
@@ -479,4 +485,4 @@ def config_aipu_compass(config):
         runtime["simulator"] = sim_from_gb or _get_simulator_path(gbuilder["target"].split("_")[0])
 
     # 8. Initialize the singleton AIPU Compass configuration.
-    AipuCompassConfig.init_singleton(common, parser, optimizer, gbuilder, runtime)
+    AipuCompassConfig.init_singleton(common, parser, optimizers, gbuilder, runtime)

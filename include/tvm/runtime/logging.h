@@ -113,7 +113,7 @@
  * in a function, or 'continue' or 'break' in a loop)
  * The default behavior when quit_on_assertion is false, is to 'return false'. If this is not
  * desirable, the macro caller can pass one more last parameter to COND_X to tell COND_X what
- * to do when when quit_on_assertion is false and the assertion fails.
+ * to do when quit_on_assertion is false and the assertion fails.
  *
  * Rationale: These macros were designed to implement functions that have two behaviors
  * in a concise way. Those behaviors are quitting on assertion failures, or trying to
@@ -353,7 +353,10 @@ class LogFatal {
 #pragma disagnostic push
 #pragma warning(disable : 4722)
 #endif
-  [[noreturn]] ~LogFatal() TVM_THROW_EXCEPTION { GetEntry().Finalize(); }
+  [[noreturn]] ~LogFatal() TVM_THROW_EXCEPTION {
+    GetEntry().Finalize();
+    throw;
+  }
 #ifdef _MSC_VER
 #pragma disagnostic pop
 #endif
@@ -366,7 +369,7 @@ class LogFatal {
       this->file_ = file;
       this->lineno_ = lineno;
     }
-    [[noreturn]] TVM_NO_INLINE dmlc::Error Finalize() {
+    [[noreturn]] TVM_NO_INLINE dmlc::Error Finalize() TVM_THROW_EXCEPTION {
       InternalError error(file_, lineno_, stream_.str());
 #if DMLC_LOG_BEFORE_THROW
       std::cerr << error.what() << std::endl;
@@ -560,15 +563,26 @@ std::unique_ptr<std::string> LogCheckFormat(const X& x, const Y& y) {
     return LogCheck##name<int, int>(x, y);                                                \
   }
 
+#if defined(__GNUC__) || defined(__clang__)  // GCC and Clang
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wsign-compare"
+#elif defined(_MSC_VER)  // MSVC
+#pragma warning(push)
+#pragma warning(disable : 4389)  // '==' : signed/unsigned mismatch
+#endif
+
 TVM_CHECK_FUNC(_LT, <)
 TVM_CHECK_FUNC(_GT, >)
 TVM_CHECK_FUNC(_LE, <=)
 TVM_CHECK_FUNC(_GE, >=)
 TVM_CHECK_FUNC(_EQ, ==)
 TVM_CHECK_FUNC(_NE, !=)
+
+#if defined(__GNUC__) || defined(__clang__)  // GCC and Clang
 #pragma GCC diagnostic pop
+#elif defined(_MSC_VER)  // MSVC
+#pragma warning(pop)
+#endif
 
 }  // namespace detail
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/relay/backend/compass/config.cc
  */
@@ -15,7 +15,7 @@ class AipuCompassConfigObj final : public runtime::AipuCompassBasicConfigObj {
   // Things that will interface with user directly.
  public:
   Map<String, String> parser;
-  Map<String, String> optimizer;
+  Map<String, Map<String, String>> optimizers;
   Map<String, String> gbuilder;
 
   // Internal supporting.
@@ -34,7 +34,7 @@ class AipuCompassConfigObj final : public runtime::AipuCompassBasicConfigObj {
 void AipuCompassConfigObj::VisitAttrs(AttrVisitor* v) {
   v->Visit("common", &common);
   v->Visit("parser", &parser);
-  v->Visit("optimizer", &optimizer);
+  v->Visit("optimizers", &optimizers);
   v->Visit("gbuilder", &gbuilder);
   v->Visit("runtime", &runtime);
   return;
@@ -50,8 +50,8 @@ class AipuCompassConfig final : public ObjectRef {
   // Things that will interface with user directly.
  public:
   static void InitSingleton(Map<String, String> common, Map<String, String> parser,
-                            Map<String, String> optimizer, Map<String, String> gbuilder,
-                            Map<String, String> runtime);
+                            Map<String, Map<String, String>> optimizers,
+                            Map<String, String> gbuilder, Map<String, String> runtime);
   static AipuCompassConfig Global();
 
   // Internal supporting.
@@ -62,12 +62,12 @@ class AipuCompassConfig final : public ObjectRef {
 };
 
 void AipuCompassConfig::InitSingleton(Map<String, String> common, Map<String, String> parser,
-                                      Map<String, String> optimizer, Map<String, String> gbuilder,
-                                      Map<String, String> runtime) {
+                                      Map<String, Map<String, String>> optimizers,
+                                      Map<String, String> gbuilder, Map<String, String> runtime) {
   ObjectPtr<AipuCompassConfigObj> obj = make_object<AipuCompassConfigObj>();
   obj->common = common;
   obj->parser = parser;
-  obj->optimizer = optimizer;
+  obj->optimizers = optimizers;
   obj->gbuilder = gbuilder;
   obj->runtime = runtime;
   // Store the singleton of derived class to the singleton of base class, so we

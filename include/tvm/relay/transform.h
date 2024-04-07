@@ -47,6 +47,30 @@ using PassInfoNode = tvm::transform::PassInfoNode;
 using PassContext = tvm::transform::PassContext;
 using PassContextNode = tvm::transform::PassContextNode;
 using Sequential = tvm::transform::Sequential;
+using FTVMRelayToTIR = tvm::transform::Pass;
+/*!
+ * \brief TIRToRuntime conversion specific to a TargetKind
+ *
+ * This function is responsible for scanning an IRModule for appropriate Target-specific functions
+ and generating a Runtime module representing the compiled output
+ *
+ * \param ir_module Unified IRModule
+ * \param target Target to filter on or retrieve arguments from
+ * \return Runtime Module containing compiled functions
+ */
+using FTVMTIRToRuntime = tvm::runtime::TypedPackedFunc<runtime::Module(IRModule, Target)>;
+
+/*!
+ * \brief RelayToTIR tvm::transform::Pass specific to a TargetKind
+ *
+ * Called before the default lowering passes.
+ *
+ * \param mod The module that an optimization pass runs on.
+ * \param pass_ctx The pass context that can provide information for the optimization.
+ *
+ * \return The transformed module.
+ */
+using FTVMRelayToTIR = tvm::transform::Pass;
 
 /*
  * \brief Create a function pass.
@@ -60,7 +84,7 @@ using Sequential = tvm::transform::Sequential;
  */
 TVM_DLL Pass CreateFunctionPass(
     const runtime::TypedPackedFunc<Function(Function, IRModule, PassContext)>& pass_func,
-    int opt_level, String name, tvm::Array<String> required);
+    int opt_level, String name, tvm::Array<String> required, bool traceable = false);
 
 /*! \brief Remove let-bound expressions which do not effect the program result.
  *
@@ -492,7 +516,7 @@ TVM_DLL Pass SimplifyExprPostAlterOp();
  * A typical custom pass will:
  *  - Find calls to "Compiler" attributes functions with matching compiler name.
  *  - Lower those function to TIR PrimFuncs.
- *  - Bind those functions into the IRModule under the the functions' "global_symbol" attribute.
+ *  - Bind those functions into the IRModule under the functions' "global_symbol" attribute.
  *  - Replace all calls to those functions with 'call_lowered' to the matching global.
  * Care should be taken to handle multiple calls to the same function.
  * See src/relay/backend/contrib/example_target_hooks/relay_to_tir.cc for an example custom pass.

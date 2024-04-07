@@ -21,6 +21,7 @@
 #
 import ctypes
 import warnings
+
 import numpy as np
 
 try:
@@ -28,24 +29,38 @@ try:
 except ImportError:
     ml_dtypes = None
 import tvm._ffi
+from tvm._ffi.base import _FFI_MODE, _LIB, c_array, check_call, string_types
+from tvm._ffi.runtime_ctypes import (
+    DataType,
+    DataTypeCode,
+    Device,
+    TVMArray,
+    TVMArrayHandle,
+    tvm_shape_index_t,
+)
 
-from tvm._ffi.base import _LIB, check_call, c_array, string_types, _FFI_MODE
-from tvm._ffi.runtime_ctypes import DataType, Device, TVMArray, TVMArrayHandle
-from tvm._ffi.runtime_ctypes import DataTypeCode, tvm_shape_index_t
 from . import _ffi_api
 
 try:
     # pylint: disable=wrong-import-position
     if _FFI_MODE == "ctypes":
         raise ImportError()
-    from tvm._ffi._cy3.core import _set_class_ndarray, _make_array, _from_dlpack
-    from tvm._ffi._cy3.core import NDArrayBase
+    from tvm._ffi._cy3.core import (
+        NDArrayBase,
+        _from_dlpack,
+        _make_array,
+        _set_class_ndarray,
+    )
 except (RuntimeError, ImportError) as error:
     # pylint: disable=wrong-import-position
     if _FFI_MODE == "cython":
         raise error
-    from tvm._ffi._ctypes.ndarray import _set_class_ndarray, _make_array, _from_dlpack
-    from tvm._ffi._ctypes.ndarray import NDArrayBase
+    from tvm._ffi._ctypes.ndarray import (
+        NDArrayBase,
+        _from_dlpack,
+        _make_array,
+        _set_class_ndarray,
+    )
 
 
 @tvm._ffi.register_object("runtime.NDArray")
@@ -179,6 +194,8 @@ class NDArray(NDArrayBase):
         if (not source_array.flags["C_CONTIGUOUS"]) or (
             dtype == "bfloat16" or dtype != np_dtype_str
         ):
+            if dtype == "bfloat16":
+                source_array = np.frombuffer(source_array.tobytes(), "uint16")
             source_array = np.ascontiguousarray(
                 source_array, dtype="uint16" if dtype == "bfloat16" else dtype
             )
@@ -327,11 +344,28 @@ def device(dev_type, dev_id=0):
       assert tvm.device("cpu", 1) == tvm.cpu(1)
       assert tvm.device("cuda", 0) == tvm.cuda(0)
     """
+    if isinstance(dev_type, Device):
+        return dev_type
+    if not isinstance(dev_id, int):
+        raise ValueError(f"Invalid device id: {dev_id}")
+
     if isinstance(dev_type, string_types):
         dev_type = dev_type.split()[0]
+        if dev_type.count(":") == 0:
+            pass
+        elif dev_type.count(":") == 1:
+            # It will override the dev_id passed by the user.
+            dev_type, dev_id = dev_type.split(":")
+            if not dev_id.isdigit():
+                raise ValueError(f"Invalid device id: {dev_id}")
+            dev_id = int(dev_id)
+        else:
+            raise ValueError(f"Invalid device string: {dev_type}")
+
         if dev_type not in Device.STR2MASK:
-            raise ValueError(f"Unknown device type {dev_type}")
-        dev_type = Device.STR2MASK[dev_type]
+            raise ValueError(f"Unknown device type: {dev_type}")
+
+        return Device(Device.STR2MASK[dev_type], dev_id)
     return Device(dev_type, dev_id)
 
 
@@ -621,7 +655,7 @@ def array(arr, device=cpu(0), mem_scope=None):
         The array to be copied from
 
     device : Device, optional
-        The device device to create the array
+        The device to create the array
 
     mem_scope : Optional[str]
         The memory scope of the array

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/runtime/compass/sim/driver.cc
  */
@@ -33,8 +33,9 @@ void AipuDriver::ConfigGlobal(bool is_profile) {
   const Map<String, String>& rt_cfg = AipuCompassBasicConfig::Global()->runtime;
   std::string sim_path = GetSimulatorPath(rt_cfg, target_);
   cfg.simulator = sim_path.c_str();
-  if (StrStartsWith(target_, "X2_")) {
-    cfg.x2_arch_desc = target_.c_str();
+  if (StrStartsWith(target_, "X2_") || StrStartsWith(target_, "X3_")) {
+    cfg.npu_arch_desc = target_.c_str();
+    cfg.simulator = NULL;
   }
   cfg.log_level = std::stoi(rt_cfg["log_level"]);
   cfg.verbose = rt_cfg["verbose"] == "true";

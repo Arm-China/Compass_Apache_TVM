@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Custom operator plugin register for aipu."""
 CODEGEN_CUSTOM_OP_DICT = dict()  # {op_type:codegen_func}
 ONNX_CUSTOM_OP_DICT = dict()  # {op_type:op_converter}

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """The tir expression operation registration"""
+#
+# This file has been modified by Arm China team.
+#
 
 from typing import Type
 
@@ -99,23 +102,29 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
         else:
             raise TypeError("do not know how to deal with it.")
 
+    def _no_span(func):
+        def _wrapper(a, b):
+            return func(a, b, None)
+
+        return _wrapper
+
     def _eq(a, b):
-        return _auto_broadcast(a, b, tir.EQ)
+        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpEQ))
 
     def _ne(a, b):
-        return _auto_broadcast(a, b, tir.NE)
+        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpNE))
 
     def _lt(a, b):
-        return _auto_broadcast(a, b, tir.LT)
+        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpLT))
 
     def _le(a, b):
-        return _auto_broadcast(a, b, tir.LE)
+        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpLE))
 
     def _gt(a, b):
-        return _auto_broadcast(a, b, tir.GT)
+        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpGT))
 
     def _ge(a, b):
-        return _auto_broadcast(a, b, tir.GE)
+        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpGE))
 
     def r(op: Type, i: int, m: OpMethod):  # pylint: disable=invalid-name
         register_op(ty, op, i)(m)

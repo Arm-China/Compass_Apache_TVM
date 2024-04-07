@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 
 # pylint: disable=invalid-name
 """Check results with multiple methods."""
@@ -13,8 +13,6 @@ from typing import List
 import numpy as np
 import torch
 from torch.utils.data.dataloader import DataLoader
-from AIPUBuilder.executor import GtForward
-import tvm
 from tvm import relay
 from tvm.ir import container
 from tvm.aipu.logger import timer
@@ -1182,76 +1180,3 @@ def clear_traceback(func):
         return ret
 
     return _wrapper
-
-
-def run_op_case(work_dir, case_file_path, target):
-    """
-    Parameters
-    ----------
-    work_dir : str
-        the dir in which all operations in this function are executed.
-
-    case_file_path : str
-        the dir that include all the file aipurun need.
-        the files is graph.def, weight.bin, input0.bin, input1.bin ...
-
-    target : str
-
-    """
-    files = os.listdir(case_file_path)
-    assert "graph.def" in files, "graph not found!"
-    assert "weight.bin" in files, "weight not found!"
-    assert "input0.bin" in files, "input bin not found!"
-    graph_path = os.path.join(case_file_path, "graph.def")
-    weight_path = os.path.join(case_file_path, "weight.bin")
-    inputs = ",".join([os.path.join(case_file_path, i) for i in files if "input" in i])
-    stage_info = lambda x: print(f"[DSL OP Test]: {'='*20}Stage {x}{'='*20}")
-    stage_info("1(aipurun) Start")
-    # Run DSL OP
-    cmd = ["aipurun", graph_path, "-w", weight_path, "-i", inputs, "--target", target]
-    # disable passes
-    passes = ""
-    disable_pass_file = os.environ.get("AIPU_TVM_DISABLE_PASS_FILE", None)
-    if disable_pass_file:
-        with open(disable_pass_file, "r") as p:
-            passes = p.read().strip()
-    else:
-        try:
-            with os.popen("aipurun --show-all-passes", "r") as p:
-                all_passes = p.readlines()
-                passes = ",".join(
-                    [
-                        i.strip("PassTuple(").strip().strip(")")
-                        for i in [all_passes[2], all_passes[5]]
-                    ]
-                )
-        except IndexError as e:
-            print(e)
-            print("[WARN] Failed to obtain passes, not disable any pass during the 'aipurun'.")
-    if passes:
-        cmd += ["--disable-pass", passes]
-    # run aipurun
-    aipu_builder.check_call_aipu_tool(cmd, work_dir=work_dir)
-    assert "output.bin" in os.listdir(work_dir), "can not found output!"
-    stage_info("1(aipurun) End")
-    stage_info("2(executor) Start")
-    # Run Gt
-    cur_dir = os.getcwd()
-    try:
-        os.chdir(work_dir)
-        exeutor = GtForward(graph_path, weight_path, inputs=inputs, target=target)
-        gts = exeutor.forward()
-    finally:
-        os.chdir(cur_dir)
-    stage_info("2(executor) End")
-    stage_info("3(compare) Start")
-    # Check Results
-    for i, gt in enumerate(gts):
-        out_bin = "output.bin" if i == 0 else f"output.bin{i}"
-        output = np.fromfile(os.path.join(work_dir, out_bin), dtype=gt.dtype).reshape(gt.shape)
-        cos_dis = compute_cos_distance(output, gt)
-        print(f"Cosine Distance: {cos_dis}")
-        if cos_dis > 0.99:
-            return
-        tvm.testing.assert_allclose(output, gt)
-    stage_info("3(compare) End")

@@ -65,7 +65,19 @@ from .op import (
     tvm_fill_fragment,
 )
 from .op import ptx_mma, ptx_mma_sp, mma_store, mma_fill
-from .op import ptx_ldmatrix, ptx_cp_async, ptx_commit_group, ptx_wait_group
+from .op import (
+    ptx_ldmatrix,
+    ptx_cp_async,
+    ptx_cp_async_bulk,
+    ptx_commit_group,
+    ptx_wait_group,
+    ptx_cp_async_barrier,
+    ptx_init_barrier_thread_count,
+    ptx_arrive_barrier,
+    ptx_arrive_barrier_expect_tx,
+    ptx_wait_barrier,
+    create_barriers,
+)
 from .op import vectorlow, vectorhigh, vectorcombine
 from .op import infinity, reinterpret
 from .op import exp, exp2, exp10, log, log2, log10, log1p, ldexp, clz
@@ -93,7 +105,8 @@ from .op import comm_reducer, min, max, sum
 from .op import q_multiply_shift, q_multiply_shift_per_axis, shift_left, shift_right
 from .op import TVMBackendAllocWorkspace, TVMBackendFreeWorkspace
 from .op import start_profile_intrinsic, end_profile_intrinsic
-from .op import reassign
+from .op import vscale
+from .op import reassign, vector_get_element, vector_set_element
 from .generic import add, subtract, multiply, cast
 
 from .schedule import StmtSRef, BlockScope, ScheduleState, Schedule, ScheduleError

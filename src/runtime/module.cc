@@ -200,6 +200,10 @@ TVM_REGISTER_GLOBAL("runtime.ModuleGetImport").set_body_typed([](Module mod, int
   return mod->imports().at(index);
 });
 
+TVM_REGISTER_GLOBAL("runtime.ModuleClearImports").set_body_typed([](Module mod) {
+  mod->ClearImports();
+});
+
 TVM_REGISTER_GLOBAL("runtime.ModuleGetTypeKey").set_body_typed([](Module mod) {
   return std::string(mod->type_key());
 });
@@ -209,6 +213,10 @@ TVM_REGISTER_GLOBAL("runtime.ModuleGetFormat").set_body_typed([](Module mod) {
 });
 
 TVM_REGISTER_GLOBAL("runtime.ModuleLoadFromFile").set_body_typed(Module::LoadFromFile);
+TVM_REGISTER_GLOBAL("runtime.ModuleGetFunction")
+    .set_body_typed([](Module mod, String name, bool query_imports) {
+      return mod->GetFunction(name, query_imports);
+    });
 
 TVM_REGISTER_GLOBAL("runtime.ModuleSaveToFile")
     .set_body_typed([](Module mod, String name, tvm::String fmt) { mod->SaveToFile(name, fmt); });

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """A generic IRBuilder across the TVM stack"""
+#
+# This file has been modified by Arm China team.
+#
 from typing import Any, Callable, List
 
 from tvm._ffi import register_object as _register_object
@@ -152,6 +155,24 @@ class IRBuilder(_Object):
     def get(self) -> _Object:
         """Get the constructed IR."""
         return _ffi_api.IRBuilderGet(self)  # type: ignore[attr-defined] # pylint: disable=no-member
+
+    def find_frame(self, kind):
+        """Find the first meet frame that match the specified kind from top to
+        bottom of the frame stack.
+
+        Parameters
+        ----------
+        kind : str
+            The kind of the frame that will be searched, it is the lower and
+            underline version of the corresponding frame class name prefix,
+            e.g. "prim_func" for PrimFuncFrame, "block" for BlockFrame.
+
+        Returns
+        -------
+        ret : Optional[xxxFrame]
+            The frame instance if found, or None if it don't exist.
+        """
+        return _ffi_api.IRBuilderFindFrame(self, kind)
 
     @staticmethod
     def name(s: str, v: Any) -> Any:

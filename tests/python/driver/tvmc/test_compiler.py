@@ -798,6 +798,7 @@ def test_compile_opencl(tflite_mobilenet_v1_0_25_128):
     assert type(tvmc_package.lib_path) is str
     assert type(tvmc_package.params) is bytearray
     assert os.path.exists(dumps_path)
+    assert path.exists("{}.{}".format(tvmc_package.package_path, "opencl"))
 
 
 @tvm.testing.requires_cmsisnn
@@ -857,6 +858,24 @@ def test_compile_tflite_module_with_external_codegen_vitis_ai(tflite_mobilenet_v
     tvmc_package = tvmc.compiler.compile_model(
         tvmc_model,
         target="vitis-ai -dpu=DPUCZDX8G-zcu104 -export_runtime_module=vitis_ai.rtmod, llvm",
+        dump_code="relay",
+    )
+    dumps_path = tvmc_package.package_path + ".relay"
+
+    # check for output types
+    assert type(tvmc_package) is TVMCPackage
+    assert type(tvmc_package.graph) is str
+    assert type(tvmc_package.lib_path) is str
+    assert type(tvmc_package.params) is bytearray
+    assert os.path.exists(dumps_path)
+
+
+@tvm.testing.requires_mrvl
+def test_compile_pytorch_module_with_external_codegen_mrvl(pytorch_resnet18):
+    tvmc_model = tvmc.load(pytorch_resnet18, shape_dict={"input": [1, 3, 224, 224]})
+    tvmc_package = tvmc.compiler.compile_model(
+        tvmc_model,
+        target="mrvl, llvm",
         dump_code="relay",
     )
     dumps_path = tvmc_package.package_path + ".relay"

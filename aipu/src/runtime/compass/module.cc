@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/runtime/compass/module.cc
  */
@@ -21,8 +21,7 @@ namespace runtime {
 class AipuCompassModuleNode : public ModuleNode {
   // Things that will interface with user directly.
  public:
-  void Init(uint64_t*, uint64_t*);
-  void ReInitWithSharedInfo(uint64_t*, uint64_t*);
+  void Init();
   // Member variables need to be serialized.
   // The AIPU executable in binary format.
   std::string aipu_bin;
@@ -63,22 +62,15 @@ class AipuCompassModuleNode : public ModuleNode {
   const PackedFunc* dump_func;
 };
 
-void AipuCompassModuleNode::Init(uint64_t* inputs_shared, uint64_t* outputs_shared) {
+void AipuCompassModuleNode::Init() {
   std::string work_dir = AipuCompassBasicConfig::Global().GetRuntimeWorkDir(func_name);
 
-  aipu_driver_.Init(aipu_bin, work_dir, target, inputs_shared, outputs_shared, umd_dtcm_sz);
+  aipu_driver_.Init(aipu_bin, work_dir, target, umd_dtcm_sz);
 
   in_params_ = aipu_driver_.GetParamInfo(true);
   out_params_ = aipu_driver_.GetParamInfo(false);
 
   dump_func = Registry::Get("aipu_compass.dump_tensors");
-  return;
-}
-
-void AipuCompassModuleNode::ReInitWithSharedInfo(uint64_t* inputs_shared,
-                                                 uint64_t* outputs_shared) {
-  aipu_driver_.DeinitGraphJob();
-  Init(inputs_shared, outputs_shared);
   return;
 }
 
@@ -175,23 +167,44 @@ PackedFunc AipuCompassModuleNode::GetFunction(const String& name,
 
       GetOutputs(out_args);
     });
-  } else if (name == "compass_drvier_reinit_with_shared") {
-    // When in pipeline mod, the module input is from previous module output.
-    // And module output may be used as next module input.
-    // To avoid redundent copy, UMD provides mechanism to implement this.
-    // In this situation, set_input/get_output would bypassed.
-    // And the aipu_driver need re_init.
-    // The function need get input physical address to recondig job_id,
-    // and return the output physical address to users, which would be used
-    // to config next module inputs.
+  } else if (name == "compass_set_input_shared") {
+    // Set the module input from dmabuf or physical addr.
+    // so that avoid one copy.
+    // If the input dltensor dtype is uint64_t, it means physical address
+    // Otherwise if the input dltensor dtype is int32, it means fd;
+    // The element num in dltensor should be the same with the input num of model
+    // If the value in dltensor is 0 and it is pa, means the corresponding input is not shared.
+    // If the value in dltensor <= 0 and it is fd, means the corresponding input is not shared.
+
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
       // Check information of arguments match those of parameters.
       std::vector<DLTensor*> in_shared_info = Convert2DLTensor(args, 0, 1);
-      std::vector<DLTensor*> out_shared_info = Convert2DLTensor(args, 1, 1);
-
-      uint64_t* shared_in = reinterpret_cast<uint64_t*>(in_shared_info[0]->data);
-      uint64_t* shared_out = reinterpret_cast<uint64_t*>(out_shared_info[0]->data);
-      ReInitWithSharedInfo(shared_in, shared_out);
+      bool is_fd = in_shared_info[0]->dtype.code == 0 && in_shared_info[0]->dtype.bits == 32;
+      if (is_fd) {
+        aipu_driver_.SetInputShared(static_cast<int*>(in_shared_info[0]->data));
+      } else {
+        aipu_driver_.SetInputShared(static_cast<uint64_t*>(in_shared_info[0]->data));
+      }
+    });
+  } else if (name == "compass_mark_output_shared") {
+    // Mart the module output shared for next module used in pipeline.
+    // Or put the output on dmabuf so that avoid one copy to get the result.
+    // If the dltensor dtype is uint64_t, it means physical address and the call
+    // will filled the allocated shared buffer and put the pa on it for pipeline.
+    // Otherwise if the dltensor dtype is int32, it means fd;
+    // The element num in dltensor should be the same with the input num of model
+    // If the value in dltensor is 0xFFFFFFFFFFFFFFFF and it is pa, means the corresponding output
+    // is not shared. If the value in dltensor <= 0 and it is fd, means the corresponding input is
+    // not shared.
+    return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
+      // Check information of arguments match those of parameters.
+      std::vector<DLTensor*> out_shared_info = Convert2DLTensor(args, 0, 1);
+      bool is_fd = out_shared_info[0]->dtype.code == 0 && out_shared_info[0]->dtype.bits == 32;
+      if (is_fd) {
+        aipu_driver_.MarkOutputShared(static_cast<int*>(out_shared_info[0]->data));
+      } else {
+        aipu_driver_.MarkOutputShared(static_cast<uint64_t*>(out_shared_info[0]->data));
+      }
     });
   } else if (name == "compass_run" || name == func_name) {
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
@@ -237,7 +250,7 @@ static Module LoadFromBinary(void* stream) {
       (strm->Read(&(obj->target)) == false) || (strm->Read(&(obj->umd_dtcm_sz)) == false)) {
     LOG(FATAL) << "Load aipu_compass.AipuCompassModuleNode from binary failed!";
   }
-  obj->Init(nullptr, nullptr);
+  obj->Init();
   return Module(obj);
 }
 
@@ -250,7 +263,7 @@ TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassModuleNode")
       obj->func_name = func_name;
       obj->target = target;
       obj->umd_dtcm_sz = umd_dtcm_sz;
-      obj->Init(nullptr, nullptr);
+      obj->Init();
       return Module(obj);
     });
 

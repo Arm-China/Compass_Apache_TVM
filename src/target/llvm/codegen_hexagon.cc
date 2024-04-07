@@ -393,7 +393,7 @@ llvm::Value* CodeGenHexagon::Intrinsic(llvm::Intrinsic::ID IntID,
 llvm::Value* CodeGenHexagon::VectorLookupLoad(Buffer buffer, DataType buffer_type,
                                               Array<PrimExpr> indices) {
   PrimExpr index = indices[0];
-  if (!index.dtype().is_vector()) {
+  if (!index.dtype().is_fixed_length_vector()) {
     return nullptr;
   }
 
@@ -588,8 +588,11 @@ runtime::Module BuildHexagon(IRModule mod, Target target) {
 #if TVM_LLVM_VERSION <= 90
       auto ft = cgft == Asm ? llvm::TargetMachine::CodeGenFileType::CGFT_AssemblyFile
                             : llvm::TargetMachine::CodeGenFileType::CGFT_ObjectFile;
-#else
+#elif TVM_LLVM_VERSION <= 170
       auto ft = cgft == Asm ? llvm::CGFT_AssemblyFile : llvm::CGFT_ObjectFile;
+#else
+      auto ft =
+          cgft == Asm ? llvm::CodeGenFileType::AssemblyFile : llvm::CodeGenFileType::ObjectFile;
 #endif
 
       llvm::SmallString<16384> ss;  // Will grow on demand.

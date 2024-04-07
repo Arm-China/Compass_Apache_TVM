@@ -372,6 +372,10 @@ void CodeGenC::PrintVecStore(const BufferNode* buffer, DataType t, PrimExpr base
   stream << ref << " = " << value << ";\n";
 }
 
+void CodeGenC::PrintVecConstructor(DataType t, std::ostream& os) {  // NOLINT(*)
+  PrintType(t, os);
+}
+
 std::string CodeGenC::CastFromTo(std::string value, DataType from, DataType target) {
   if (from == target) return value;
   std::ostringstream os;
@@ -627,13 +631,33 @@ void CodeGenC::VisitExpr_(const CallNode* op, std::ostream& os) {  // NOLINT(*)
     } else if (op->op.same_as(builtin::shift_right())) {
       PrintBinaryIntrinsic(op, " >> ", os, this);
     } else if (op->op.same_as(builtin::if_then_else())) {
-      os << "(";
-      PrintExpr(op->args[0], os);
-      os << " ? ";
-      PrintExpr(op->args[1], os);
-      os << " : ";
-      PrintExpr(op->args[2], os);
-      os << ")";
+      // conditional that skips eval if cond evals to false
+      std::string result = name_supply_->FreshName("condval");
+      std::string cond = PrintExpr(op->args[0]);
+      this->PrintIndent();
+      PrintType(op->dtype, this->stream);
+      this->stream << " " << result << ";\n";
+      this->PrintIndent();
+      this->stream << "if (" << cond << ") {\n";
+      {
+        int then_scope = this->BeginScope();
+        std::string true_val = PrintExpr(op->args[1]);
+        this->PrintIndent();
+        this->stream << result << " = " << true_val << ";\n";
+        this->EndScope(then_scope);
+        this->PrintIndent();
+        this->stream << "} else {\n";
+      }
+      {
+        int else_scope = this->BeginScope();
+        std::string false_val = PrintExpr(op->args[2]);
+        this->PrintIndent();
+        this->stream << result << " = " << false_val << ";\n";
+        this->EndScope(else_scope);
+        this->PrintIndent();
+        this->stream << "}\n";
+      }
+      os << result;
     } else if (op->op.same_as(builtin::address_of())) {
       const BufferLoadNode* load = op->args[0].as<BufferLoadNode>();
       ICHECK(op->args.size() == 1 && load);
@@ -665,6 +689,10 @@ void CodeGenC::VisitExpr_(const CallNode* op, std::ostream& os) {  // NOLINT(*)
       const StringImmNode* str = op->args[0].as<StringImmNode>();
       ICHECK(str != nullptr);
       os << "__tvm_param__" << str->value;
+    } else if (op->op.same_as(builtin::tvm_thread_invariant())) {
+      os << "(";
+      this->PrintExpr(op->args[0], os);
+      os << ")";
     } else {
       LOG(FATAL) << "Unresolved call " << op->op;
     }
@@ -860,17 +888,57 @@ void CodeGenC::VisitExpr_(const RampNode* op, std::ostream& os) {  // NOLINT(*)
   // NOTE: C have comma expression so cannot use (int2)(v0, v1)
   // instead should use int2(v0, v1)
   PrintType(op->dtype, os);
+  int lanes = op->dtype.lanes();
   os << "(";
-  for (int i = 0; i < op->lanes; i++) {
+  for (int i = 0; i < lanes; i++) {
     os << "(" << PrintExpr(op->base) << ")"
        << "+(" << PrintExpr(op->stride) << "*" << i << ")";
-    if (i != op->lanes - 1) os << ", ";
+    if (i != lanes - 1) os << ", ";
   }
   os << ")";
 }
 
-void CodeGenC::VisitExpr_(const ShuffleNode* op, std::ostream& os) {
-  LOG(FATAL) << "Shuffle: not supported ";
+void CodeGenC::VisitExpr_(const ShuffleNode* op, std::ostream& os) {  // NOLINT(*)
+  // Shuffle support
+  // vec = concat(vectors)
+  // result = (vec[indices[0]], vec[indices[1]], ...)
+  //
+  // print shuffle as:
+  // target_dtype(e0, e1, e2, .. en)
+
+  // construct the concat
+  std::vector<std::string> concat_vec;
+  // NOTE: important to print expr first
+  // in case each expr have their own nested expressions
+  // print each elements
+  for (const PrimExpr& vec : op->vectors) {
+    std::string vec_value = this->PrintExpr(vec);
+    if (vec.dtype().lanes() == 1) {
+      concat_vec.push_back(vec_value);
+    } else {
+      // print out each element
+      for (int i = 0; i < vec.dtype().lanes(); ++i) {
+        // access i-th element of each vector
+        std::ostringstream vec_elem_strm;
+        vec_elem_strm << vec_value << "[" << i << "]";
+        concat_vec.push_back(vec_elem_strm.str());
+      }
+    }
+  }
+  if (op->indices.size() == 1) {
+    // This is an extract element
+    os << concat_vec[Downcast<IntImm>(op->indices[0])->value];
+  } else {
+    // Print the shuffle as vector constructor
+    // vec(e0, e1, e2, .. en)
+    PrintVecConstructor(op->dtype, os);
+    os << '(';
+    for (size_t i = 0; i < op->indices.size(); ++i) {
+      if (i != 0) os << ", ";
+      os << concat_vec[Downcast<IntImm>(op->indices[i])->value];
+    }
+    os << ')';
+  }
 }
 
 void CodeGenC::VisitExpr_(const BroadcastNode* op, std::ostream& os) {  // NOLINT(*)
@@ -975,8 +1043,11 @@ void CodeGenC::VisitStmt_(const ForNode* op) {
 
 void CodeGenC::VisitStmt_(const WhileNode* op) {
   PrintIndent();
-  stream << "while (" << PrintExpr(op->condition) << ") {\n";
+  stream << "while (1) {\n";
   int while_scope = BeginScope();
+  std::string cond = PrintExpr(op->condition);
+  PrintIndent();
+  stream << "if (!(" << cond << ")) { break; }\n";
   PrintStmt(op->body);
   this->EndScope(while_scope);
   PrintIndent();

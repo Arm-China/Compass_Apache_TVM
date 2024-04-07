@@ -9,10 +9,12 @@ include(cmake/utils/Utils.cmake)
 include(cmake/utils/Summary.cmake)
 include(cmake/utils/Linker.cmake)
 include(cmake/utils/FindCUDA.cmake)
+include(cmake/utils/FindNCCL.cmake)
 include(cmake/utils/FindOpenCL.cmake)
 include(cmake/utils/FindVulkan.cmake)
 include(cmake/utils/FindLLVM.cmake)
 include(cmake/utils/FindROCM.cmake)
+include(cmake/utils/FindRCCL.cmake)
 include(cmake/utils/FindEthosN.cmake)
 
 if(EXISTS ${CMAKE_BINARY_DIR}/config.cmake)
@@ -28,6 +30,7 @@ endif()
 # and add set(OPTION VALUE) to override these build options.
 # Alernatively, use cmake -DOPTION=VALUE through command-line.
 tvm_option(USE_CUDA "Build with CUDA" OFF)
+tvm_option(USE_NCCL "Build with NCCL" OFF)
 tvm_option(USE_OPENCL "Build with OpenCL" OFF)
 tvm_option(USE_OPENCL_ENABLE_HOST_PTR "Enable OpenCL memory object access to host" OFF)
 tvm_option(USE_OPENCL_GTEST "Path to OpenCL specific gtest version for runtime cpp tests." /path/to/opencl/gtest)
@@ -44,6 +47,7 @@ tvm_option(USE_KHRONOS_SPIRV "Whether to use spirv-tools.and SPIRV-Headers from 
 tvm_option(USE_SPIRV_KHR_INTEGER_DOT_PRODUCT "whether enable SPIRV_KHR_DOT_PRODUCT" OFF)
 tvm_option(USE_METAL "Build with Metal" OFF)
 tvm_option(USE_ROCM "Build with ROCM" OFF)
+tvm_option(USE_RCCL "Build with RCCL" OFF)
 tvm_option(ROCM_PATH "The path to rocm" /opt/rocm)
 tvm_option(USE_HEXAGON "Build with Hexagon support" OFF)
 tvm_option(USE_HEXAGON_SDK "Path to the Hexagon SDK root (required for Hexagon support)" /path/to/sdk)
@@ -53,6 +57,7 @@ tvm_option(USE_HEXAGON_EXTERNAL_LIBS "Path to git repo containing external Hexag
 tvm_option(USE_RPC "Build with RPC" ON)
 tvm_option(USE_THREADS "Build with thread support" ON)
 tvm_option(USE_LLVM "Build with LLVM, can be set to specific llvm-config path" OFF)
+tvm_option(USE_MLIR "Build with MLIR support" OFF)
 tvm_option(USE_STACKVM_RUNTIME "Include stackvm into the runtime" OFF)
 tvm_option(USE_GRAPH_EXECUTOR "Build with tiny graph executor" ON)
 tvm_option(USE_GRAPH_EXECUTOR_CUDA_GRAPH "Build with tiny graph executor with CUDA Graph for GPUs" OFF)
@@ -96,6 +101,7 @@ tvm_option(USE_MKL "MKL root path when use MKL blas" OFF)
 tvm_option(USE_DNNL "Enable DNNL codegen" OFF)
 tvm_option(USE_CUDNN "Build with cuDNN" OFF)
 tvm_option(USE_CUBLAS "Build with cuBLAS" OFF)
+tvm_option(USE_NVTX "Build with NVTX" OFF)
 tvm_option(USE_CUTLASS "Build with CUTLASS" OFF)
 tvm_option(USE_THRUST "Build with Thrust" OFF)
 tvm_option(USE_CURAND "Build with cuRAND" OFF)
@@ -124,6 +130,8 @@ tvm_option(USE_CLML "Build with CLML Codegen support" OFF)
 tvm_option(USE_CLML_GRAPH_EXECUTOR "Build with CLML graph runtime" OFF)
 tvm_option(USE_UMA "Build with UMA support" OFF)
 tvm_option(USE_VERILATOR "Build with Verilator support" OFF)
+tvm_option(USE_MSC "Enable Multi-System Compiler" OFF)
+tvm_option(USE_MRVL "Build with MRVL TVM support" OFF)
 
 # include directories
 include_directories(${CMAKE_INCLUDE_PATH})
@@ -163,6 +171,11 @@ if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
   add_compile_options(/bigobj)
+
+  # Use standard-conforming two-phase name resolution for templates.
+  # This minimizes the differences between g++/clang builds on Linux,
+  # and MSVC builds on Windows.
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive-")
 
   # MSVC already errors on undefined symbols, no additional flag needed.
   set(TVM_NO_UNDEFINED_SYMBOLS "")
@@ -296,6 +309,18 @@ tvm_file_glob(GLOB_RECURSE COMPILER_SRCS
     src/driver/*.cc
     src/support/*.cc
     src/script/*.cc
+    src/relax/ir/*.cc
+    src/relax/op/*.cc
+    src/relax/analysis/*.cc
+    src/relax/transform/*.cc
+    src/relax/backend/vm/*.cc
+    src/relax/backend/task_extraction.cc
+    src/relax/backend/pattern_registry.cc
+    src/relax/utils.cc
+    src/relax/distributed/*.cc
+    src/relax/distributed/transform/*.cc
+    src/relax/op/distributed/*.cc
+    src/relax/testing/*.cc
     )
 
 tvm_file_glob(GLOB CODEGEN_SRCS
@@ -341,7 +366,10 @@ list(APPEND COMPILER_SRCS "src/target/datatype/myfloat/myfloat.cc")
 tvm_file_glob(GLOB RUNTIME_SRCS
   src/runtime/*.cc
   src/runtime/vm/*.cc
+  src/runtime/memory/*.cc
+  src/runtime/disco/*.cc
   src/runtime/minrpc/*.cc
+  src/runtime/relax_vm/*.cc
 )
 
 if(BUILD_FOR_HEXAGON)
@@ -426,6 +454,22 @@ if(USE_PROFILER)
   tvm_file_glob(GLOB RUNTIME_VM_PROFILER_SRCS src/runtime/vm/profiler/*.cc)
   list(APPEND RUNTIME_SRCS ${RUNTIME_VM_PROFILER_SRCS})
 endif(USE_PROFILER)
+
+if(USE_CUDA AND USE_NCCL)
+  message(STATUS "Build with NCCL...")
+  find_nccl(${USE_NCCL})
+  tvm_file_glob(GLOB RUNTIME_NCCL_SRC src/runtime/disco/nccl/*.cc)
+  set_source_files_properties(src/runtime/disco/nccl/nccl.cc PROPERTIES COMPILE_DEFINITIONS "TVM_NCCL_RCCL_SWITCH=0")
+  list(APPEND RUNTIME_SRCS ${RUNTIME_NCCL_SRC})
+endif()
+
+if(USE_ROCM AND USE_RCCL)
+  message(STATUS "Build with RCCL...")
+  find_rccl(${USE_RCCL})
+  tvm_file_glob(GLOB RUNTIME_RCCL_SRC src/runtime/disco/nccl/*.cc)
+  set_source_files_properties(src/runtime/disco/nccl/nccl.cc PROPERTIES COMPILE_DEFINITIONS "TVM_NCCL_RCCL_SWITCH=1")
+  list(APPEND RUNTIME_SRCS ${RUNTIME_RCCL_SRC})
+endif()
 
 if(USE_AOT_EXECUTOR)
   message(STATUS "Build with AOT Executor support...")
@@ -539,9 +583,12 @@ include(cmake/modules/contrib/TensorRT.cmake)
 include(cmake/modules/contrib/VitisAI.cmake)
 include(cmake/modules/contrib/Verilator.cmake)
 include(cmake/modules/contrib/UMA.cmake)
+include(cmake/modules/contrib/MSC.cmake)
+include(cmake/modules/contrib/vllm.cmake)
 include(cmake/modules/Git.cmake)
 include(cmake/modules/LibInfo.cmake)
 include(cmake/modules/RustExt.cmake)
+include(cmake/modules/contrib/Mrvl.cmake)
 include(aipu/cmake/AIPU.cmake)
 
 set(LIBINFO_FILE ${CMAKE_CURRENT_LIST_DIR}/src/support/libinfo.cc)
@@ -552,6 +599,7 @@ add_library(tvm_objs OBJECT ${COMPILER_SRCS})
 add_library(tvm_runtime_objs OBJECT ${RUNTIME_SRCS})
 add_library(tvm_libinfo_objs OBJECT ${LIBINFO_FILE})
 
+include(GNUInstallDirs)
 if(NOT BUILD_DUMMY_LIBTVM)
   add_library(tvm SHARED $<TARGET_OBJECTS:tvm_objs> $<TARGET_OBJECTS:tvm_runtime_objs> $<TARGET_OBJECTS:tvm_libinfo_objs>)
 else()
@@ -701,7 +749,23 @@ if(GTEST_FOUND)
   # include runtime files for unit testing
   target_link_libraries(cpptest PRIVATE ${TVM_TEST_LIBRARY_NAME} GTest::GTest GTest::Main GTest::gmock pthread dl)
   if(DEFINED LLVM_LIBS)
-    target_link_libraries(cpptest PRIVATE ${LLVM_LIBS})
+    # The TVM library is linked with LLVM libraries. If the LLVM libraries are
+    # static and the symbols are not hidden, then don't link them again into
+    # cpptest since cpptest is itself linked against the TVM library. If static
+    # LLVM libraries are linked in twice, it can cause issues with global
+    # variable initialization (cl::opt).
+    # If the LLVM libraries are dynamic, we have to link them again, since the
+    # TVM library will not contain any LLVM definitions.
+    unset(LLVM_SO)
+    foreach(L IN LISTS LLVM_LIBS)
+      if(L MATCHES "libLLVM.*\.so")
+        set(LLVM_SO TRUE)
+        break()
+      endif()
+    endforeach()
+    if(DEFINED LLVM_SO OR HIDE_PRIVATE_SYMBOLS)
+      target_link_libraries(cpptest PRIVATE ${LLVM_LIBS})
+    endif()
   endif()
   if(DEFINED ETHOSN_RUNTIME_LIBRARY)
     target_link_libraries(cpptest PRIVATE ${ETHOSN_RUNTIME_LIBRARY})
@@ -753,7 +817,6 @@ else(INSTALL_DEV)
     )
 endif(INSTALL_DEV)
 
-include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 set(PROJECT_CONFIG_CONTENT "@PACKAGE_INIT@\n")
 string(APPEND PROJECT_CONFIG_CONTENT "include(CMakeFindDependencyMacro)\n")
@@ -838,4 +901,46 @@ if(USE_CUDA AND USE_CUTLASS)
   install(TARGETS fpA_intB_gemm EXPORT ${PROJECT_NAME}Targets DESTINATION lib${LIB_SUFFIX})
   target_link_libraries(tvm PRIVATE fpA_intB_gemm)
   target_link_libraries(tvm_runtime PRIVATE fpA_intB_gemm)
+  target_link_libraries(tvm PRIVATE fpA_intB_gemm_tvm)
+  target_link_libraries(tvm_runtime PRIVATE fpA_intB_gemm_tvm)
+
+  install(TARGETS flash_attn EXPORT ${PROJECT_NAME}Targets DESTINATION lib${LIB_SUFFIX})
+  target_link_libraries(tvm PRIVATE -Wl,--no-as-needed flash_attn)
+  target_link_libraries(tvm_runtime PRIVATE -Wl,--no-as-needed flash_attn)
 endif()
+
+if(USE_CUDA AND USE_NVTX)
+  set_source_files_properties(src/runtime/nvtx.cc PROPERTIES COMPILE_DEFINITIONS "TVM_NVTX_ENABLED=1")
+endif()
+
+if(USE_CUDA AND USE_NCCL)
+  find_library(LIBRT rt)
+  target_link_libraries(tvm PRIVATE nccl ${LIBRT})
+  target_link_libraries(tvm_runtime PRIVATE nccl ${LIBRT})
+endif()
+
+if(USE_ROCM AND USE_RCCL)
+  target_link_libraries(tvm PRIVATE rccl)
+  target_link_libraries(tvm_runtime PRIVATE rccl)
+endif()
+
+
+option(USE_FLASHINFER "Build TVM with FlashInfer" OFF)
+if (USE_FLASHINFER STREQUAL "ON")
+  message(STATUS "Build with FlashInfer")
+  set(FLASHINFER_TVM_BINDING ON)
+  set(FLASHINFER_TVM_HOME ${PROJECT_SOURCE_DIR})
+  set(FLASHINFER_ENABLE_FP8 OFF)
+  set(FLASHINFER_PREFILL OFF)
+  set(FLASHINFER_DECODE OFF)
+  set(FLASHINFER_PAGE OFF)
+  add_subdirectory(3rdparty/flashinfer)
+else ()
+  message(STATUS "Build without FlashInfer")
+endif ()
+
+
+if (USE_FLASHINFER STREQUAL "ON")
+  target_link_libraries(tvm PRIVATE flashinfer_tvm)
+  target_link_libraries(tvm_runtime PRIVATE flashinfer_tvm)
+endif ()

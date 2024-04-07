@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 # pylint: disable=bad-super-call, unsupported-binary-operation
 """ Rewrite module by pattern """
 import numpy as np

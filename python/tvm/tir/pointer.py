@@ -1,11 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Abstraction for pointer."""
 from ..ir import PrimExpr, PointerType, PrimType
 from ..runtime import DataType, ObjectGeneric
-from .expr import Var
+from .expr import Var, LT, LE, GT, GE, EqualOp, NotEqualOp
 from .buffer import decl_buffer
-from .op import pointer
+from .op import pointer, isnullptr
+
+
+def _in_block_check():
+    from ..script.ir_builder import IRBuilder  # pylint: disable=import-outside-toplevel
+
+    assert not IRBuilder.is_in_scope() or IRBuilder.current().find_frame("block") is None, (
+        "Pointer can't be used in any schedulable block, please match it to a "
+        "buffer and use the buffer instead."
+    )
 
 
 class Pointer(ObjectGeneric):
@@ -18,6 +27,7 @@ class Pointer(ObjectGeneric):
     """
 
     def __init__(self, dtype, scope, begin=None, offset=0, name=""):
+        _in_block_check()
         self.dtype = DataType(dtype)
         self.scope = scope
         self.begin = Var(name, PointerType(PrimType(dtype), scope)) if begin is None else begin
@@ -29,10 +39,16 @@ class Pointer(ObjectGeneric):
         # valid offset in unit of "fp16x16".
         assert isinstance(self.begin, (Var, Pointer)), f"Invalid begin type: {type(self.begin)}."
         self.buffer = None
-        if isinstance(self.begin, Var) and not self.dtype.is_void:
+        if isinstance(self.begin, Var) and self.begin.dtype == "handle" and not self.dtype.is_void:
             self.buffer = decl_buffer((-1,), dtype, f"{name}_buf", self.begin)
 
+    @property
+    def is_nullptr(self):
+        _in_block_check()
+        return isnullptr(self)
+
     def asobject(self):
+        _in_block_check()
         return pointer(self.dtype, self.scope, self.begin, self._offset)
 
     def as_ptr(self, dtype):
@@ -43,8 +59,9 @@ class Pointer(ObjectGeneric):
         return Pointer(dtype, self.scope, self.begin if self._offset == 0 else self)
 
     def accessible_check(self):
+        _in_block_check()
         assert not self.dtype.is_void, "Can't access data through void pointer."
-        assert isinstance(self.begin, Var), (
+        assert isinstance(self.begin, Var) and self.begin.dtype == "handle", (
             "Can't access data through this temporary pointer, because it is converted from a "
             "different type and non-zero offset pointer, please define it as a new named pointer "
             "first and access data through the new named pointer."
@@ -66,10 +83,8 @@ class Pointer(ObjectGeneric):
         assert not self.dtype.is_void, "The void pointer can't be moved."
         if isinstance(step, int):
             return
-        if isinstance(step, PrimExpr):
-            dtype = DataType(step.dtype)
-            if dtype.is_scalar and dtype.is_integer:
-                return
+        if isinstance(step, PrimExpr) and DataType(step.dtype).is_integer_scalar:
+            return
         raise RuntimeError("The step that the pointer will be moved must be a scalar integer.")
 
     def __add__(self, other):
@@ -82,3 +97,35 @@ class Pointer(ObjectGeneric):
     def __sub__(self, other):
         self._move_check(other)
         return Pointer(self.dtype, self.scope, self.begin, self._offset - other)
+
+    def _comparable_check(self, other):
+        assert isinstance(other, Pointer), "Only can compare pointer with another pointer."
+
+    def __lt__(self, other):
+        self._comparable_check(other)
+        return LT(self, other)
+
+    def __le__(self, other):
+        self._comparable_check(other)
+        return LE(self, other)
+
+    def __gt__(self, other):
+        self._comparable_check(other)
+        return GT(self, other)
+
+    def __ge__(self, other):
+        self._comparable_check(other)
+        return GE(self, other)
+
+    def same_as(self, other):
+        """Will be called by EqualOp or NotEqualOp, when the compare isn't
+        happened inside TVM script program."""
+        return super().__eq__(other)
+
+    def __eq__(self, other):
+        self._comparable_check(other)
+        return EqualOp(self, other)
+
+    def __ne__(self, other):
+        self._comparable_check(other)
+        return NotEqualOp(self, other)

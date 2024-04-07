@@ -355,6 +355,17 @@ class ScheduleNode : public runtime::Object {
   virtual Array<LoopRV> Split(const LoopRV& loop_rv, const Array<Optional<ExprRV>>& factors,
                               bool preserve_unit_iters = true) = 0;
   /*!
+   * \brief Partition the loops into sequence of multiple loops
+   * 1) The loop can't have annotation or thread binding.
+   * \param loop_rv The loop to be partition
+   * \param factors The positive integers, and at most one of which is `NullOpt`, which means
+   * that factor is inferred.
+   * \param preserve_unit_iters Whether or not to preserve unit iterators in block bindings
+   * \return The new loops after partition
+   */
+  virtual Array<LoopRV> LoopPartition(const LoopRV& loop_rv, const Array<Optional<ExprRV>>& factors,
+                                      bool preserve_unit_iters = true) = 0;
+  /*!
    * \brief Reorder a list of loops. It doesn't require the loops to be consecutive.
    * It requires:
    * 1) The loops are in the same chain. That means: the loops can be ordered to [l_1, l_2, ... ,
@@ -480,7 +491,7 @@ class ScheduleNode : public runtime::Object {
                                     const String& storage_scope, const IndexMap& index_map) = 0;
   /*!
    * \brief Create 2 blocks that read&write a buffer region into a read/write cache.
-   * It requires the the target block both read & write the target buffer.
+   * It requires the target block both read & write the target buffer.
    * \param block_rv The target block operates on the target buffer.
    * \param read_buffer_index The index of the buffer in block's read region.
    * \param storage_scope The target storage scope

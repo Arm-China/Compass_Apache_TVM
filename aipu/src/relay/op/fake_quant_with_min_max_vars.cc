@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 /*!
  * \file aipu/src/relay/op/fake_quant_with_min_max_vars.cc
  * \brief Operator definitions for FakeQuantWithMinMaxVars.

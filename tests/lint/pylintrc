@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 [MASTER]
 
@@ -26,7 +29,7 @@
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=CVS, _cy2, _cy3, grammar
+ignore=CVS, _cy2, _cy3, grammar, libdsl_op_plugin.so
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
@@ -120,7 +123,9 @@ disable=
     use-dict-literal,
     use-maxsplit-arg,
     useless-object-inheritance,
-    useless-suppression
+    useless-suppression,
+    use-list-literal,
+    arguments-renamed
 
 [REPORTS]
 
@@ -268,7 +273,7 @@ redefining-builtins-modules=six.moves,future.builtins
 [BASIC]
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=i,j,_,a,b,op,x,y,wd,lr,kv,k,v,s,p,h,c,m,n,X,t,g,f
+good-names=i,j,_,a,b,op,x,y,wd,lr,kv,k,v,s,p,h,c,m,n,X,t,g,f,r
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=
