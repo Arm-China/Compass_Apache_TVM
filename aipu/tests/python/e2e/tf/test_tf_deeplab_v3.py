@@ -37,11 +37,11 @@ def run_deeplab_v3(model, runtime):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_deeplab_v3(runtime):
     run_deeplab_v3("deeplab_v3", runtime)
 
 
 if __name__ == "__main__":
-    test_deeplab_v3("simulator")
+    test_deeplab_v3("sim")

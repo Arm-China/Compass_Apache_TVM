@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/runtime/logging.h>
 #include <tvm/runtime/registry.h>
 #include <tvm/script/printer/doc.h>
@@ -441,6 +444,37 @@ void PythonDocPrinter::PrintTypedDoc(const CallDoc& doc) {
   PrintChildExpr(doc->callee, doc);
 
   output_ << "(";
+
+  // Arm China team: Print T.const_pred("TFT") rather than
+  // T.const_pred(T.bool(True), T.bool(False), T.bool(True))
+  size_t str_size = output_.str().size();
+  if (str_size >= 11 && output_.str().substr(str_size - 11, 10) == "const_pred") {
+    output_ << "\"";
+    CallDoc args_0 = Downcast<CallDoc>(doc->args[0]);
+    IntImm first_p = Downcast<IntImm>(Downcast<LiteralDoc>(args_0->args[0])->value);
+    size_t num = 1;
+    size_t last_num = num;
+    for (size_t i = 1; i < doc->args.size(); ++i) {
+      CallDoc args_i = Downcast<CallDoc>(doc->args[i]);
+      IntImm cur_p = Downcast<IntImm>(Downcast<LiteralDoc>(args_i->args[0])->value);
+      if (first_p->value != cur_p->value) {
+        if (last_num != 1 || num != 1) {
+          output_ << num;
+        }
+        output_ << (first_p->value ? "T" : "F");
+        first_p = cur_p;
+        last_num = num;
+        num = 1;
+      } else {
+        num++;
+      }
+    }
+    if (last_num != 1 || num != 1) {
+      output_ << num;
+    }
+    output_ << (first_p->value ? "T" : "F") << "\")";
+    return;
+  }
 
   // Print positional args
   bool is_first = true;

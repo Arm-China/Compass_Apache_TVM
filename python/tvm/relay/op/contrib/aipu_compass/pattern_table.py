@@ -45,19 +45,25 @@ def unpack_commutative_args(call, rhs_name="const"):
     """Unpack arguments of the binary operators consider commutative, ensure the
     right hand side operand is the expected one."""
     assert isinstance(call, relay.Call)
+    ops = (
+        relay.op.get("add"),
+        relay.op.get("multiply"),
+        relay.op.get("maximum"),
+        relay.op.get("minimum"),
+    )
 
     lhs, rhs = call.args
     if rhs_name == "const":
         if isinstance(rhs, relay.Constant):
             return lhs, rhs
-        assert call.op == relay.op.get("add") or call.op == relay.op.get("multiply")
+        assert call.op in ops
         assert isinstance(lhs, relay.Constant)
         return rhs, lhs
 
     if isinstance(rhs, relay.Call) and rhs.op == relay.op.get(rhs_name):
         return lhs, rhs
 
-    assert call.op == relay.op.get("add") or call.op == relay.op.get("multiply")
+    assert call.op in ops
     assert isinstance(lhs, relay.Call) and lhs.op == relay.op.get(rhs_name)
     return rhs, lhs
 
@@ -268,6 +274,7 @@ def _check_shape(
 @ir.register_op_attr("contrib.aipu_compass.detection_output", "target.aipu_compass")
 @ir.register_op_attr("contrib.aipu_compass.nms", "target.aipu_compass")
 @ir.register_op_attr("contrib.aipu_compass.decode_box", "target.aipu_compass")
+@ir.register_op_attr("contrib.aipu_compass.divide_mod", "target.aipu_compass")
 @_checker
 def _check_nothing(call: relay.Call):
     return True
@@ -1008,7 +1015,8 @@ def _batchnorm_single_pattern():
     add = is_op("add")(wildcard(), is_constant())
     multiply = is_op("multiply")(wildcard(), is_constant())
     sub = is_op("subtract")(wildcard(), is_constant())
-    batch_norm = add | multiply | sub
+    div = is_op("divide")(wildcard(), is_constant())
+    batch_norm = add | multiply | sub | div
 
     @_checker
     def check(batch_norm: relay.Call):
@@ -1016,7 +1024,7 @@ def _batchnorm_single_pattern():
         arg_in, const_in = unpack_commutative_args(batch_norm)
         if isinstance(arg_in, relay.Constant):
             return False
-        if len(arg_in.checked_type.shape) != 4:
+        if len(arg_in.checked_type.shape) not in (3, 4):
             return False
         shape = [int(val) for val in const_in.checked_type.shape]
         if len(shape) != 1 and not all([val == 1 for val in shape[:-1]]):
@@ -1027,6 +1035,40 @@ def _batchnorm_single_pattern():
         return True
 
     return ("aipu_compass.BatchNorm", batch_norm, check)
+
+
+def _l2norm_pattern():
+    inp = wildcard()
+    mul0 = is_op("multiply")(inp, inp)
+    reduce_sum = is_op("sum")(mul0)
+    sqrt = is_op("sqrt")(reduce_sum)
+    add_or_maximum = is_op("add")(sqrt, is_constant()) | is_op("maximum")(sqrt, is_constant())
+    divide = is_op("divide")(inp, add_or_maximum)
+    pattern = divide
+
+    @_checker
+    def check(l2_norm: relay.Call):
+        # Check if the given match is supported by AIPU Compass.
+        inp = l2_norm.args[0]
+        add_or_maximum = l2_norm.args[1]
+        in_shape = inp.checked_type.shape
+        out_shape = l2_norm.checked_type.shape
+        dim = len(in_shape)
+
+        res = []
+        _, eps = unpack_commutative_args(add_or_maximum)
+        epsilon = eps.data.numpy()
+        res.append(epsilon.size == 1)
+        res.append(epsilon.reshape([]) < 1.0e-4)
+        spec = [32] + [16384] * (dim - 1)
+        # support 1,2,3,4,5-dim
+        res.append(_check_dim([in_shape, out_shape], [1, 2, 3, 4, 5]))
+        # check shape of input and output
+        res.append(_check_range(in_shape[:], spec))
+        res.append(_check_range(out_shape[:], spec))
+        return all(res)
+
+    return ("aipu_compass.L2Norm", pattern, check)
 
 
 def _instancenorm_pattern():
@@ -1534,6 +1576,7 @@ def pattern_table_pre(include_float, include_quant):
         _batchnorm_pattern(),
         _mean_variance_norm_pattern(),
         _log_softmax_pattern(),
+        _l2norm_pattern(),
         _batchnorm_single_pattern(),
     ]
     quant_patterns = [

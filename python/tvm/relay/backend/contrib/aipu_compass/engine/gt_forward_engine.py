@@ -4,9 +4,9 @@
 import os
 import numpy as np
 from tvm import nd
+from tvm.aipu.utils import check_call_aipu_tool
 from AIPUBuilder.executor import GtForward
 from .engine import PurePythonForwardEngine, FunctionData
-from ..aipu_builder import check_call_aipu_tool
 from ..codegen import CodeGenAipuCompass
 from ..config import AipuCompassConfig, AipuCompassFunctionConfig
 from ..utils import relative_symlink_in_dir

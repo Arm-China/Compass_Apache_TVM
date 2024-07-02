@@ -19,13 +19,13 @@
 namespace tvm {
 namespace runtime {
 
-#define AIPU_DRIVER_HANDLE_ERROR(status)                    \
-  do {                                                      \
-    if (status != AIPU_STATUS_SUCCESS) {                    \
-      const char* error_message = nullptr;                  \
-      aipu_get_error_message(ctx_, status, &error_message); \
-      LOG(FATAL) << error_message;                          \
-    }                                                       \
+#define AIPU_DRIVER_HANDLE_ERROR(status)                            \
+  do {                                                              \
+    if (status != AIPU_STATUS_SUCCESS) {                            \
+      const char* error_message = nullptr;                          \
+      aipu_get_error_message(ctx_, status, &error_message);         \
+      LOG(FATAL) << error_message << " at function " << func_name_; \
+    }                                                               \
   } while (false)
 
 class ParamInfo {
@@ -43,7 +43,7 @@ class AipuDriver {
   AipuDriver();
   ~AipuDriver();
   void Init(const std::string& aipu_bin, const std::string& work_dir, const std::string& target,
-            const std::string& umd_dtcm_sz);
+            const std::string& umd_dtcm_sz, const std::string& func_name);
   void SetInputs(const std::vector<DLTensor*>& inputs);
   void Run();
   void GetOutputs(const std::vector<DLTensor*>& outputs);
@@ -74,6 +74,7 @@ class AipuDriver {
   std::vector<aipu_share_buf_t> shared_outputs_buf;
   // The size of the Data Tightly Coupled Memory, used by AIPU simulator.
   std::string umd_dtcm_sz_;
+  std::string func_name_;
 };
 
 }  // namespace runtime

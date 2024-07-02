@@ -743,7 +743,7 @@ def test_avg_pool2d():
                     T.reads(pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
                     T.writes(pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
                     T.block_attr({"schedule_rule": "meta_schedule.pool_avg"})
-                    pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] / T.Cast("float32", (T.min(T.int64(1), T.int64(112) - v_ax1 * T.int64(2)) + T.int64(2)) * (T.min(T.int64(1), T.int64(112) - v_ax2 * T.int64(2)) + T.int64(2)))
+                    pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] / T.Cast("float32", T.max((T.min(v_ax1 * T.int64(2) + T.int64(1), T.int64(111)) + T.int64(2) - T.max(T.int64(1) - v_ax1 * T.int64(2), T.int64(0)) - v_ax1 * T.int64(2)) * (T.min(v_ax2 * T.int64(2) + T.int64(1), T.int64(111)) + T.int64(2) - T.max(T.int64(1) - v_ax2 * T.int64(2), T.int64(0)) - v_ax2 * T.int64(2)), T.int64(1)))
 
         @R.function
         def main(x: R.Tensor((4, 112, 112, 6), dtype="float32")) -> R.Tensor((4, 56, 56, 6), dtype="float32"):
@@ -785,8 +785,7 @@ def test_avg_pool2d_NCHW16c():
                     T.reads(pool_sum[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
                     T.writes(pool_avg[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4])
                     T.block_attr({"schedule_rule": "meta_schedule.pool_avg"})
-                    pool_avg[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] = pool_sum[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] / T.Cast("float32", (T.min(T.int64(2), T.int64(111) - v_ax2) + T.int64(1)) * (T.min(T.int64(2), T.int64(111) - v_ax3) + T.int64(1)))
-
+                    pool_avg[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] = pool_sum[v_ax0, v_ax1, v_ax2, v_ax3, v_ax4] / T.Cast("float32", T.max((T.min(T.int64(2), T.int64(111) - v_ax2) + T.int64(1) - T.max(T.int64(0) - v_ax2, T.int64(0))) * (T.min(T.int64(2), T.int64(111) - v_ax3) + T.int64(1) - T.max(T.int64(0) - v_ax3, T.int64(0))), T.int64(1)))
         @R.function
         def main(x: R.Tensor((4, 4, 112, 112, 16), dtype="float32")) -> R.Tensor((4, 4, 110, 110, 16), dtype="float32"):
             gv = R.call_tir(Expected.avg_pool2d, (x,), out_sinfo=R.Tensor((4, 4, 110, 110, 16), dtype="float32"))
@@ -834,7 +833,7 @@ def test_avg_pool2d_ceil_mode():
                     T.reads(pool_sum[v_ax0, v_ax1, v_ax2, v_ax3])
                     T.writes(pool_avg[v_ax0, v_ax1, v_ax2, v_ax3])
                     T.block_attr({"schedule_rule": "meta_schedule.pool_avg"})
-                    pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] / T.Cast("float32", (T.min(T.int64(1), T.int64(112) - v_ax2 * T.int64(3)) + T.int64(2)) * (T.min(T.int64(1), T.int64(112) - v_ax3 * T.int64(3)) + T.int64(2)))
+                    pool_avg[v_ax0, v_ax1, v_ax2, v_ax3] = pool_sum[v_ax0, v_ax1, v_ax2, v_ax3] / T.Cast("float32", T.max((T.min(v_ax2 * T.int64(3) + T.int64(1), T.int64(111)) + T.int64(2) - T.max(T.int64(1) - v_ax2 * T.int64(3), T.int64(0)) - v_ax2 * T.int64(3)) * (T.min(v_ax3 * T.int64(3) + T.int64(1), T.int64(111)) + T.int64(2) - T.max(T.int64(1) - v_ax3 * T.int64(3), T.int64(0)) - v_ax3 * T.int64(3)), T.int64(1)))
 
         @R.function
         def main(x: R.Tensor((4, 6, 112, 112), dtype="float32")) -> R.Tensor((4, 6, 38, 38), dtype="float32"):
@@ -3268,6 +3267,30 @@ def test_attention():
     # fmt: on
     mod = LegalizeOps()(Attention)
     tvm.ir.assert_structural_equal(mod, Expected)
+
+
+def test_dynamic_attention():
+    """The sequence lengths may be dynamic
+
+    In previous implementations, the `seq_len` and `seq_len_kv` were
+    assumed to be static integers, and produced an exception during
+    legalization.
+    """
+
+    @tvm.script.ir_module
+    class Attention:
+        @R.function
+        def main(
+            q: R.Tensor((4, "seq_len", 32, 8), "float32"),
+            k: R.Tensor((4, "seq_len_kv", 32, 8), "float32"),
+            v: R.Tensor((4, "seq_len_kv", 32, 16), "float32"),
+            bias: R.Tensor((4, 32, "seq_len", "seq_len_kv"), "float32"),
+        ):
+            scale = T.FloatImm("float32", 0.1)
+            gv = R.nn.attention(q, k, v, bias, scale=scale, causal_mask="BottomRight")
+            return gv
+
+    LegalizeOps()(Attention)
 
 
 def test_nll_loss():

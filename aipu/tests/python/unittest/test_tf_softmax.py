@@ -21,7 +21,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 def test_softmax(input_shapes, axis):
     if aipu_testing.skip_case(input_shapes, axis):
-        pytest.xfail("axis out of shapes")
+        pytest.skip("axis out of shapes")
 
     op_type = "Softmax"
     dim_info = f"{len(input_shapes[0])}d"

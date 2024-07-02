@@ -20,7 +20,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 def test_onehot(input_shapes, depth_v, on_value_v, off_value_v, axis_v):
     r = len(input_shapes[0])
     if axis_v != "default" and axis_v not in range(-r - 1, r):
-        pytest.xfail("axis must in the range [-r-1, 1]")
+        pytest.skip("axis must in the range [-r-1, 1]")
 
     op_type = "OneHot"
     if input_shapes[0]:

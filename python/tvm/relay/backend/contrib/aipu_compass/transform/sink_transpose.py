@@ -22,6 +22,8 @@ class TransposeSinker(relay.ExprMutator):
             post.op == relay.op.get("nn.relu")
             or post.op == relay.op.get("log")
             or post.op == relay.op.get("tanh")
+            or post.op == relay.op.get("sqrt")
+            or post.op == relay.op.get("rsqrt")
         ) and (isinstance(args[0], relay.Call) and args[0].op == relay.op.get("transpose")):
             transpose = args[0]
             new_call = relay.Call(post.op, transpose.args, post.attrs, post.type_args, post.span)
@@ -29,7 +31,13 @@ class TransposeSinker(relay.ExprMutator):
                 transpose.op, [new_call], transpose.attrs, transpose.type_args, transpose.span
             )
 
-        ops = [relay.op.get("add"), relay.op.get("multiply")]
+        ops = [
+            relay.op.get("add"),
+            relay.op.get("multiply"),
+            relay.op.get("divide"),
+            relay.op.get("maximum"),
+            relay.op.get("minimum"),
+        ]
         if post.op in ops:
             add = post
             # All operands are transpose.
@@ -104,7 +112,7 @@ class TransposeSinker(relay.ExprMutator):
                 )
 
         if (
-            post.op == relay.op.get("mean")
+            post.op in [relay.op.get("mean"), relay.op.get("sum")]
             and isinstance(args[0], relay.Call)
             and args[0].op == relay.op.get("transpose")
         ):

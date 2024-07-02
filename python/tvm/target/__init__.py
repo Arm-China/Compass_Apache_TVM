@@ -58,6 +58,9 @@ The list of options include:
 We can use :py:func:`tvm.target.Target` to create a tvm.target.Target from the target string.
 We can also use other specific function in this module to create specific targets.
 """
+#
+# This file has been modified by Arm China team.
+#
 from .target import Target, create, TargetKind
 from .target import (
     cuda,
@@ -79,3 +82,4 @@ from .generic_func import GenericFunc
 from .generic_func import generic_func, get_native_generic_func, override_native_generic_func
 from . import datatype
 from . import codegen
+from .target_info import AipuInfo

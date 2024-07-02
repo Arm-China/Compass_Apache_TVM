@@ -44,11 +44,11 @@ def run_peleenet(model, runtime):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_peleenet(runtime):
     run_peleenet("peleenet", runtime)
 
 
 if __name__ == "__main__":
-    test_peleenet("simulator")
+    test_peleenet("sim")

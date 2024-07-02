@@ -748,6 +748,40 @@ def decode_box(
     return out
 
 
+def _divide_mod_rel(arg_types, attrs):
+    assert len(arg_types) == 2
+    lhs_type = arg_types[0]
+
+    if isinstance(lhs_type, relay.TensorType):
+        assert not str.startswith(lhs_type.dtype, "float")
+        out_type = relay.TensorType(lhs_type.shape, lhs_type.dtype)
+        return relay.TupleType([out_type, out_type])
+    else:
+        return None
+
+
+def divide_mod(x, y):
+    """Make an AIPU Compass DivMod operator.
+
+    Parameters
+    ----------
+    x : relay.Expr
+        The input x.
+
+    y : relay.Expr
+        The input y.
+
+    Returns
+    -------
+    result : relay.Expr
+        The computed result.
+    """
+    new_call = relay.Call(relay.op.get("contrib.aipu_compass.divide_mod"), [x, y])
+    out = relay.TupleWrapper(new_call, 2)
+    out = relay.Tuple(list(out))
+    return out
+
+
 def register_op(op_name, input_num, rel_func):
     relay.op.op.register(op_name)
     op = relay.op.get(op_name)
@@ -759,3 +793,4 @@ def register_op(op_name, input_num, rel_func):
 register_op("contrib.aipu_compass.detection_output", 3, _detection_output_type_rel)
 register_op("contrib.aipu_compass.nms", 4, _nms_type_rel)
 register_op("contrib.aipu_compass.decode_box", 6, _decode_box_rel)
+register_op("contrib.aipu_compass.divide_mod", 2, _divide_mod_rel)

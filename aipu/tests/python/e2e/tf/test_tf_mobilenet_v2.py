@@ -7,9 +7,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 from tvm.relay.backend.contrib.aipu_compass.testing.gen_model_inputs import ImageNetVal
 
 
-def run_mobilenet(
-    model, runtime="simulator", is_topk=False, threshold_cos=0.97, threshold_topk=None
-):
+def run_mobilenet(model, runtime="sim", is_topk=False, threshold_cos=0.97, threshold_topk=None):
     # 1. Create AIPU Compass instance and set configurations.
     cfg_path = f"{aipu_testing.DATA_DIR}/tf_{model}.cfg"
     compass = AipuCompass(cfg_path)
@@ -57,11 +55,11 @@ def run_mobilenet(
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_mobilenet_v2(runtime):
     run_mobilenet("mobilenet_v2", runtime=runtime)
 
 
 if __name__ == "__main__":
-    test_mobilenet_v2("simulator")
+    test_mobilenet_v2("sim")

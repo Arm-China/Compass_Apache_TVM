@@ -25,3 +25,21 @@ def ReAnnotateTuple():
         The registered pass for reannotate tuple target.
     """
     return relay.transform._ffi_api.ReAnnotateTuple()
+
+
+def SetNodeCompilerToDefault(indices):
+    """
+    Annotate nodes' compiler to default depend on given index.
+
+    Parameters
+    ----------
+    indices: list of int
+        The indices of nodes in relay ir to annotate to cpu. Need to
+        specify node upon compiler_end.
+
+    Returns
+    -------
+    ret : tvm.transform.Pass
+        The registered pass for reannotate tuple target.
+    """
+    return relay.transform._ffi_api.SetNodeCompilerToDefault(indices)

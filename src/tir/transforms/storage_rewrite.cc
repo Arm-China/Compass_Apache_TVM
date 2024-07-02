@@ -668,7 +668,8 @@ class StoragePlanRewriter : public StmtExprMutator {
         if (all_allocs_identical) {
           // simply use the original allocation.
           e->alloc_nest.push_back(Allocate(e->alloc_var, alloc_type, e->allocs[0]->extents,
-                                           e->allocs[0]->condition, Evaluate(0)));
+                                           e->allocs[0]->condition, Evaluate(0),
+                                           e->allocs[0]->annotations, e->allocs[0]->span));
           if (auto ptr = e->allocs[0]->body.as<DeclBufferNode>()) {
             e->alloc_nest.push_back(
                 DeclBuffer(RemapBuffer(ptr->buffer, e->alloc_var), Evaluate(0)));
@@ -720,8 +721,9 @@ class StoragePlanRewriter : public StmtExprMutator {
             combo_size = combo_size + make_const(DataType::Int(32), 1);
           }
           combo_size = analyzer_.Simplify(combo_size);
-          e->alloc_nest.push_back(
-              Allocate(e->alloc_var, alloc_type, {combo_size}, const_true(), Evaluate(0)));
+          e->alloc_nest.push_back(Allocate(e->alloc_var, alloc_type, {combo_size}, const_true(),
+                                           Evaluate(0), e->allocs[0]->annotations,
+                                           e->allocs[0]->span));
           if (IsSpecialTaggedMemory(e->scope)) {
             MemoryInfo info = GetMemoryInfo(e->scope.to_string());
             if (info.defined()) {
@@ -765,8 +767,8 @@ class StoragePlanRewriter : public StmtExprMutator {
     uint64_t type_bits = e->elem_type.bits() * e->elem_type.lanes();
     PrimExpr alloc_size =
         make_const(e->allocs[0]->extents[0].dtype(), (total_bits + type_bits - 1) / type_bits);
-    e->alloc_nest.push_back(
-        Allocate(e->alloc_var, e->elem_type, {alloc_size}, const_true(), Evaluate(0)));
+    e->alloc_nest.push_back(Allocate(e->alloc_var, e->elem_type, {alloc_size}, const_true(),
+                                     Evaluate(0), e->allocs[0]->annotations, e->allocs[0]->span));
     if (info.defined()) {
       ICHECK_LE(total_bits, info->max_num_bits)
           << "Allocation exceed bound of memory tag " << e->scope.to_string();
@@ -1309,6 +1311,13 @@ class VectorTypeAccessChecker : public StmtExprVisitor {
     auto it = info_map_.find(buffer);
     ICHECK(it != info_map_.end()) << "Load/Store of buffer " << buffer->name_hint << " (" << buffer
                                   << ") occurred before its declaration.";
+
+    if (value_dtype.is_scalable_vector()) {
+      // Scalable types are not currently supported in storage_rewrite. Scalable buffer
+      // accesses are not currently checked and therefore are not rewritten.
+      return;
+    }
+
     BufferVarInfo& var_info = it->second;
 
     if (value_dtype.element_of() == DataType::Bool()) {
@@ -1635,7 +1644,8 @@ class VectorTypeRewriter : public StmtExprMutator {
     // ceil the result.
     PrimExpr last_extent = extents[extents.size() - 1];
     extents.Set(extents.size() - 1, truncdiv(last_extent + (info.factor() - 1), info.factor()));
-    return Allocate(new_buffer_var, info.new_element_dtype, extents, op->condition, op->body);
+    return Allocate(new_buffer_var, info.new_element_dtype, extents, op->condition, op->body,
+                    op->annotations, op->span);
   }
 
   Stmt VisitStmt_(const AllocateConstNode* op) final {

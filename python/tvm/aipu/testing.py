@@ -2,10 +2,11 @@
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Zhouyi Compass extension of testing."""
 import os
+import sys
 import numpy as np
-from tvm.relay.backend.contrib.aipu_compass import aipu_builder
 from AIPUBuilder.executor import GtForward
 from .. import testing
+from .utils import check_call_aipu_tool
 
 
 def binary_equal(x, y):
@@ -60,39 +61,40 @@ def run_op_case(work_dir, case_file_path, target):
 
     """
     files = os.listdir(case_file_path)
-    assert "graph.def" in files, "graph not found!"
-    assert "weight.bin" in files, "weight not found!"
-    assert "input0.bin" in files, "input bin not found!"
-    graph_path = os.path.join(case_file_path, "graph.def")
-    weight_path = os.path.join(case_file_path, "weight.bin")
+    for file_str in ("graph.def", "weight.bin", "input0.bin"):
+        assert file_str in files, f"Not found {file_str} in {case_file_path}."
+    graph = os.path.join(case_file_path, "graph.def")
+    weight = os.path.join(case_file_path, "weight.bin")
     inputs = ",".join([os.path.join(case_file_path, i) for i in files if "input" in i])
-    stage_info = lambda x: print(f"[DSL OP Test]: {'='*20}Stage {x}{'='*20}")
+
+    def flush_out(message):
+        sys.stdout.write(message + "\n")
+        sys.stdout.flush()
+
+    stage_info = lambda x: flush_out(f"[DSL OP Test]: {'='*20}Stage {x}{'='*20}")
     stage_info("1(aipurun) Start")
     # Run DSL OP
-    cmd = ["aipurun", graph_path, "-w", weight_path, "-i", inputs, "--target", target]
+    cmd = ["aipurun", graph, "-w", weight, "-i", inputs, "--target", target]
     # disable passes
     passes = ""
     disable_pass_file = os.environ.get("AIPU_TVM_DISABLE_PASS_FILE", None)
-    if disable_pass_file:
+    if disable_pass_file and "tvm_update_aipubuilder" not in os.environ.get("JOB_NAME", ""):
+        assert os.path.isfile(disable_pass_file), f"File not exists: {disable_pass_file}."
         with open(disable_pass_file, "r") as p:
             passes = p.read().strip()
     else:
+        show_passes = "aipurun --show-all-passes"
         try:
-            with os.popen("aipurun --show-all-passes", "r") as p:
+            with os.popen(show_passes, "r") as p:
                 all_passes = p.readlines()
-                passes = ",".join(
-                    [
-                        i.strip("PassTuple(").strip().strip(")")
-                        for i in [all_passes[2], all_passes[5]]
-                    ]
-                )
-        except IndexError as idx_err:
-            print(idx_err)
-            print("[WARN] Failed to obtain passes, not disable any pass during the 'aipurun'.")
+                passes = ",".join(["".join(i[10:-2]) for i in [all_passes[2], all_passes[5]]])
+        except IndexError:
+            print(f"[WARN] Failed to get passes through '{show_passes}', not disable any passes.")
+
     if passes:
         cmd += ["--disable-pass", passes]
     # run aipurun
-    aipu_builder.check_call_aipu_tool(cmd, work_dir=work_dir)
+    check_call_aipu_tool(cmd, work_dir=work_dir)
     assert "output.bin" in os.listdir(work_dir), "can not found output!"
     stage_info("1(aipurun) End")
     stage_info("2(executor) Start")
@@ -100,7 +102,7 @@ def run_op_case(work_dir, case_file_path, target):
     cur_dir = os.getcwd()
     try:
         os.chdir(work_dir)
-        exeutor = GtForward(graph_path, weight_path, inputs=inputs, target=target)
+        exeutor = GtForward(graph, weight, inputs=inputs, target=target, disable_pass=passes)
         gts = exeutor.forward()
     finally:
         os.chdir(cur_dir)
@@ -108,7 +110,7 @@ def run_op_case(work_dir, case_file_path, target):
     stage_info("3(compare) Start")
     if (
         os.getenv("AIPU_TVM_DEV_OP_LIB_IMPL_ID") == "0"
-        and case_file_path.split("/")[-2] == "Eltwise"
+        and case_file_path.split("/")[-2] == "eltwise"
     ):
         return
     # Check Results

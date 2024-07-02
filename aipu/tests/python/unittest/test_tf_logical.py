@@ -63,7 +63,7 @@ def test_logical(input_shapes, method_v):
     input_shapes = copy.deepcopy(input_shapes)
 
     if method_v in ["And", "Or", "Xor"] and input_shapes == [[2, 3, 4, 5], [5]]:
-        pytest.xfail("Not Support 1 Dim in Cast OP")
+        pytest.skip("Not Support 1 Dim in Cast OP")
 
     if method_v == "Not":
         input_shapes.pop()
@@ -79,7 +79,7 @@ def test_logical(input_shapes, method_v):
     in_dims = [len(i) for i in input_shapes]
     oos = "OutOfSpec" if min(in_dims) == 0 else ""
     if oos:
-        pytest.xfail("OutOfSpec")
+        pytest.skip("OutOfSpec")
     model_name = aipu_testing.gen_model_name(op_type, dim_info, input_shapes, "float32")
 
     g = tf.Graph()

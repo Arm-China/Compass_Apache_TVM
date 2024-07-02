@@ -63,10 +63,12 @@ AipuDriver::AipuDriver() {
 }
 
 void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
-                      const std::string& target, const std::string& umd_dtcm_sz) {
+                      const std::string& target, const std::string& umd_dtcm_sz,
+                      const std::string& func_name) {
   work_dir_ = work_dir;
   target_ = target;
   umd_dtcm_sz_ = umd_dtcm_sz;
+  func_name_ = func_name;
 
   // Create directories recursively and ignore the directories exist error.
   CreateDirectories(work_dir_);
@@ -157,11 +159,11 @@ static inline DataType CreateDataType(aipu_data_type_t type_code) {
       return DataType::Int(64);
     case AIPU_DATA_TYPE_U64:
       return DataType::UInt(64);
-    case AIPU_DATA_TYPE_f16:
+    case AIPU_DATA_TYPE_F16:
       return DataType::Float(16);
-    case AIPU_DATA_TYPE_f32:
+    case AIPU_DATA_TYPE_F32:
       return DataType::Float(32);
-    case AIPU_DATA_TYPE_f64:
+    case AIPU_DATA_TYPE_F64:
       return DataType::Float(64);
     default:
       LOG(FATAL) << "Unsupported AIPU driver data type: " << type_code;

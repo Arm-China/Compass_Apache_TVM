@@ -166,7 +166,9 @@ class CallerOpInjector(relay.ExprMutator):
                 continue
 
             # Need insert quantize node for the float parameter.
-            assert str(old_dtype) == "float32"
+            assert str(old_dtype) in ("float32", "float64")
+            if str(old_dtype) == "float64":
+                old_arg = relay.cast(old_arg, "float32")
             scale = relay.const(quant_info.scale, "float32")
             zp = relay.const(quant_info.zero_point, "int32")  # pylint: disable=invalid-name
             new_args.append(relay.qnn.op.quantize(old_arg, scale, zp, out_dtype=quant_info.dtype))
@@ -201,10 +203,16 @@ class CallerOpInjector(relay.ExprMutator):
                 continue
 
             # Need insert dequantize node for the float output node.
-            assert str(old_dtype) in ("float16", "float32")
+            assert str(old_dtype) in ("float16", "float32", "float64")
             scale = relay.const(quant_info.scale, "float32")
             zero_point = relay.const(quant_info.zero_point, "int32")
-            out_exprs.append(relay.qnn.op.dequantize(out_expr, scale, zero_point, -1, old_dtype))
+            if str(old_dtype) != "float64":
+                out_exprs.append(
+                    relay.qnn.op.dequantize(out_expr, scale, zero_point, -1, old_dtype)
+                )
+            else:
+                deq = relay.qnn.op.dequantize(out_expr, scale, zero_point, -1, "float32")
+                out_exprs.append(relay.cast(deq, "float64"))
 
         return relay.Tuple(out_exprs) if is_multiple_output else out_exprs[0]
 

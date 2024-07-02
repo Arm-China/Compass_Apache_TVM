@@ -35,6 +35,7 @@ from .model_forward_engine import (
 )
 from .gen_model_inputs import CoCo, get_imagenet_input, ClassificationDataset, VOC
 from .common import convert_to_list, is_number, get_subgraph_and_op_count
+from ..utils import compute_cos_distance
 
 
 DATA_DIR = os.path.abspath(f"{__file__}/../../../../../../../../aipu/tests/data")
@@ -89,7 +90,7 @@ DEVICE_COMPILER = os.getenv("AIPU_TVM_DEVICE_COMPILER")
 
 
 def calc_mean_ap(
-    dataset, prediction, model, framework="unknown", iou_thres=0.5, map_thres=0, runtime="simulator"
+    dataset, prediction, model, framework="unknown", iou_thres=0.5, map_thres=0, runtime="sim"
 ):
     """
     The general function to calculate mAP@IOU0.5 based on the Dataset passed in.
@@ -287,21 +288,21 @@ def calc_mean_iou(predicts, targets, class_num):
     The general function to calculate mIoU for segmentation models.
     :param
     predicts   (list)   : outputs of each image inference.
-    targets    (liat)   : ground truth of each image.
-    class_num  (string) : total class num.
+    targets    (list)   : ground truth of each image.
+    class_num  (int)    : total class num.
     :return: mIoU
     """
     assert len(predicts) == len(targets)
-    n = class_num
+    assert predicts[0].shape == targets[0].shape
     epsilon = 0.000000000001
-    confusion_matrix = np.zeros((n, n))
+    confusion_matrix = np.zeros((class_num, class_num))
     for p, g in zip(predicts, targets):
         p = p.flatten()
         g = g.flatten()
-        mask = (p >= 0) & (p < n)
+        mask = (g >= 0) & (g < class_num)
         confusion_matrix += np.bincount(
-            n * p[mask].astype(int) + g[mask], minlength=n**2
-        ).reshape(n, n)
+            class_num * g[mask].astype(int) + p[mask], minlength=class_num**2
+        ).reshape(class_num, class_num)
     iou = np.diag(confusion_matrix) / (
         confusion_matrix.sum(0) + confusion_matrix.sum(1) - np.diag(confusion_matrix) + epsilon
     )
@@ -383,7 +384,7 @@ def write_result_to_file(result):
                 tuple's rules:
                     length: 6
                     Element per index position:
-                        result[0]: runtime of AIPU compass(rpc/simulator), e.g. rpc
+                        result[0]: runtime of AIPU compass(rpc/sim), e.g. rpc
                         result[1]: framework and model name, e.g. tf_mobilenet_v1
                         result[2]: test metric, e.g. Cosine_Dis
                         result[3]: value
@@ -444,14 +445,6 @@ def write_result_to_file(result):
 
     with open(NIGHTLY_TEST_TXT, "a") as f:
         f.write(json.dumps(result_dict) + "\n")
-
-
-def compute_cos_distance(x, y):
-    """Get cosine similarity."""
-    x = x.astype("float32")
-    y = y.astype("float32")
-    similarity = np.dot(x.flatten(), y.flatten()) / (np.linalg.norm(x) * (np.linalg.norm(y)))
-    return float(format(similarity, ".3f"))
 
 
 def calc_cos_distance(output_gt: dict, output_real: dict):
@@ -918,7 +911,7 @@ def calc_l1_norm(
     :param data2: the second data, usually the output data of original frame
     :param model_name: model name, e.g. tflite_vgg_quant
     :param threshold: threshold, e.g. [0.46]
-    :param runtime: runtime, e.g. rpc/simulator
+    :param runtime: runtime, e.g. rpc/sim
     :return: None
     """
     assert len(data1) == len(data2), "The length of the two data must be same."
@@ -1042,7 +1035,7 @@ def get_output_dict(model_inst, input_data, aipu_output):
     return aipu_out_dict, model_out_dict
 
 
-def get_test_result(model, input_data, aipu_output, threshold=0.90, runtime="simulator"):
+def get_test_result(model, input_data, aipu_output, threshold=0.90, runtime="sim"):
     """Compare the results of AIPU-TVM and the original framework forward."""
     aipu_out_dict, model_out_dict = get_output_dict(model, input_data, aipu_output)
     cos_distance = calc_cos_distance(model_out_dict, aipu_out_dict)
@@ -1072,7 +1065,7 @@ def get_topk_result(
     im_height=224,
     im_width=224,
     preprocess_mode="tf_vgg",
-    runtime="simulator",
+    runtime="sim",
 ):
     """
     Calculate the Top-1 and Top-5 Accuracy.

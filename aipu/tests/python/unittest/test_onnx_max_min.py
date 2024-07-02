@@ -40,7 +40,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 def test_max_min(method_v, input_shapes, output_shapes, opset_id):
     if opset_id == 6 and input_shapes[0] != input_shapes[1]:
-        pytest.xfail("Opset 6 not support broadcast")
+        pytest.skip("Opset 6 not support broadcast")
 
     op_type = method_v
     short_name = f"Eltwise{method_v}"

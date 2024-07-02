@@ -5,10 +5,10 @@ import time
 import numpy as np
 from tvm import nd
 from tvm.aipu.logger import DEBUG
+from tvm.aipu.utils import check_call_aipu_tool
 from ..codegen import CodeGenAipuCompass
 from ..config import AipuCompassFunctionConfig
 from .engine import AipuForwardEngine
-from ..aipu_builder import check_call_aipu_tool
 from ..utils import relative_symlink_in_dir, create_aipu_compass_module
 
 

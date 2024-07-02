@@ -91,10 +91,18 @@ class ExprOp(object):
         return _generic.subtract(other, self)
 
     def __mul__(self, other: PrimExpr) -> PrimExpr:
-        return _generic.multiply(self, other)
+        ret = _generic.multiply(self, other)
+        if tvm.target.AipuInfo.current() is not None:
+            if DataType(ret.dtype).bits == 8 and DataType(ret.dtype).is_vector:
+                raise RuntimeError("The 8bit equal-width multiply is meaningless.")
+        return ret
 
     def __rmul__(self, other: PrimExpr) -> PrimExpr:
-        return _generic.multiply(other, self)
+        ret = _generic.multiply(other, self)
+        if tvm.target.AipuInfo.current() is not None:
+            if DataType(ret.dtype).bits == 8 and DataType(ret.dtype).is_vector:
+                raise RuntimeError("The 8bit equal-width multiply is meaningless.")
+        return ret
 
     def __div__(self, other: PrimExpr) -> PrimExpr:
         if _dtype_is_int(self) and _dtype_is_int(other):
@@ -107,18 +115,26 @@ class ExprOp(object):
         return _generic.divide(other, self)
 
     def __truediv__(self, other: PrimExpr) -> PrimExpr:
+        is_aipu = tvm.target.AipuInfo.current() is not None
         if _dtype_is_int(self) and _dtype_is_int(other):
-            if tvm.target.Target.current() and tvm.target.Target.current().kind.name == "aipu":
+            if is_aipu:
                 return _ffi_api._OpTruncDiv(self, other, None)
             raise div_ambiguity_error()
-        return _generic.divide(self, other)
+        ret = _generic.divide(self, other)
+        if is_aipu and DataType(ret.dtype).is_float16_vector:
+            raise RuntimeError("The operand of '/' does not support float16 vector.")
+        return ret
 
     def __rtruediv__(self, other: PrimExpr) -> PrimExpr:
+        is_aipu = tvm.target.AipuInfo.current() is not None
         if _dtype_is_int(self) and _dtype_is_int(other):
-            if tvm.target.Target.current() and tvm.target.Target.current().kind.name == "aipu":
+            if is_aipu:
                 return _ffi_api._OpTruncDiv(other, self, None)
             raise div_ambiguity_error()
-        return _generic.divide(other, self)
+        ret = _generic.divide(other, self)
+        if is_aipu and DataType(ret.dtype).is_float16_vector:
+            raise RuntimeError("The operand of '/' does not support float16 vector.")
+        return ret
 
     def __floordiv__(self, other: PrimExpr) -> PrimExpr:
         return _generic.floordiv(self, other)
@@ -648,10 +664,14 @@ class IntImm(ConstExpr):
         return self.value != 0
 
     def __eq__(self, other: PrimExpr) -> PrimExpr:
-        return _ffi_api._OpEQ(self, other, None)  # type: ignore
+        if isinstance(other, (int, IntImm)):
+            return _ffi_api._OpEQ(self, other, None)  # type: ignore
+        return super().__eq__(other)
 
     def __ne__(self, other: PrimExpr) -> PrimExpr:
-        return _ffi_api._OpNE(self, other, None)  # type: ignore
+        if isinstance(other, (int, IntImm)):
+            return _ffi_api._OpNE(self, other, None)  # type: ignore
+        return super().__ne__(other)
 
     def __bool__(self) -> bool:
         return self.__nonzero__()

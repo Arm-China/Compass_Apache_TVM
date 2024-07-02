@@ -3,6 +3,7 @@
 """Configuration processing of AIPU Compass."""
 import os
 import uuid
+import shutil
 from configparser import ConfigParser
 import json
 import tvm
@@ -142,6 +143,8 @@ class AipuCompassFunctionConfig:
             opt_cfg["dataset"] = "numpymultiinputdataset"
         if AipuCompassConfig.get().common["compat_quantized_model"] == "true":
             opt_cfg["compat_quantized_model"] = "true"
+        if "min_compatible_zhouyi_target" not in opt_cfg:
+            opt_cfg["min_compatible_zhouyi_target"] = self.target.split("_")[0].strip().upper()
 
         if extra_cfg:
             opt_cfg.update(extra_cfg)
@@ -295,12 +298,27 @@ def config_aipu_compass(config):
     else:
         common.setdefault("output_dir", f"./compass_output_{uuid.uuid4().hex}")
     common["output_dir"] = os.path.abspath(common["output_dir"])
+    if os.path.exists(common["output_dir"]):
+        shutil.rmtree(common["output_dir"])
 
     value = common.get("forward_engine", None)
     value_from_env = os.environ.get("AIPU_TVM_FORWARD_ENGINE", None)
     if value_from_env:
         value = value_from_env
     common["forward_engine"] = value.lower() if value else "driver"
+
+    value = common.get("continuous_similarity", None)
+    value_from_env = os.environ.get("AIPU_TVM_CONTINUOUS_SIM", None)
+    if value_from_env:
+        value = value_from_env
+    common["continuous_similarity"] = value.lower() if value else "false"
+    continuous_sim = common["continuous_similarity"] == "true"
+    if continuous_sim:
+        WARN(
+            "The forward_engine has been changed to opt_int mode, "
+            "because continuous sim requires every layer results inferred by opt_int."
+        )
+        common["forward_engine"] = "opt_int"
 
     value = common.get("calibrate_collector", None)
     value_from_env = os.environ.get("AIPU_TVM_CALIBRATE_COLLECTOR", None)
@@ -417,13 +435,19 @@ def config_aipu_compass(config):
         if value_from_env:
             optimizer["save_statistic_info"] = value_from_env
         optimizer.setdefault("cast_dtypes_for_lib", "true")
+        if continuous_sim:
+            WARN(
+                "The optimizer dump has been changed to true, "
+                "because continuous sim requires opt dump float results."
+            )
+            optimizer["dump"] = "true"
 
     # 6. Update and check "gbuilder" section.
     value = gbuilder.get("target", None)
     value_from_env = os.environ.get("AIPU_TVM_GBUILDER_TARGET", None)
     if value_from_env:
         value = value_from_env
-    gbuilder["target"] = value.upper() if value else "Z1_0904"
+    gbuilder["target"] = value.upper() if value else "X1_1204"
 
     value = gbuilder.get("profile", None)
     value_from_env = os.environ.get("AIPU_TVM_GBUILDER_PROFILE", None)

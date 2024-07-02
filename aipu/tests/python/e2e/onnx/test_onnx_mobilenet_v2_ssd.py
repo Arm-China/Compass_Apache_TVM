@@ -101,7 +101,7 @@ def compass_compile(compass, target):
 
 
 def run_ssd_mobilenet(
-    model, runtime="simulator", visualize=False, calc_mAP=False, imgs_number=1, map_thres=0
+    model, runtime="sim", visualize=False, calc_mAP=False, imgs_number=1, map_thres=0
 ):
     cfg = f"{aipu_testing.DATA_DIR}/onnx_{model}.cfg"
     # 1. Create AIPU Compass instance and set configurations.
@@ -187,7 +187,7 @@ def run_ssd_mobilenet(
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_mobilenet_v2_ssd(runtime):
     if os.environ.get("AIPU_TVM_NIGHTLY_TEST", None) == "True":
@@ -197,4 +197,4 @@ def test_mobilenet_v2_ssd(runtime):
 
 
 if __name__ == "__main__":
-    test_mobilenet_v2_ssd("simulator")
+    test_mobilenet_v2_ssd("sim")

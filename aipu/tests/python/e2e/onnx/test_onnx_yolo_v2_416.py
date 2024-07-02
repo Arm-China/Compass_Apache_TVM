@@ -85,7 +85,7 @@ def run_yolo_v2_416(runtime, imgs_number=10):
     ]
 
     # b. Check cosine distance with original framework on simulator.
-    if runtime == "simulator":
+    if runtime == "sim":
         img_id = all_img_ids[0]
         img = voc.load_imgs(img_id)[0]
         print(f"Input image: {img}")
@@ -129,11 +129,11 @@ def run_yolo_v2_416(runtime, imgs_number=10):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_yolo_v2_416(runtime):
     run_yolo_v2_416(runtime)
 
 
 if __name__ == "__main__":
-    run_yolo_v2_416("simulator")
+    run_yolo_v2_416("sim")

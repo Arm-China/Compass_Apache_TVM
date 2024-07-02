@@ -50,7 +50,8 @@ def _create_opt_executor(func):
 def _create_relay_vm_executor(func):
     # Create a new IRModule from the AIPU Compass function with removing all
     # function attributes.
-    ir_mod = tvm.IRModule.from_expr(func.body)
+    new_func = relay.Function(func.params, func.body)
+    ir_mod = tvm.IRModule.from_expr(new_func)
 
     # Do any optimizations needed, e.g., convert the layout according to CPU
     # requirement.

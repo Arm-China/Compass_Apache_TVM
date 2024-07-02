@@ -32,7 +32,7 @@ def run_erfnet(runtime, img_num=10):
     dataset = np.load(data_file)
 
     # b. Check cosine distance with original framework on simulator.
-    if runtime == "simulator":
+    if runtime == "sim":
         image = np.transpose(np.expand_dims(dataset[0], axis=0), [0, 3, 1, 2]).astype("float32")
         outputs = ee.run(image)
         caffe_model = aipu_testing.CaffeModel(cfg)
@@ -64,11 +64,11 @@ def run_erfnet(runtime, img_num=10):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_erfnet(runtime):
     run_erfnet(runtime)
 
 
 if __name__ == "__main__":
-    test_erfnet("simulator")
+    test_erfnet("sim")

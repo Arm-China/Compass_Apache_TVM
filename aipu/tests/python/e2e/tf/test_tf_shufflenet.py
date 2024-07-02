@@ -36,7 +36,7 @@ def run_shufflenet(model, runtime):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_shufflenet_v2(runtime):
     pool = relay.op.get("nn.max_pool2d")
@@ -53,4 +53,4 @@ def test_shufflenet_v2(runtime):
 
 
 if __name__ == "__main__":
-    test_shufflenet_v2("rpc")
+    test_shufflenet_v2("sim")

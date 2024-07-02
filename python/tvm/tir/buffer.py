@@ -28,6 +28,26 @@ from tvm.runtime import Object, Scriptable, convert
 from . import _ffi_api
 
 
+def check_indice_int_dtype(indices):
+    """check if indice is of int dtype"""
+    if isinstance(indices, (list, tuple)):
+        for elt in indices:
+            if not check_indice_int_dtype(elt):
+                return False
+    if isinstance(indices, float):
+        return False
+    if hasattr(indices, "dtype"):
+        dtype = indices.dtype
+        if not (dtype.startswith("int") or dtype.startswith("uint")):
+            return False
+    if isinstance(indices, slice):
+        for _attr in ["start", "stop", "step"]:
+            attr = getattr(indices, _attr)
+            if not check_indice_int_dtype(attr):
+                return False
+    return True
+
+
 @tvm._ffi.register_object("tir.Buffer")
 class Buffer(Object, Scriptable):
     """Symbolic data buffer in TVM.
@@ -179,6 +199,9 @@ class Buffer(Object, Scriptable):
 
             The offset indices of the element in the flattened buffer.
         """
+        if not check_indice_int_dtype(indices):
+            raise TypeError("Indice should be Int dtype. Please explicit cast it into Int dtype.")
+
         return _ffi_api.BufferOffsetOf(self, indices)  # type: ignore
 
     def __getitem__(self, indices):
@@ -188,6 +211,10 @@ class Buffer(Object, Scriptable):
 
         if not isinstance(indices, (tuple, list)):
             indices = [indices]
+
+        if not check_indice_int_dtype(indices):
+            raise TypeError("Indice should be Int dtype. Please explicit cast it into Int dtype.")
+
         has_slice = any(isinstance(i, slice) for i in indices)
         has_step = any(isinstance(i, slice) and i.step is not None for i in indices)
         analyzer = Analyzer()

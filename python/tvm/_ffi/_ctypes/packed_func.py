@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 # coding: utf-8
 # pylint: disable=invalid-name, protected-access, too-many-branches
 # pylint: disable=global-statement, unused-import, using-constant-test

@@ -7,7 +7,7 @@ from tvm.relay.backend.contrib.aipu_compass import AipuCompass, AipuCompassConfi
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 
-def run_inception(model, runtime="simulator"):
+def run_inception(model, runtime="sim"):
     cfg = f"{aipu_testing.DATA_DIR}/tf_{model}.cfg"
     # 1. Create AIPU Compass instance and set configurations.
     compass = AipuCompass(cfg)
@@ -42,21 +42,21 @@ def run_inception(model, runtime="simulator"):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_inception_v3(runtime):
     run_inception("inception_v3", runtime)
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_inception_v4(runtime):
     run_inception("inception_v4", runtime)
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_inception_resnet_v2(runtime):
     # After confirming by OPT topk metric, the quantization accuracy of this
@@ -66,6 +66,6 @@ def test_inception_resnet_v2(runtime):
 
 
 if __name__ == "__main__":
-    test_inception_v3("simulator")
-    test_inception_v4("simulator")
-    test_inception_resnet_v2("simulator")
+    test_inception_v3("sim")
+    test_inception_v4("sim")
+    test_inception_resnet_v2("sim")

@@ -33,7 +33,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 def test_logsoftmax(input_shapes, axis, opset_id):
     if aipu_testing.skip_case(input_shapes, axis):
-        pytest.xfail()
+        pytest.skip()
 
     op_type = "LogSoftmax"
     dim_info = f"{len(input_shapes[0])}d"

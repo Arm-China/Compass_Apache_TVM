@@ -41,10 +41,10 @@ def test_avgpool2d(
     input_shapes, kernel_shape, pads, strides, auto_pad, count_include_pad, ceil_mode, opset_id
 ):
     if auto_pad not in ["NOTSET", "default"] and isinstance(pads, list):
-        pytest.xfail("pads cannot be used simultaneously with auto_pad attribute")
+        pytest.skip("pads cannot be used simultaneously with auto_pad attribute")
 
     if auto_pad == "VALID" and ceil_mode == 1:
-        pytest.xfail("OnnxRT implementation not match with onnx op SPEC")
+        pytest.skip("OnnxRT implementation not match with onnx op SPEC")
         # https://github.com/microsoft/onnxruntime/issues/10083
 
     if auto_pad in ["SAME_UPPER", "SAME_LOWER"]:
@@ -55,7 +55,7 @@ def test_avgpool2d(
         pad_h = (out_h - 1) * _strides[0] + kernel_shape[0] - input_shapes[0][2]
         pad_w = (out_w - 1) * _strides[1] + kernel_shape[1] - input_shapes[0][3]
         if (pad_h < 0 and abs(pad_h) % 2 == 1) or (pad_w < 0 and abs(pad_w) % 2 == 1):
-            pytest.xfail("ORT Bug")
+            pytest.skip("ORT Bug")
             # https://github.com/microsoft/onnxruntime/issues/10086
 
     op_type = "AveragePool"
@@ -101,7 +101,7 @@ def test_avgpool2d(
             - _pad[3]
         )
         if (extra_ph + _pad[2] >= kernel_shape[0]) or (extra_pw + _pad[3] >= kernel_shape[1]):
-            pytest.xfail("Out Of Spec")
+            pytest.skip("Out Of Spec")
 
     inputs_info = {"shapes": input_shapes}
     outputs_info = {"shapes": output_shapes}

@@ -104,6 +104,3 @@ Note that, when you compile uboot with the extend cmd code, you need link the 4 
 Arm China provides an example of bare metal based on juno. You can check the following files:
 - out-of-box-test/tf_mobilenet_v1_bare_metal_X2/CMakeLists.txt for how to compile each part.
 - out-of-box-test/tf_mobilenet_v1_bare_metal_X2/tf_mobilenet_v1.py for how the whole flow works.
-
-
-

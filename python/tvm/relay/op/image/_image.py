@@ -398,6 +398,16 @@ def _grid_sample_func_nchw(data, grid):
 
 
 @script
+def _grid_sample_func_nhwc(data, grid):
+    out = output_tensor((4,), "int64")
+    out[0] = int64(data[0])
+    out[1] = int64(grid[1])
+    out[2] = int64(grid[2])
+    out[3] = int64(data[3])
+    return out
+
+
+@script
 def _grid_sample_func_ncdhw(data, grid):
     out = output_tensor((5,), "int64")
     out[0] = int64(data[0])
@@ -415,6 +425,8 @@ def grid_sample_func(attrs, inputs, _):
     """
     if attrs.layout == "NCHW":
         script_func = _grid_sample_func_nchw
+    elif attrs.layout == "NHWC":
+        script_func = _grid_sample_func_nhwc
     elif attrs.layout == "NCDHW":
         script_func = _grid_sample_func_ncdhw
     else:

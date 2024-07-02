@@ -20,6 +20,9 @@ The Relay Virtual Machine profiler.
 
 Provides extra APIs for profiling vm execution.
 """
+#
+# This file has been modified by Arm China team.
+#
 import warnings
 from tvm.runtime import _ffi_api
 from tvm.rpc import base as rpc_base
@@ -38,19 +41,26 @@ class VirtualMachineProfiler(vm.VirtualMachine):
     def __init__(self, exe, device, memory_cfg=None):
         super(VirtualMachineProfiler, self).__init__(exe, device, memory_cfg)
 
+        device = [device] if not isinstance(device, (list, tuple)) else device
         # Make sure the constructor of the VM module is on the proper device
         # Remote devices have device_type of their actual device_type + RPC_SESS_MASK
-        if device.device_type >= rpc_base.RPC_SESS_MASK:
-            self.module = device._rpc_sess.get_function("runtime._VirtualMachineDebug")(exe)
+        if device[0].device_type >= rpc_base.RPC_SESS_MASK:
+            self.module = device[0]._rpc_sess.get_function("runtime._VirtualMachineDebug")(exe)
         else:
             self.module = _ffi_api._VirtualMachineDebug(exe.module)
 
-        self._init = self.module["init"]
         self._invoke = self.module["invoke"]
+        self._invoke_stateful = self.module["invoke_stateful"]
+        self._get_output = self.module["get_output"]
+        self._get_num_outputs = self.module["get_num_outputs"]
+        self._get_input_index = self.module["get_input_index"]
+        self._set_input = self.module["set_input"]
+        self._set_one_input = self.module["set_one_input"]
+        self._set_outputs = self.module["set_outputs"]
+        self._setup_device(device, memory_cfg)
+
         self._profile = self.module["profile"]
         self._profile_rpc = self.module["profile_rpc"]
-        self._set_input = self.module["set_input"]
-        self._setup_device(device, memory_cfg)
 
     def get_stat(self, sort_by_time=True):  # pylint: disable=unused-argument
         """Get the statistics of executed ops.

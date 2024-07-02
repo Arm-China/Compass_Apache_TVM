@@ -21,6 +21,9 @@
  * \file ndarray.cc
  * \brief NDArray container infratructure.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/runtime/c_runtime_api.h>
 #include <tvm/runtime/device_api.h>
 #include <tvm/runtime/logging.h>
@@ -230,7 +233,6 @@ NDArray NDArray::Empty(ShapeTuple shape, DLDataType dtype, Device dev, Optional<
 
 NDArray NDArray::FromExternalDLTensor(const DLTensor& dl_tensor) {
   ICHECK(::tvm::runtime::IsContiguous(dl_tensor)) << "External DLTensor must be contiguous.";
-  ICHECK(IsAligned(dl_tensor)) << "Data in DLTensor is not aligned as required by NDArray";
   NDArray::Container* data = new NDArray::Container();
 
   data->SetDeleter(Internal::SelfDeleter);
@@ -287,6 +289,17 @@ void NDArray::CopyFromBytes(const void* data, size_t nbytes) {
   ArrayCopyFromBytes(&get_mutable()->dl_tensor, data, nbytes);
 }
 
+NDArray NDArray::CopyTo(const Device& dev, Optional<String> mem_scope) const {
+  ICHECK(data_ != nullptr);
+  const DLTensor* dptr = operator->();
+  NDArray ret =
+      Empty(ShapeTuple(dptr->shape, dptr->shape + dptr->ndim), dptr->dtype, dev, mem_scope);
+  this->CopyTo(ret);
+  Device copy_gpu_dev = dptr->device.device_type != kDLCPU ? dptr->device : dev;
+  DeviceAPI::Get(copy_gpu_dev)->StreamSync(copy_gpu_dev, nullptr);
+  return ret;
+}
+
 void NDArray::CopyFromTo(const DLTensor* from, DLTensor* to, TVMStreamHandle stream) {
   size_t from_size = GetDataSize(*from);
   size_t to_size = GetDataSize(*to);
@@ -316,8 +329,7 @@ runtime::DataType NDArray::DataType() const {
 bool NDArray::AbilityOfZeroCopyForDLTensor(DLTensor* tensor, const Device& dev) {
   bool device_check = (dev.device_type == tensor->device.device_type);
   bool device_id_check = (dev.device_id == tensor->device.device_id);
-  bool alignment_check = IsAligned(*tensor);
-  return device_check && device_id_check && alignment_check;
+  return device_check && device_id_check;
 }
 
 bool NDArray::IsAligned(const DLTensor& tensor) {

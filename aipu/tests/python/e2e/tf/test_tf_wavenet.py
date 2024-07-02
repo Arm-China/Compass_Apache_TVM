@@ -43,11 +43,11 @@ def run_wavenet(model, runtime):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_wavenet(runtime):
     run_wavenet("wavenet", runtime)
 
 
 if __name__ == "__main__":
-    test_wavenet("simulator")
+    test_wavenet("sim")

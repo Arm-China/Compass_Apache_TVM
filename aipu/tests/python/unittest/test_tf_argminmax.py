@@ -30,7 +30,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 def test_argminmax(input_shapes, axis_v, op_type):
     if aipu_testing.skip_case(input_shapes, axis_v):
-        pytest.xfail("axis out of input shape")
+        pytest.skip("axis out of input shape")
 
     dim_info = f"{len(input_shapes[0])}d"
     model_name = aipu_testing.gen_model_name(op_type, dim_info, axis_v)

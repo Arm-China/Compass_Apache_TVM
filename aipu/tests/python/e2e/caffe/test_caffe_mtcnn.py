@@ -36,27 +36,27 @@ def run_mtcnn(model, runtime):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_mtcnn_p(runtime):
     run_mtcnn("mtcnn_p", runtime)
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_mtcnn_r(runtime):
     run_mtcnn("mtcnn_r", runtime)
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_mtcnn_o(runtime):
     run_mtcnn("mtcnn_o", runtime)
 
 
 if __name__ == "__main__":
-    test_mtcnn_p("simulator")
-    test_mtcnn_r("simulator")
-    test_mtcnn_o("simulator")
+    test_mtcnn_p("sim")
+    test_mtcnn_r("sim")
+    test_mtcnn_o("sim")

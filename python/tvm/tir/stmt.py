@@ -852,6 +852,8 @@ def stmt_seq(*args: Union[PrimExpr, Stmt]) -> SeqStmt:
         if not isinstance(value, Stmt):
             value = Evaluate(value)
         ret.append(value)
+    if len(ret) == 0:
+        return Evaluate(0)
     if len(ret) == 1:
         return ret[0]
     return SeqStmt(ret)

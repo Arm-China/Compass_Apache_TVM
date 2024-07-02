@@ -62,7 +62,7 @@ def infer_output_shape(input_shape, split, axis):
 )
 def test_split(input_shapes, axis, opset_id):
     if aipu_testing.skip_case(input_shapes, axis, default_axis=0):
-        pytest.xfail("axis out of shapes")
+        pytest.skip("axis out of shapes")
 
     op_type = "Split"
     dim_info = f"{len(input_shapes[0])}d"

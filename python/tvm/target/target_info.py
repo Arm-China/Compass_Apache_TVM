@@ -7,7 +7,7 @@ from . import _ffi_api
 
 
 @tvm.register_object
-class AIPUInfo(runtime.Object):
+class AipuInfo(runtime.Object):
     """Hardware information of AIPU target."""
 
     @staticmethod
@@ -27,12 +27,31 @@ class AIPUInfo(runtime.Object):
 
         Returns
         -------
-        aipu_info : aipu.target.AIPUInfo
+        aipu_info : aipu.target.AipuInfo
             The found instance.
         """
         from tvm.aipu.utils import canonicalize_target  # pylint: disable=import-outside-toplevel
 
-        return _ffi_api.AIPUInfo_Get(canonicalize_target(target))
+        return _ffi_api.AipuInfo_Get(canonicalize_target(target))
+
+    @classmethod
+    def current(cls, allow_none=True):
+        """Get the predefined instance that corresponding to the target in current context.
+
+        Parameters
+        ----------
+        allow_none : bool
+            Whether allow the current context haven't defined any target.
+
+        Returns
+        -------
+        aipu_info : aipu.target.AipuInfo
+            The found instance.
+        """
+        cur_target = tvm.target.Target.current(allow_none)
+        if cur_target is not None and cur_target.kind.name == "aipu":
+            return cls.get(cur_target)
+        return None
 
     @property
     def is_x1(self):
@@ -67,7 +86,7 @@ class AIPUInfo(runtime.Object):
         tec_count : int
             The tec_count of corresponding AIPU configuration.
         """
-        return _ffi_api.AIPUInfo_TecCount(self)
+        return _ffi_api.AipuInfo_TecCount(self)
 
     @property
     def vector_width(self):
@@ -81,7 +100,7 @@ class AIPUInfo(runtime.Object):
         width : int
             The vector width of corresponding AIPU configuration.
         """
-        return _ffi_api.AIPUInfo_VectorWidth(self)
+        return _ffi_api.AipuInfo_VectorWidth(self)
 
     def lsram_size(self, piece_idx=0):
         """The size of the given piece local SRAM in bytes for each TEC.
@@ -99,7 +118,7 @@ class AIPUInfo(runtime.Object):
         size : int
             The size of the specified piece of local SRAM.
         """
-        return _ffi_api.AIPUInfo_LsramSize(self, piece_idx)
+        return _ffi_api.AipuInfo_LsramSize(self, piece_idx)
 
     def gsram_size(self, piece_idx=0):
         """The size of the given piece global SRAM in bytes for each core.
@@ -117,7 +136,7 @@ class AIPUInfo(runtime.Object):
         size : int
             The size of the specified piece of global SRAM.
         """
-        return _ffi_api.AIPUInfo_GsramSize(self, piece_idx)
+        return _ffi_api.AipuInfo_GsramSize(self, piece_idx)
 
 
 class Environment(object):

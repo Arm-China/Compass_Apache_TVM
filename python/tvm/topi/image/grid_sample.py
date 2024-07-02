@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=invalid-name
+#
+# This file has been modified by Arm China team.
+#
 """affine_grid and grid_sample operator"""
 from tvm import te, tir
 
@@ -121,7 +124,10 @@ def _grid_sample_2d(
 
     assert method in ("bilinear", "nearest", "bicubic"), f"{method} is not supported"
     assert padding_mode in ("zeros", "border", "reflection"), f"{padding_mode} is not supported"
-    assert layout == "NCHW", f"{layout} is not supported"
+    assert layout in ("NCHW", "NHWC"), f"{layout} is not supported"
+
+    if layout == "NHWC":
+        return _grid_sample_2d_NHWC(data, grid, method, padding_mode, align_corners)
 
     batch, in_channel, in_height, in_width = data.shape
     out_height, out_width = grid.shape[2:]
@@ -284,6 +290,199 @@ def _grid_sample_2d(
         interpolation = _bicubic_sample
 
     return te.compute((batch, in_channel, out_height, out_width), interpolation, tag="grid_sample")
+
+
+def _grid_sample_2d_NHWC(data, grid, method="bilinear", padding_mode="zeros", align_corners=True):
+    """Grid sample NHWC implement.
+
+    Parameters
+    ----------
+    data : tvm.Tensor
+        4-D with shape [batch, in_height, in_width, in_channel]
+
+    grid : tvm.Tensor
+        4-D with shape [batch, out_height, out_width, 2]
+
+    method : str
+        The interpolation method "nearest", "bilinear", "bicubic" are supported.
+
+    padding_mode : str
+        The padding mode for outside grid values, "zeros", "border", "reflection" are supported.
+
+    align_corners: bool
+        Geometrically, we consider the pixels of the input as squares rather than points.
+        If set to "True", the extrema ("-1" and "1") are considered as referring
+        to the center points of the input corner pixels. If set to "False", they
+        are instead considered as referring to the corner points of the input corner
+        pixels, making the sampling more resolution agnostic.
+
+    Returns
+    -------
+    Output : tvm.Tensor
+        4-D with shape [batch, out_height, out_width, in_channel]
+    """
+
+    batch, in_height, in_width, in_channel = data.shape
+    out_height, out_width = grid.shape[1:3]
+
+    def _get_pixel_value(n, h, w, c):
+        return te.if_then_else(
+            te.all(h >= 0, w >= 0, h < in_height, w < in_width),
+            data[n, h, w, c],
+            tir.const(0.0, dtype=data.dtype),
+        )
+
+    def _unnormalize(h, w):
+        if align_corners:
+            y = (h + 1) * (in_height - 1) / 2
+            x = (w + 1) * (in_width - 1) / 2
+        else:
+            y = -0.5 + (h + 1) * in_height / 2
+            x = -0.5 + (w + 1) * in_width / 2
+        return (y, x)
+
+    def _clip_coordinates(x, size):
+        return te.min(te.max(x, 0), size - 1)
+
+    def _compute_source_index(n, h, w):
+        y = grid[n, h, w, 1]
+        x = grid[n, h, w, 0]
+        y, x = _unnormalize(y, x)
+
+        if padding_mode == "reflection":
+            y = _reflect_coordinates(y, in_height)
+            x = _reflect_coordinates(x, in_width)
+            y = _clip_coordinates(y, in_height)
+            x = _clip_coordinates(x, in_width)
+        elif padding_mode == "border":
+            y = _clip_coordinates(y, in_height)
+            x = _clip_coordinates(x, in_width)
+
+        return (y, x)
+
+    def _reflect_coordinates(x, size):
+        def __refelection(x, size, corner_start):
+            def __reflect(index, size, corner_start):
+                index_align_corner = te.abs(corner_start - index)
+                size_times = te.truncdiv(index_align_corner.astype("int32"), size).astype("int32")
+                t = tir.Mod(size_times, 2)
+                extra = index_align_corner - size_times * size
+                return tir.if_then_else(
+                    tir.EQ(t, 0), extra + corner_start, size - extra + corner_start
+                )
+
+            return tir.if_then_else(
+                tir.all(x >= corner_start, x <= size + corner_start),
+                x,
+                __reflect(x, size, corner_start),
+            )
+
+        if align_corners:
+            new_x = __refelection(x, size - 1, 0)
+        else:
+            new_x = __refelection(x, size, -0.5)
+        return new_x
+
+    def _bilinear_sample(n, h, w, c):
+        y, x = _compute_source_index(n, h, w)
+        y0 = te.floor(y).astype("int32")
+        x0 = te.floor(x).astype("int32")
+        y1 = y0 + tir.const(1, "int32")
+        x1 = x0 + tir.const(1, "int32")
+
+        return (
+            _get_pixel_value(n, y0, x0, c) * (1.0 - (y - y0)) * (1.0 - (x - x0))
+            + _get_pixel_value(n, y0, x1, c) * (1.0 - (y - y0)) * (x - x0)
+            + _get_pixel_value(n, y1, x0, c) * (y - y0) * (1.0 - (x - x0))
+            + _get_pixel_value(n, y1, x1, c) * (y - y0) * (x - x0)
+        )
+
+    def _nearest_sample(n, h, w, c):
+        y, x = _compute_source_index(n, h, w)
+        y_new = te.nearbyint(y).astype("int32")
+        x_new = te.nearbyint(x).astype("int32")
+
+        return _get_pixel_value(n, y_new, x_new, c)
+
+    def _bicubic_sample(n, h, w, c):
+        A = -0.75  # -0.75 is used in pytorch, it maybe different in other frameworks
+
+        def cubic_weight_1(fraction):
+            return ((A + 2) * fraction - (A + 3)) * fraction * fraction + 1
+
+        def cubic_weight_2(fraction):
+            return ((A * fraction - 5 * A) * fraction + 8 * A) * fraction - 4 * A
+
+        def cubic_interp_1d(pixel_0, pixel_1, pixel_2, pixel_3, fraction):
+            weights = [0] * 4
+            weights[0] = cubic_weight_2(fraction + 1)
+            weights[1] = cubic_weight_1(fraction)
+            weights[2] = cubic_weight_1(1 - fraction)
+            weights[3] = cubic_weight_2(2 - fraction)
+            return (
+                pixel_0 * weights[0]
+                + pixel_1 * weights[1]
+                + pixel_2 * weights[2]
+                + pixel_3 * weights[3]
+            )
+
+        y = grid[n, h, w, 1]
+        x = grid[n, h, w, 0]
+        y, x = _unnormalize(y, x)
+        y_floor = te.floor(y).astype("int32")
+        x_floor = te.floor(x).astype("int32")
+        y_fraction = y - y_floor
+        x_fraction = x - x_floor
+
+        coefficients = [0] * 4
+
+        for i in range(4):
+            y_ = y_floor - 1 + i
+            x_0 = x_floor - 1
+            x_1 = x_floor + 0
+            x_2 = x_floor + 1
+            x_3 = x_floor + 2
+
+            if padding_mode == "border":
+                y_ = _clip_coordinates(y_, in_height).astype("int32")
+                x_0 = _clip_coordinates(x_0, in_width).astype("int32")
+                x_1 = _clip_coordinates(x_1, in_width).astype("int32")
+                x_2 = _clip_coordinates(x_2, in_width).astype("int32")
+                x_3 = _clip_coordinates(x_3, in_width).astype("int32")
+
+            elif padding_mode == "reflection":
+                y_ = _reflect_coordinates(y_, in_height)
+                x_0 = _reflect_coordinates(x_0, in_width)
+                x_1 = _reflect_coordinates(x_1, in_width)
+                x_2 = _reflect_coordinates(x_2, in_width)
+                x_3 = _reflect_coordinates(x_3, in_width)
+
+                y_ = _clip_coordinates(y_, in_height).astype("int32")
+                x_0 = _clip_coordinates(x_0, in_width).astype("int32")
+                x_1 = _clip_coordinates(x_1, in_width).astype("int32")
+                x_2 = _clip_coordinates(x_2, in_width).astype("int32")
+                x_3 = _clip_coordinates(x_3, in_width).astype("int32")
+
+            coefficients[i] = cubic_interp_1d(
+                _get_pixel_value(n, y_, x_0, c),
+                _get_pixel_value(n, y_, x_1, c),
+                _get_pixel_value(n, y_, x_2, c),
+                _get_pixel_value(n, y_, x_3, c),
+                x_fraction,
+            )
+
+        return cubic_interp_1d(
+            coefficients[0], coefficients[1], coefficients[2], coefficients[3], y_fraction
+        )
+
+    if method == "bilinear":
+        interpolation = _bilinear_sample
+    elif method == "nearest":
+        interpolation = _nearest_sample
+    else:  # method == "bicubic"
+        interpolation = _bicubic_sample
+
+    return te.compute((batch, out_height, out_width, in_channel), interpolation, tag="grid_sample")
 
 
 def _grid_sample_3d(

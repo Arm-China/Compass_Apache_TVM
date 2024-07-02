@@ -44,11 +44,11 @@ def run_alexnet(model, runtime):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_alexnet(runtime):
     run_alexnet("alexnet", runtime)
 
 
 if __name__ == "__main__":
-    test_alexnet("simulator")
+    test_alexnet("sim")

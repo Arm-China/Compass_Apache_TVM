@@ -900,5 +900,53 @@ def test_variable_with_cpp_address():
     assert re.match(expected_regex, script)
 
 
+def test_return_statement():
+    from tvm.script import tir as T
+
+    @T.prim_func
+    def func():
+        T.evaluate(T.ret(5))
+
+    expected_output = """
+# from tvm.script import tir as T
+
+@T.prim_func
+def func():
+    return 5
+    """
+    _assert_print(func, expected_output)
+
+
+@pytest.mark.parametrize("dtype", ["e4m3_float8", "e5m2_float8"])
+def test_float8(dtype):
+    from tvm.script import tir as T
+
+    def get_func(dtype):
+        if dtype == "e4m3_float8":
+
+            @T.prim_func
+            def func():
+                T.evaluate(T.e4m3_float8(0.0))
+
+            return func
+        elif dtype == "e5m2_float8":
+
+            @T.prim_func
+            def func():
+                T.evaluate(T.e5m2_float8(0.0))
+
+            return func
+
+    expected_output = f"""
+# from tvm.script import tir as T
+
+@T.prim_func
+def func():
+    T.evaluate(T.{dtype}(0))
+    """
+    func = get_func(dtype)
+    _assert_print(func, expected_output)
+
+
 if __name__ == "__main__":
     tvm.testing.main()

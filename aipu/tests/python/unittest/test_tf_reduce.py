@@ -32,23 +32,23 @@ def reduce(inp, method, axis, keepdims):
 
 def reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v):
     if aipu_testing.skip_case(input_shapes, axis_v):
-        pytest.xfail("axis out of input shape")
+        pytest.skip("axis out of input shape")
 
     if method_v == "Prod":
         if axis_v is None or isinstance(axis_v, list):
-            pytest.xfail("Not Supported in TVM Frontend.")
+            pytest.skip("Not Supported in TVM Frontend.")
 
     op_type = f"Reduce{method_v}"
     dim_info = f"{len(input_shapes[0])}d"
 
     if not keepdims_v:
         if axis_v is None:
-            pytest.xfail("OutOfSpec")
+            pytest.skip("OutOfSpec")
         else:
             if isinstance(axis_v, list) and len(axis_v) == len(input_shapes[0]):
-                pytest.xfail("OutOfSpec")
+                pytest.skip("OutOfSpec")
             elif dim_info == "1d":
-                pytest.xfail("OutOfSpec")
+                pytest.skip("OutOfSpec")
 
     model_name = aipu_testing.gen_model_name(op_type, dim_info, axis_v, keepdims_v, "float32")
 

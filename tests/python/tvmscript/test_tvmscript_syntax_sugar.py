@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=missing-function-docstring,missing-module-docstring,invalid-name,pointless-string-statement
+#
+# This file has been modified by Arm China team.
+#
 import sys
 from typing import Any
 
@@ -488,6 +491,20 @@ def test_foldable_boolean_in_assert():
     def implicit():
         assert 0 == 1, "Message"
         T.evaluate(0)
+
+    assert_structural_equal_ignore_global_symbol(implicit, explicit)
+
+
+def test_return_statement():
+    """A python `return` statement uses `T.ret`"""
+
+    @T.prim_func
+    def explicit() -> T.int32:
+        T.evaluate(T.ret(5))
+
+    @T.prim_func
+    def implicit() -> T.int32:
+        return 5
 
     assert_structural_equal_ignore_global_symbol(implicit, explicit)
 

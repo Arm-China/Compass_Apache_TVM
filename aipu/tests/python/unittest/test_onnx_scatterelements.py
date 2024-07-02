@@ -18,10 +18,10 @@ def test_scatterelements(input_shapes, axis, reduction, opset_id):
     input_shapes = copy.deepcopy(input_shapes)
 
     if aipu_testing.skip_case(input_shapes, axis, default_axis=0):
-        pytest.xfail("axis out of shapes")
+        pytest.skip("axis out of shapes")
 
     if opset_id < 16 and reduction not in ["default", "none"]:
-        pytest.xfail()
+        pytest.skip()
 
     op_type = "ScatterElements"
     input_rank = len(input_shapes[0])

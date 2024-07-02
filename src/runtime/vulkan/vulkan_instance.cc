@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include "vulkan_instance.h"
 
@@ -108,7 +111,8 @@ VulkanInstance::VulkanInstance() {
     inst_info.enabledExtensionCount = enabled_extensions_.size();
     inst_info.ppEnabledExtensionNames = enabled_extensions_.data();
 
-    VULKAN_CALL(vkCreateInstance(&inst_info, nullptr, &instance_));
+    VkResult ret = vkCreateInstance(&inst_info, nullptr, &instance_);
+    if (ret != VK_ERROR_INCOMPATIBLE_DRIVER) VULKAN_CHECK_ERROR(ret);
   }
 }
 
@@ -140,6 +144,7 @@ bool VulkanInstance::HasExtension(const char* query) const {
 }
 
 std::vector<VkPhysicalDevice> VulkanInstance::GetPhysicalDevices() const {
+  if (instance_ == nullptr) return {};
   uint32_t device_count = 0;
   VULKAN_CALL(vkEnumeratePhysicalDevices(instance_, &device_count, nullptr));
   std::vector<VkPhysicalDevice> devices(device_count);

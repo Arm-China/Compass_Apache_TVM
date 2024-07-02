@@ -13,6 +13,7 @@ import absl.logging
 __all__ = [
     "set_logger",
     "DEBUG",
+    "DEBUG_ONCE",
     "INFO",
     "WARN",
     "ERROR",
@@ -63,23 +64,30 @@ class AIPULogger:
         self.logger.addHandler(handler)
 
 
-LOGGER = AIPULogger()
+_LOGGER = AIPULogger()
+_ONCE_LOGS = []
 
 
 def DEBUG(msg, *args, **kwargs):
-    LOGGER.logger.debug(msg, *args, **kwargs)
+    _LOGGER.logger.debug(msg, *args, **kwargs)
+
+
+def DEBUG_ONCE(msg):
+    if msg not in _ONCE_LOGS:
+        _LOGGER.logger.debug(msg)
+        _ONCE_LOGS.append(msg)
 
 
 def INFO(msg, *args, **kwargs):
-    LOGGER.logger.info(msg, *args, **kwargs)
+    _LOGGER.logger.info(msg, *args, **kwargs)
 
 
 def WARN(msg, *args, **kwargs):
-    LOGGER.logger.warning(msg, *args, **kwargs)
+    _LOGGER.logger.warning(msg, *args, **kwargs)
 
 
 def ERROR(msg, *args, **kwargs):
-    LOGGER.logger.error(msg, *args, **kwargs)
+    _LOGGER.logger.error(msg, *args, **kwargs)
 
 
 def timer(func):
@@ -107,6 +115,6 @@ def set_logger(log_file=None, log_level=None):
     if log_level is None:
         log_level = os.environ.get("AIPU_TVM_LOG_LEVEL", None)
     if log_file:
-        LOGGER.set_log_file(log_file)
+        _LOGGER.set_log_file(log_file)
     if log_level:
-        LOGGER.set_log_level(log_level)
+        _LOGGER.set_log_level(log_level)

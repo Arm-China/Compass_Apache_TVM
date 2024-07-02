@@ -56,9 +56,17 @@ Currently there only is 1 partitioning stage, in another words,
 2. Run first time.
 3. Get node index that you want to specify to cpu from snapshoots "***XXX***/partitioning_annotation_graph.txt".
    (***`XXX`*** is the root output directory)
+   Only support the node before a compiler_end op, which means the node index need to be a arg of a compiler end op.
 4. Run again with
     ```
     ...
     deployable = compass.compile(fallback_indices=[id1, id2, ...])
     ...
     ```
+
+**5. How to Use Multi Subgraph Continuous Cosine Similarity Statistical Function.**
+1. Set option `continuous_similarity = True` in Common section or environment variable
+`AIPU_TVM_CONTINUOUS_SIM` just like above.
+2. Run as usual.
+3. Get opt_continuous_similarity.json at compass_output_*/tvmgen_default_aipu_compass_main_*/optimizer and
+find Continuous Cosine Similarity of every single layer.

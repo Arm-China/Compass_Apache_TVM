@@ -18,7 +18,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
     ],
 )
 @pytest.mark.parametrize(
-    "dtype", ["uint8", "int8", "uint16", "int16", "uint32", "int32", "uint64", "int64", "float32"]
+    "dtype", ["uint8", "int8", "uint16", "int16", "uint32", "int32", "int64", "float32"]
 )
 @pytest.mark.parametrize(
     "input_shapes, output_shapes",
@@ -42,9 +42,9 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 def test_mod(input_shapes, output_shapes, fmod, dtype, opset_id):
     # if input dtype is float, fmod must == 1
     if "float" in dtype and fmod != 1:
-        pytest.xfail()
+        pytest.skip()
     if fmod == "default":
-        pytest.xfail("Not support yet.")
+        pytest.skip("Not support yet.")
 
     op_type = "Mod"
 

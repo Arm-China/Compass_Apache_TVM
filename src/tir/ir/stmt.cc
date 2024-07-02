@@ -520,7 +520,7 @@ BufferStore::BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices,
                << "`, but RHS's dtype is `" << value.dtype() << "`";
   }
 
-  if (!predicate.defined()) predicate = const_true(value_dtype_lanes);
+  if (!predicate.defined()) predicate = const_true();
 
   ObjectPtr<BufferStoreNode> node = make_object<BufferStoreNode>();
   node->buffer = std::move(buffer);

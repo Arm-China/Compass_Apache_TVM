@@ -519,6 +519,76 @@ def vector_set_element(var, idx, value):
     return call_intrin("void", "tir.vector_set_element", var, idx, value)
 
 
+def const_pred(bool_arr, span=None):
+    """Construct a expression which represent a constant predicate.
+
+    Parameters
+    ----------
+    bool_arr : Union[List[bool], Tuple[bool]]
+        The concrete values of the constant predicate.
+
+    span : Optional[Span]
+        The location of this operation in the source.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return _ffi_api.const_pred(bool_arr, span)
+
+
+def low_true_pred(n, lanes, span=None):
+    """Construct a expression which will generate a predicate that the lowest n
+    items are True, and others are False.
+
+    Parameters
+    ----------
+    n : Union[PrimExpr, int]
+        The lowest item count will be set to True.
+
+    lanes : int
+        The total item count of the predicate.
+
+    span : Optional[Span]
+        The location of this operation in the source.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return _ffi_api.low_true_pred(n, lanes, span)
+
+
+def pointer(dtype, scope, base, offset):
+    """Create a expression that represent pointer.
+
+    Parameters
+    ----------
+    dtype : Union[str, DataType]
+        The data type of the data that the pointer point to.
+
+    scope: str
+        The memory space of the data that the pointer point to.
+
+    base : Union[Var, Pointer]
+        The expression that represents a base memory address, its data type can
+        be different with the pointer.
+
+    offset : PrimExpr
+        The expression that represents a offset from the base memory address, in
+        unit of data type of the pointer, the concrete address that the pointer
+        represents is ((dtype*)base + offset).
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("handle", "tir.pointer", type_annotation(dtype), scope, base, offset)
+
+
 def call_tir(global_var: tvm.ir.GlobalVar, *args):
     """Performs a call into another PrimFunc in the same IRModule
 
@@ -850,34 +920,6 @@ def tvm_access_ptr(ptype, data, offset, extent, rw_mask):
         The call expression.
     """
     return call_intrin("handle", "tir.tvm_access_ptr", ptype, data, offset, extent, rw_mask)
-
-
-def pointer(dtype, scope, begin, offset):
-    """Create a expression that represent pointer.
-
-    Parameters
-    ----------
-    dtype : Union[str, DataType]
-        The data type of the data that the pointer point to.
-
-    scope: str
-        The storage scope of the data that the pointer point to.
-
-    begin : PrimExpr
-        The expression that represents a base memory address, its data type can
-        be different with the pointer.
-
-    offset : PrimExpr
-        The expression that represents a offset from the base memory address, in
-        unit of data type of the pointer, the concrete address that the pointer
-        represents is ((dtype*)begin + offset).
-
-    Returns
-    -------
-    call : PrimExpr
-        The call expression.
-    """
-    return call_intrin("handle", "tir.pointer", type_annotation(dtype), scope, begin, offset)
 
 
 def tvm_throw_last_error():

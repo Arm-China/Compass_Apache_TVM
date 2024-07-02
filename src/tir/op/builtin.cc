@@ -132,11 +132,11 @@ TIR_DEFINE_BUILTIN_FUNC(fma)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure))
     .set_attr<TVectorizable>("TVectorizable", true);
 
-TIR_DEFINE_BUILTIN_FUNC(low_true_pred)
-    .set_num_inputs(2)
+TIR_DEFINE_BUILTIN_FUNC(const_pred)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure));
 
-TIR_DEFINE_BUILTIN_FUNC(const_pred)
+TIR_DEFINE_BUILTIN_FUNC(low_true_pred)
+    .set_num_inputs(1)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kPure));
 
 TIR_DEFINE_BUILTIN_FUNC(call_extern)

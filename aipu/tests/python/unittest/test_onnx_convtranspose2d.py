@@ -56,13 +56,13 @@ def test_convtranspose(
     opset_id,
 ):
     if auto_pad_v in ["SAME_UPPER", "SAME_LOWER", "VALID"] and isinstance(pads_v, list):
-        pytest.xfail("Can not set pads and auto_pad simultaneously")
+        pytest.skip("Can not set pads and auto_pad simultaneously")
 
     if strides_v != "default" and isinstance(dilations_v, list):
-        pytest.xfail("strides = 1 if dilations")
+        pytest.skip("strides = 1 if dilations")
 
     if auto_pad_v in ["SAME_UPPER", "SAME_LOWER"] and isinstance(dilations_v, list):
-        pytest.xfail("Dilation NOT support in AutoPad: SAME")
+        pytest.skip("Dilation NOT support in AutoPad: SAME")
 
     op_type = "ConvTranspose"
     alias_type = "ConvTranspose2D"

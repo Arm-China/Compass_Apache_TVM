@@ -14,6 +14,7 @@ from tvm.relay.dataflow_pattern import (
     wildcard,
     rewrite,
 )
+from tvm.relay.op.contrib.aipu_compass.op import divide_mod
 from tvm.relay.op.dyn import _make as _dyn_make
 
 
@@ -858,6 +859,28 @@ class ChannelShuffleMerger(DFPatternCallback):
         return relay.op.contrib.aipu_compass.channel_shuffle(reshape0.args[0], group, splits)
 
 
+@RewriteDecorator
+class RewriteDivide(DFPatternCallback):
+    """
+    divide(int) ===> divide_mod
+    Avoid quantization.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        divide = is_op("divide")(wildcard(), wildcard())
+        self.pattern = divide
+
+    def callback(self, pre, post, node_map):
+        divide = node_map[self.pattern][0]
+
+        dtype = divide.checked_type.dtype
+        if not str.startswith(dtype, "float"):
+            div_mod = divide_mod(divide.args[0], divide.args[1])
+            return relay.TupleGetItem(div_mod, 0)
+        return post
+
+
 @tvm.ir.transform.module_pass(opt_level=0)
 class HintPatternRewrite:
     """
@@ -893,6 +916,7 @@ class HintPatternRewrite:
             RemoveRequantizeAfterQuantize(before_passes=infer_type),
             QnnConvertReduceMeanWithInconsistentIOScaleZp(before_passes=infer_type),
             ChannelShuffleMerger(),
+            RewriteDivide(before_passes=infer_type),
         ]
         for pattern in patterns:
             update_mod = pattern(update_mod)

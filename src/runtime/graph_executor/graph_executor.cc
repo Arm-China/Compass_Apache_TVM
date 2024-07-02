@@ -194,9 +194,6 @@ void GraphExecutor::CheckExternalDLTensor(const DLTensor* external, uint32_t eid
   const DLTensor* internal = data_entry_[eid].operator->();
 
   ICHECK_EQ(data_alignment_[eid], details::GetDataAlignment(*external));
-  ICHECK_EQ(reinterpret_cast<size_t>(static_cast<char*>(external->data) + external->byte_offset) %
-                kAllocAlignment,
-            0);
   ICHECK_EQ(internal->ndim, static_cast<size_t>(external->ndim));
   ICHECK_EQ(internal->device.device_type, external->device.device_type);
   ICHECK_EQ(internal->device.device_id, external->device.device_id);

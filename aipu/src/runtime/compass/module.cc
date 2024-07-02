@@ -65,7 +65,7 @@ class AipuCompassModuleNode : public ModuleNode {
 void AipuCompassModuleNode::Init() {
   std::string work_dir = AipuCompassBasicConfig::Global().GetRuntimeWorkDir(func_name);
 
-  aipu_driver_.Init(aipu_bin, work_dir, target, umd_dtcm_sz);
+  aipu_driver_.Init(aipu_bin, work_dir, target, umd_dtcm_sz, func_name);
 
   in_params_ = aipu_driver_.GetParamInfo(true);
   out_params_ = aipu_driver_.GetParamInfo(false);

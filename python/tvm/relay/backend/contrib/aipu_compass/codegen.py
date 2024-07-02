@@ -422,14 +422,18 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         output_scales = []
         output_zps = []
         if isinstance(call.checked_type, relay.TupleType):
-            for out in self._tuple2tgn[call]:
-                output_names.append(self._get_or_alloc_var_name(out))
-                qnn_params = self._get_qnn_params(out, is_to_list=True)
-                if qnn_params:
-                    scale, zero_point = qnn_params
-                    output_scales.append(scale)
-                    output_zps.append(zero_point)
-            for field in call.checked_type.fields:
+            tgn_dict = {i.index: i for i in self._tuple2tgn[call]}
+            for i, field in enumerate(call.checked_type.fields):
+                if i in tgn_dict.keys():
+                    out = tgn_dict[i]
+                    output_names.append(self._get_or_alloc_var_name(out))
+                    qnn_params = self._get_qnn_params(out, is_to_list=True)
+                    if qnn_params:
+                        scale, zero_point = qnn_params
+                        output_scales.append(scale)
+                        output_zps.append(zero_point)
+                else:
+                    output_names.append("useless_out_" + str(self._get_layer_idx()) + str(i))
                 output_shapes.append(field.shape)
                 output_types.append(field.dtype)
         else:
@@ -441,10 +445,6 @@ class CodeGenAipuCompass(relay.ExprFunctor):
                 scale, zero_point = qnn_params
                 output_scales.append(scale)
                 output_zps.append(zero_point)
-
-        useless_out = len(output_shapes) - len(output_names)
-        for i in range(useless_out):
-            output_names.append("useless_out_" + str(self._get_layer_idx()) + str(i))
 
         layer_idx = self._get_layer_idx()
         input_types = [inp_type if inp_type != "bool" else "uint8" for inp_type in input_types]
@@ -705,6 +705,8 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             self._gen_log_softmax(call)
         elif _is_composite_op(call.op, "aipu_compass.InstanceNorm"):
             self._gen_instancenorm(call)
+        elif _is_composite_op(call.op, "aipu_compass.L2Norm"):
+            self._gen_l2norm(call)
         elif (
             call.op == relay.op.get("add")
             or call.op == relay.op.get("subtract")
@@ -902,6 +904,8 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             self._gen_fake_quant_min_max_vars(call)
         elif call.op == relay.op.get("contrib.aipu_compass.channel_shuffle"):
             self._gen_channel_shuffle(call)
+        elif call.op == relay.op.get("contrib.aipu_compass.divide_mod"):
+            self._gen_divide_mod(call)
         elif call.op == relay.op.get("nn.mirror_pad"):
             self._gen_mirror_pad(call)
         elif _is_composite_op(call.op, "aipu_compass.QnnMirrorPad"):
@@ -1841,6 +1845,10 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         self._gen_basic_layer_items("Div", divide.args, divide)
         self._ir_text += textwrap.dedent("\n")
 
+    def _gen_divide_mod(self, divide_mod):
+        self._gen_basic_layer_items("DivMod", divide_mod.args, divide_mod)
+        self._ir_text += textwrap.dedent("\n")
+
     def _gen_mod(self, mod):
         self._gen_basic_layer_items("Mod", mod.args, mod)
         # The relay equivalent of np.fmod is relay.mod, so set fmod as true
@@ -2077,6 +2085,11 @@ class CodeGenAipuCompass(relay.ExprFunctor):
                 add_const = nd.array(add_const)
                 add_const = relay.Constant(add_const)
                 add_const._checked_type_ = ir.TensorType([c])
+                if func.body.op.name == "divide":
+                    mul_const_shape = mul_const.checked_type.shape
+                    np_mul_const = mul_const.data.numpy()
+                    mul_const = relay.const(1 / np_mul_const)
+                    mul_const._checked_type_ = ir.TensorType(mul_const_shape)
 
         add_const_shape = add_const.checked_type.shape
         mul_const_shape = mul_const.checked_type.shape
@@ -2143,6 +2156,28 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             biases_size={bias_nbytes}
             biases_shape={_verify_shape(bias_shape)}
             epsilon={epsilon}
+            """
+        )
+
+    def _gen_l2norm(self, l2norm):
+        func = l2norm.op
+        divide = func.body
+        inp, add_or_maximum = divide.args
+        sqrt, eps = unpack_commutative_args(add_or_maximum)
+        reduce_sum = sqrt.args[0]
+
+        dim = len(inp.checked_type.shape)
+        axis = reduce_sum.attrs.axis
+        axis = [x if x >= 0 else x + dim for x in axis]
+        epsilon = eps.data.numpy()
+        assert epsilon.size == 1
+
+        self._gen_basic_layer_items("Normalization", func.params, l2norm)
+        self._ir_text += textwrap.dedent(
+            f"""
+            axis={axis}
+            method=L2
+            epsilon={epsilon.reshape([])}
             """
         )
 

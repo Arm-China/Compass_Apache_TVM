@@ -24,6 +24,9 @@
 /*
  * This file has been modified by Arm China team.
  */
+
+#include "../../tir/transforms/simplify.h"
+
 #include <tvm/arith/analyzer.h>
 #include <tvm/runtime/registry.h>
 #include <tvm/tir/analysis.h>
@@ -350,6 +353,11 @@ class StmtSimplifier : public IRMutatorWithAnalyzer {
 }  // namespace arith
 
 namespace tir {
+
+PrimFunc Simplify(PrimFunc func, arith::Analyzer* analyzer) {
+  return arith::StmtSimplifier::Apply(std::move(func), analyzer);
+}
+
 namespace transform {
 
 Pass Simplify() {

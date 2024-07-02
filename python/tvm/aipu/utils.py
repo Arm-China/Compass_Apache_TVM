@@ -2,12 +2,76 @@
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Common AIPU utilities."""
 import os
+import re
 import operator
 import functools
+from subprocess import run, STDOUT
 import numpy as np
 import tvm
 from .. import autotvm, contrib, rpc, tir, DataType
 from .logger import INFO
+
+
+_EXE_NAME2TOOL_NAME = {
+    "aipuopt": "Optimizer",
+    "aipugb": "GBuilder",
+    "aipugsim": "GSim",
+    "aipurun": "AIPURun",
+    "aipu_profiler": "Profiler",
+}
+
+
+def check_call_aipu_tool(cmd, work_dir=os.getcwd()):
+    """Call tools of AIPUBuilder through sub process and check the return code."""
+    work_dir = os.path.abspath(work_dir)
+    old_cwd = os.getcwd()
+    if work_dir != old_cwd:
+        os.makedirs(work_dir, exist_ok=True)
+        os.chdir(work_dir)
+
+    exe_name = cmd[0]
+    log_file = f"{work_dir}/{exe_name}.log"
+    with open(log_file, "w", encoding="utf-8") as f:
+        f.write(f"Command Line: {' '.join(cmd)}\n")
+        f.flush()
+        env = None
+        if exe_name == "aipuopt":
+            # Workaround for the slow OPT on Python3.8.5 CPU environment.
+            env = dict(os.environ)
+            env["OMP_NUM_THREADS"] = "4"
+
+        ret_code = run(
+            cmd,
+            stdout=f,
+            stderr=STDOUT,
+            check=False,
+            encoding="utf-8",
+            env=env,
+            text=True,
+        ).returncode
+
+    count_errors = 0
+    with open(log_file, "r", encoding="utf-8") as f:
+        error_pattern = re.compile(r"(?<=Total errors: )\d+")
+        for line in f.readlines():
+            digit_list = error_pattern.findall(line)
+            if len(digit_list) == 0:
+                continue
+            for digit in digit_list:
+                if int(digit) > 0:
+                    count_errors = int(digit)
+                    break
+            if count_errors != 0:
+                break
+
+    if old_cwd != os.getcwd():
+        os.chdir(old_cwd)
+
+    if ret_code != 0 or count_errors != 0:
+        raise RuntimeError(
+            f"Error happened when executing the AIPU {_EXE_NAME2TOOL_NAME[exe_name]}, for more "
+            f'details, please refer to the log file "{log_file}".'
+        )
 
 
 def abspath(path, base_dir=None):
@@ -42,7 +106,36 @@ def abspath(path, base_dir=None):
 def get_rpc_session(
     session_timeout=600, rpc_key=None, tracker_host=None, tracker_port=None, priority=1
 ):
-    """Connect to the RPC tracker and get a RPC session with the RPC key."""
+    """Connect to the RPC tracker and get a RPC session with the RPC key.
+
+    Parameters
+    ----------
+    session_timeout : Optional[float]
+        The duration of the session, allows server to kill
+        the connection when duration is longer than this value.
+        When duration is zero, it means the request must always be kept alive.
+
+    rpc_key : Optional[str]
+        The type key of the device(default=None).
+        If rpc_key = "None", get it from env "AIPU_TVM_RPC_KEY".
+
+    tracker_host : Optional[str]
+        The hostname or IP address of RPC tracker(default = None).
+        If tracker_host = "None", get it from env "AIPU_TVM_RPC_TRACKER_IP".
+
+    tracker_port: Optional[int, str]
+        The port of PRC tracker(default = None)
+        If tracker_port = "None", get it from env "AIPU_TVM_RPC_TRACKER_PORT".
+
+    priority : Optional[int]
+        The priority of the request(default=1).
+        If priority = "None", get it from env "AIPU_TVM_RPC_PRIORITY".
+
+    Returns
+    -------
+    sess : tvm.rpc.RPCSession
+        The RPC session that is already connected to the RPC server.
+    """
     # Override logic of RPC key is special, function argument has higher priority.
     rpc_key = rpc_key or os.getenv("AIPU_TVM_RPC_KEY")
     assert rpc_key, 'Set RPC key through arg or env "AIPU_TVM_RPC_KEY".'
@@ -107,13 +200,15 @@ def vec_type(dtype):
     return scalar_dtype.with_lanes(256 // scalar_dtype.bits)
 
 
+_DTYPE2RANGE = {"bool": (0, 1)}
+for _dtype in ("uint8", "int8", "uint16", "int16", "uint32", "int32", "float16", "float32"):
+    _range = (np.finfo if DataType(_dtype).is_float else np.iinfo)(_dtype)
+    _DTYPE2RANGE[_dtype] = (_range.min, _range.max)
+
+
 def get_range(dtype):
     """Get the minimum and maximum value of the given data type."""
-    dtype = DataType(dtype)
-    np_info = np.finfo if dtype.is_float else np.iinfo
-    np_dtype = getattr(np, dtype.element_of)
-    ret = np_info(np_dtype)
-    return np_dtype(ret.min), np_dtype(ret.max)
+    return _DTYPE2RANGE[DataType(dtype).element_of]
 
 
 # Don't set value here, set it through environment variable "AIPU_TVM_RANDOM_SEED".
@@ -125,19 +220,19 @@ def rand(shape, dtype, low=None, high=None, enable_corner_values=True):
 
     Parameters
     ----------
-    shape : int or tuple of int
+    shape : Union[int,Tuple[int],List[int]]
         The element number will rand
 
     dtype : str
         The data type
 
-    low : int or float, optional
+    low : Optional[int,float]
         The maximum threshold for rand range, default is None
 
-    high : int or float, optional
+    high : Optional[int,float]
         The minimum threshold for rand range, default is None
 
-    enable_corner_values: bool
+    enable_corner_values: Optional[bool]
         Whether the corner values are forced included or not, default is True. Note:
         1. The corner values contains: low or dtype minimum value, high or dtype maximum value,
         zero value when zero in random range;
@@ -147,8 +242,16 @@ def rand(shape, dtype, low=None, high=None, enable_corner_values=True):
 
     Returns
     -------
-    out: float or int or numpy.ndarray
+    out: Union[float,int,numpy.ndarray]
         Rand values, scalar when shape is 1 or numpy.ndarray when shape is tuple of int
+
+    Examples
+    --------
+    .. code-block:: python
+
+        a = rand(100,"int8")
+        b = rand((4,16), "float16", low=-100, high=100)
+
     """
     global _RANDOM_SEED
     if _RANDOM_SEED is None:
@@ -173,8 +276,10 @@ def rand(shape, dtype, low=None, high=None, enable_corner_values=True):
 
     minv = np_dtype_info.min if low is None else low
     maxv = np_dtype_info.max if high is None else high - max_eps
-    assert minv < maxv
+    if minv == maxv:
+        return getattr(np, dtype)(minv) if shape == 1 else np.full(shape, minv, dtype=dtype)
 
+    assert minv < maxv
     out = rand_func(minv, maxv)
 
     corner_values = (minv, 0, maxv) if minv < 0 < maxv else (minv, maxv)

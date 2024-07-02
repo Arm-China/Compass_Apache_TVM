@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 import pytest
 from tvm import tir
@@ -120,10 +123,8 @@ def test_exception():
 
 def test_eq_ops():
     a = tir.IntImm("int8", 1)
-    with pytest.raises(ValueError):
-        assert a != None
-    with pytest.raises(ValueError):
-        assert not a == None
+    assert a != None
+    assert not a == None
     b = tir.StringImm("abc")
     assert b != None
     assert not b == None

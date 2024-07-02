@@ -28,6 +28,7 @@ from tvm.ir import GlobalVar, PrimType, PointerType
 from tvm.tir import Buffer, IterVar, PrimExpr, Var
 from tvm.tir import Let, StringImm, Pointer, convert_to_prim_expr
 from tvm.tir import reassign, vector_set_element
+from tvm.tir.buffer import check_indice_int_dtype
 
 from ...ir_builder import ir as I
 from ...ir_builder import tir as T
@@ -187,8 +188,8 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
     elif isinstance(value, Pointer):
         # The object created on the right side of the equal sign has no name,
         # so bind a name to it, please refer to Interface "S.alloc".
-        if isinstance(value.begin, Var) and value.begin.name == "":
-            IRBuilder.name(f"{var_name}_buf", value.begin)
+        if isinstance(value.base, Var) and value.base.name == "":
+            IRBuilder.name(f"{var_name}_buf", value.base)
 
         defined_vars = _get_defined_vars_in_prim_func(self.var_table)
         if var_name in defined_vars:
@@ -199,11 +200,11 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
                     f'Type mismatch assignment: "{ptr.dtype}" vs. "{value.dtype}", need to do '
                     "the explicit type conversion for the right hand side(i.e., new value).",
                 )
-            T.evaluate(reassign(ptr.begin, value))
+            T.evaluate(reassign(ptr.base, value))
             return ptr
 
         ptr = Pointer(value.dtype, value.scope, name=var_name)
-        frame = T.LetStmt(value, var=ptr.begin)
+        frame = T.LetStmt(value, var=ptr.base)
         frame.add_callback(partial(frame.__exit__, None, None, None))
         frame.__enter__()
         return ptr
@@ -272,11 +273,12 @@ def visit_for(self: Parser, node: doc.For) -> None:
         )
     with self.var_table.with_frame():
         with for_frame as iters:
+            is_aipu = tvm.target.AipuInfo.current() is not None
             iter_vars = node.target.elts if isinstance(node.target, doc.Tuple) else (node.target,)
             for var in iter_vars:
                 if isinstance(var, doc.Starred):
                     var = var.value
-                if var.id in self.var_table.get():
+                if is_aipu and var.id in self.var_table.get():
                     self.report_error(
                         node.target,
                         f"The iter var {var.id} of the for loop has been defined in outside scope, "
@@ -370,7 +372,7 @@ def visit_assign(self: Parser, node: doc.Assign) -> None:
                 if isinstance(p, doc.Slice):
                     check_slices.append(p)
         for s in check_slices:
-            if not s.step and s.upper and s.lower:
+            if not s.step and s.upper:
                 s.step = doc.Constant(
                     1,
                     None,
@@ -390,6 +392,12 @@ def visit_assign(self: Parser, node: doc.Assign) -> None:
                 indices.append(self.eval_expr(index))
         else:
             indices = self.eval_expr(lhs.slice)
+
+        if not check_indice_int_dtype(indices):
+            self.report_error(
+                node,
+                "Indice should be Int dtype. Please explicit cast it into Int dtype.",
+            )
         target = self.eval_expr(lhs.value)
         if isinstance(target, Var):
             T.evaluate(vector_set_element(target, indices, rhs))
@@ -519,8 +527,6 @@ def visit_function_def(self: Parser, node: doc.FunctionDef) -> None:
     self.function_annotations = None
     with self.var_table.with_frame():
         self.var_table.add("range", T.serial)
-        self.var_table.add("max", T.max)
-        self.var_table.add("min", T.min)
         with T.prim_func(is_private=privacy):
             T.func_name(node.name)
             if node.returns is not None:
@@ -599,12 +605,11 @@ def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
     node : doc.Expr
         The doc AST Expr node.
     """
-    if isinstance(node.value, doc.Call):
-        func_str = _get_func_str(node.value.func)
-        if func_str in ("pdb.set_trace", "set_trace", "breakpoint"):
-            return
-        if func_str == "print":
-            self.report_error(node, 'The built-in "print" isn\'t supported, please use "S.printf".')
+    if tvm.target.AipuInfo.current() is not None:
+        if isinstance(node.value, doc.Call):
+            func_str = _get_func_str(node.value.func)
+            if func_str in ("pdb.set_trace", "set_trace", "breakpoint"):
+                return
 
     res = self.eval_expr(node.value)
     if res is None:
@@ -726,12 +731,31 @@ def visit_tvm_declare_function(self: Parser, node: doc.FunctionDef) -> GlobalVar
         The doc AST return node.
     """
 
-    ret_type = None
-    if node.returns is not None:
-        ret_type = self.eval_expr(node.returns)
-        if callable(ret_type):
-            ret_type = PrimType(ret_type().dtype)
+    supplied_annotation = self.function_annotations
+    func_annotation = supplied_annotation.get(node.name, {})
 
-    # Only ret_type is needed for func_signature.
-    func_signature = tvm.tir.PrimFunc([], None, ret_type=ret_type)
+    ret_type = None
+    with self.var_table.with_frame():
+        if node.returns is not None:
+            ret_type = self.eval_expr(node.returns)
+            if callable(ret_type):
+                ret_type = PrimType(ret_type().dtype)
+
+        arg_annotations = []
+        for arg in node.args.args:
+            if arg.annotation is None:
+                self.report_error(arg, "Type annotation required for function parameters.")
+            try:
+                ann = self.eval_expr(arg.annotation)
+                if callable(ann):
+                    ann = ann()
+            except Exception:  # pylint: disable=broad-except
+                ann = func_annotation.get(arg.arg, None)
+                if ann is None:
+                    raise
+
+            IRBuilder.name(arg.arg, ann)
+            arg_annotations.append(ann)
+
+    func_signature = tvm.tir.PrimFunc(arg_annotations, None, ret_type=ret_type)
     return I.decl_function(node.name, func_signature)

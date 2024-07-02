@@ -139,7 +139,7 @@ PrimExpr low_true_pred(PrimExpr n, int lanes, Span span) {
     }
     return const_pred(bool_arr, span);
   }
-  return tir::Call(DataType::Bool(lanes), tir::builtin::low_true_pred(), {n, lanes}, span);
+  return tir::Call(DataType::Bool(lanes), tir::builtin::low_true_pred(), {n}, span);
 }
 
 bool WithinRange(PrimExpr imm, DataType dtype) {
@@ -159,7 +159,7 @@ void TryNarrowImmType(PrimExpr& lhs, PrimExpr& rhs) {
 
   // Only handle the situation that all operands are integers, and one's bits greater than another.
   if (ltype.bits() == rtype.bits()) return;
-  if (!((ltype.is_int() || ltype.is_uint()) && (ltype.is_int() || ltype.is_uint()))) return;
+  if (!((ltype.is_int() || ltype.is_uint()) && (rtype.is_int() || rtype.is_uint()))) return;
 
   if (lhs->IsInstance<IntImmNode>() && !rhs->IsInstance<IntImmNode>() && WithinRange(lhs, rtype)) {
     lhs = cast(rtype, lhs);
@@ -191,11 +191,12 @@ void BroadcastToMatchLanes(PrimExpr& op_a, PrimExpr& op_b) {  // NOLINT(*)
 void BinaryOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {  // NOLINT(*)
   CHECK(lhs.defined()) << "ValueError: `lhs` is null in the binary operator";
   CHECK(rhs.defined()) << "ValueError: `rhs` is null in the binary operator";
-  if (lhs.dtype() == rhs.dtype()) return;
 
   if (Target::Current().defined() && Target::Current()->kind->name == "aipu") {
     TryNarrowImmType(lhs, rhs);
   }
+
+  if (lhs.dtype() == rhs.dtype()) return;
 
   BroadcastToMatchLanes(lhs, rhs);
   BroadcastToMatchLanes(rhs, lhs);
@@ -281,6 +282,41 @@ void BinaryOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {  // NOLINT(*)
   }
 }
 
+void ShiftOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {
+  CHECK(lhs.defined()) << "ValueError: `lhs` is null in the shift operator";
+  CHECK(rhs.defined()) << "ValueError: `rhs` is null in the shift operator";
+
+  if (Target::Current().defined() && Target::Current()->kind->name == "aipu") {
+    TryNarrowImmType(lhs, rhs);
+  }
+
+  if (lhs.dtype() == rhs.dtype()) return;
+
+  BroadcastToMatchLanes(lhs, rhs);
+  BroadcastToMatchLanes(rhs, lhs);
+
+  DataType ltype = lhs.dtype();
+  DataType rtype = rhs.dtype();
+
+  ICHECK(ltype.is_scalable_vector() == rtype.is_scalable_vector())
+      << "Can't match scalable and fixed length vectors";
+
+  bool lanes_match = false;
+
+  if (ltype.is_scalable_vector()) {
+    lanes_match = ltype.vscale_factor() == rtype.vscale_factor();
+  } else {
+    lanes_match = ltype.lanes() == rtype.lanes();
+  }
+
+  ICHECK(lanes_match) << "Cannot match type " << ltype << " vs " << rtype;
+  if (lhs.dtype() == rhs.dtype()) return;
+
+  // All operands already are guaranteed to be integer.
+  rhs = cast(ltype, rhs);
+  return;
+}
+
 PrimExpr ret(PrimExpr value, Span span) {
   return tir::Call(value.dtype(), tir::builtin::ret(), {value}, span);
 }
@@ -315,6 +351,12 @@ PrimExpr max_value(const DataType& dtype, Span span) {
     }
   } else if (dtype.is_bfloat16()) {
     return FloatImm(dtype, std::numeric_limits<float>::max(), span);
+  } else if (dtype.is_float8()) {
+    if (dtype.code() == DataType::TypeCode::kE5M2Float) {
+      return FloatImm(dtype, 57344.0, span);
+    } else if (dtype.code() == DataType::TypeCode::kE4M3Float) {
+      return FloatImm(dtype, 448.0, span);
+    }
   }
   LOG(FATAL) << "Cannot decide max_value for type" << dtype;
 }
@@ -349,6 +391,12 @@ PrimExpr min_value(const DataType& dtype, Span span) {
     }
   } else if (dtype.is_bfloat16()) {
     return FloatImm(dtype, std::numeric_limits<float>::lowest(), span);
+  } else if (dtype.is_float8()) {
+    if (dtype.code() == DataType::TypeCode::kE5M2Float) {
+      return FloatImm(dtype, -57344.0, span);
+    } else if (dtype.code() == DataType::TypeCode::kE4M3Float) {
+      return FloatImm(dtype, -448.0, span);
+    }
   }
   LOG(FATAL) << "Cannot decide min_value for type" << dtype;
 }
@@ -395,7 +443,7 @@ PrimExpr cast(const DataType& t, PrimExpr value, Span span) {
   using tir::FloatImmNode;
   if (value.dtype() == t) return value;
   // const fold IntImm as they are used in index computations
-  if (t.lanes() == 1) {
+  if (t.is_scalar()) {
     try {
       if (const IntImmNode* op = value.as<IntImmNode>()) {
         return make_const(t, op->value, op->span);
@@ -704,7 +752,7 @@ PrimExpr operator>>(PrimExpr a, PrimExpr b) { return right_shift(a, b); }
 PrimExpr right_shift(PrimExpr a, PrimExpr b, Span span) {
   type_check_integer_args(a, b, ">> operator (right shift)");
 
-  BinaryOpMatchTypes(a, b, span);
+  ShiftOpMatchTypes(a, b, span);
   TVM_INDEX_CONST_PROPAGATION({
     const DataType& rtype = a.dtype();
     if (pb)
@@ -747,7 +795,7 @@ PrimExpr narrow_shift_right(PrimExpr a, DataType t, PrimExpr b, PrimExpr s, Prim
 PrimExpr operator<<(PrimExpr a, PrimExpr b) { return left_shift(a, b); }
 PrimExpr left_shift(PrimExpr a, PrimExpr b, Span span) {
   type_check_integer_args(a, b, "<< operator (left shift)");
-  BinaryOpMatchTypes(a, b, span);
+  ShiftOpMatchTypes(a, b, span);
   TVM_INDEX_CONST_PROPAGATION({
     const DataType& rtype = a.dtype();
     if (pb)
@@ -1216,6 +1264,9 @@ TVM_REGISTER_GLOBAL("tir._OpIfThenElse")
 TVM_REGISTER_GLOBAL("tir.const_true").set_body_typed([](DataType t, Span span) {
   return const_true(t.lanes(), span);
 });
+
+TVM_REGISTER_GLOBAL("tir.const_pred").set_body_typed(const_pred);
+TVM_REGISTER_GLOBAL("tir.low_true_pred").set_body_typed(low_true_pred);
 
 PrimExpr fast_erf_float_expr(PrimExpr arg, int bits) {
   auto plus_4 = make_const(DataType::Float(bits), 4.f);

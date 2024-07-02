@@ -21,7 +21,7 @@
 
 from typing import Type
 
-from tvm import tir
+from tvm import tir, target as tgt
 from tvm._ffi.runtime_ctypes import DataType, DataTypeCode
 from tvm.tir import IntImm
 from tvm.tir.expr import FloatImm
@@ -38,6 +38,9 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
         if isinstance(b, bool):
             b = IntImm("bool", b)
         if DataType(a.dtype).lanes > 1 or DataType(b.dtype).lanes > 1:
+            if tgt.AipuInfo.current() is not None:
+                err_msg = "Invalid and operator between vector, use & instead."
+                raise TypeError(err_msg)
             return a & b
         else:
             return tir.And(a, b)
@@ -48,6 +51,9 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
         if isinstance(b, bool):
             b = IntImm("bool", b)
         if DataType(a.dtype).lanes > 1 or DataType(b.dtype).lanes > 1:
+            if tgt.AipuInfo.current() is not None:
+                err_msg = "Invalid or operator between vector, use | instead."
+                raise TypeError(err_msg)
             return a | b
         else:
             return tir.Or(a, b)
@@ -108,22 +114,43 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
 
         return _wrapper
 
+    def _check_compare_operands(a, b):
+        def _get_dtype(x):
+            if isinstance(x, int):
+                return DataType("int32")
+            if isinstance(x, float):
+                return DataType("float32")
+            return DataType(x.dtype)
+
+        a_dtype, b_dtype = _get_dtype(a), _get_dtype(b)
+        if (a_dtype.is_uint and b_dtype.is_int and a_dtype.bits >= b_dtype.bits) or (
+            b_dtype.is_uint and a_dtype.is_int and b_dtype.bits >= a_dtype.bits
+        ):
+            err_msg = "Unsafe unsigned and signed comparison, do the type conversion explicitly."
+            raise TypeError(err_msg)
+
     def _eq(a, b):
+        _check_compare_operands(a, b)
         return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpEQ))
 
     def _ne(a, b):
+        _check_compare_operands(a, b)
         return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpNE))
 
     def _lt(a, b):
+        _check_compare_operands(a, b)
         return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpLT))
 
     def _le(a, b):
+        _check_compare_operands(a, b)
         return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpLE))
 
     def _gt(a, b):
+        _check_compare_operands(a, b)
         return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpGT))
 
     def _ge(a, b):
+        _check_compare_operands(a, b)
         return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpGE))
 
     def r(op: Type, i: int, m: OpMethod):  # pylint: disable=invalid-name

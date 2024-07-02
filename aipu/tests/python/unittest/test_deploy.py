@@ -2,6 +2,7 @@
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 import os
 import numpy as np
+from subprocess import run
 from tvm import contrib
 from tvm.relay.backend.contrib.aipu_compass import AipuCompass, ExecutionEngine
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
@@ -72,10 +73,11 @@ def test_cpp_deploy():
     # get cpp output
     cwd = os.getcwd()
     os.chdir(CURRENT_FILE_DIR + "/cpp/deploy")
-    os.system("mkdir build")
-    os.chdir("build")
-    os.system("cmake .. && make")
-    os.system("./cpp_deploy ../model.so ../input.bin")
+    run(
+        "mkdir build && cd build && cmake .. && make && ./cpp_deploy ../model.so ../input.bin",
+        shell=True,
+        check=True,
+    )
     os.chdir(cwd)
     output_cpp = np.fromfile(CURRENT_FILE_DIR + "/cpp/deploy/build/output.bin", dtype="float32")
 

@@ -30,6 +30,7 @@
 #include <tvm/runtime/c_runtime_api.h>
 #include <tvm/runtime/logging.h>
 
+#include <cstring>
 #include <string>
 #include <type_traits>
 
@@ -112,8 +113,12 @@ class DataType {
     }
     return -lanes_as_int;
   }
+  /*! \return get vscale factor or lanes depending on scalability of the vector. */
+  int get_lanes_or_vscale_factor() const {
+    return is_scalable_vector() ? vscale_factor() : lanes();
+  }
   /*! \return whether type is a scalar type. */
-  bool is_scalar() const { return lanes() == 1; }
+  bool is_scalar() const { return !is_scalable_vector() && lanes() == 1; }
   /*! \return whether type is a scalar type. */
   bool is_bool() const { return code() == DataType::kUInt && bits() == 1; }
   /*! \return whether type is a float type. */
@@ -213,10 +218,13 @@ class DataType {
   /*!
    * \brief Construct an uint type.
    * \param bits The number of bits in the type.
-   * \param lanes The number of lanes
+   * \param lanes The number of lanes.
+   * \param is_scalable Whether the data type is scalable.
    * \return The constructed data type.
    */
-  static DataType UInt(int bits, int lanes = 1) { return DataType(kDLUInt, bits, lanes); }
+  static DataType UInt(int bits, int lanes = 1, bool is_scalable = false) {
+    return DataType(kDLUInt, bits, lanes, is_scalable);
+  }
   /*!
    * \brief Construct an float type.
    * \param bits The number of bits in the type.
@@ -245,10 +253,13 @@ class DataType {
   static DataType NVFloat8E5M2(int lanes = 1) { return DataType(kE5M2Float, 8, lanes); }
   /*!
    * \brief Construct a bool type.
-   * \param lanes The number of lanes
+   * \param lanes The number of lanes.
+   * \param is_scalable Whether the data type is scalable.
    * \return The constructed data type.
    */
-  static DataType Bool(int lanes = 1) { return DataType::UInt(1, lanes); }
+  static DataType Bool(int lanes = 1, bool is_scalable = false) {
+    return DataType::UInt(1, lanes, is_scalable);
+  }
   /*!
    * \brief Construct a handle type.
    * \param bits The number of bits in the type.
@@ -392,9 +403,12 @@ inline std::ostream& operator<<(std::ostream& os, DLDataType t) {  // NOLINT(*)
     os << "custom[" << GetCustomTypeName(t.code) << "]";
   }
   if (t.code == kTVMOpaqueHandle) return os;
+  int16_t lanes = static_cast<int16_t>(t.lanes);
   os << static_cast<int>(t.bits);
-  if (t.lanes != 1) {
-    os << 'x' << static_cast<int>(t.lanes);
+  if (lanes > 1) {
+    os << 'x' << lanes;
+  } else if (lanes < -1) {
+    os << "xvscalex" << -lanes;
   }
   return os;
 }
@@ -458,9 +472,14 @@ inline DLDataType String2DLDataType(std::string s) {
   char* xdelim;  // emulate sscanf("%ux%u", bits, lanes)
   uint8_t bits = static_cast<uint8_t>(strtoul(scan, &xdelim, 10));
   if (bits != 0) t.bits = bits;
+  int scalable_multiplier = 1;
+  if (strncmp(xdelim, "xvscale", 7) == 0) {
+    scalable_multiplier = -1;
+    xdelim += 7;
+  }
   char* endpt = xdelim;
   if (*xdelim == 'x') {
-    t.lanes = static_cast<uint16_t>(strtoul(xdelim + 1, &endpt, 10));
+    t.lanes = static_cast<uint16_t>(scalable_multiplier * strtoul(xdelim + 1, &endpt, 10));
   }
   ICHECK(endpt == s.c_str() + s.length()) << "unknown type " << s;
   return t;

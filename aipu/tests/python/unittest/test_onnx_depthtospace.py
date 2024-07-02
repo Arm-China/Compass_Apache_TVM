@@ -24,7 +24,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 @pytest.mark.parametrize("input_shapes", [[[2, 72, 4, 5]]])
 def test_depthtospace(input_shapes, blocksize_v, mode_v, opset_id):
     if opset_id == 1 and mode_v != "default":
-        pytest.xfail("Mode only supported in OPSet > 1")
+        pytest.skip("Mode only supported in OPSet > 1")
 
     op_type = "DepthToSpace"
     model_name = aipu_testing.gen_model_name(op_type, blocksize_v, mode_v, opset_id)

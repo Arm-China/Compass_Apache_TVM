@@ -106,7 +106,7 @@ from .op import q_multiply_shift, q_multiply_shift_per_axis, shift_left, shift_r
 from .op import TVMBackendAllocWorkspace, TVMBackendFreeWorkspace
 from .op import start_profile_intrinsic, end_profile_intrinsic
 from .op import vscale
-from .op import reassign, vector_get_element, vector_set_element
+from .op import reassign, vector_get_element, vector_set_element, const_pred, low_true_pred, pointer
 from .generic import add, subtract, multiply, cast
 
 from .schedule import StmtSRef, BlockScope, ScheduleState, Schedule, ScheduleError

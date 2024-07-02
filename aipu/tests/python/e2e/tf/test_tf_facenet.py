@@ -42,11 +42,11 @@ def run_facenet(model, runtime):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_facenet(runtime):
     run_facenet("facenet", runtime)
 
 
 if __name__ == "__main__":
-    test_facenet("simulator")
+    test_facenet("sim")

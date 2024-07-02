@@ -17,6 +17,68 @@ def _infer_shape(expr):
     return relay.transform.InferType()(tvm.IRModule.from_expr(expr))["main"].body.checked_type.shape
 
 
+# Define a function to equalize the length of batch matmul input
+def _equalize_list_lengths(a, b):
+    len_diff = len(a) - len(b)
+    if len_diff > 0:
+        b = [1] * len_diff + b
+    elif len_diff < 0:
+        a = [1] * (-len_diff) + a
+    return a, b
+
+
+# Define a function to determine whether matmul can be performed
+def _can_perform_matmul(inp1_shape, inp2_shape):
+    if len(inp1_shape) < 2 or len(inp2_shape) < 2:
+        return False
+    if inp1_shape[-1] != inp2_shape[-2]:
+        return False
+    ext_shape1 = inp1_shape[:-1] if len(inp1_shape[:-1]) != 0 else [1]
+    ext_shape2 = inp2_shape[:-2] if len(inp2_shape[:-2]) != 0 else [1]
+    if len(ext_shape1) > len(ext_shape2):
+        ext_shape2 = [
+            1,
+        ] * (len(ext_shape1) - len(ext_shape2)) + ext_shape2
+    elif len(ext_shape1) < len(ext_shape2):
+        ext_shape1 = [
+            1,
+        ] * (len(ext_shape2) - len(ext_shape1)) + ext_shape1
+    for dim1, dim2 in zip(ext_shape1, ext_shape2):
+        if dim1 != 1 and dim2 != 1 and dim1 != dim2:
+            return False
+    return inp1_shape, inp2_shape
+
+
+# Define a function to calc the output shape of convert einsum to matmul
+def _get_ret_shape(inp1_shape, inp2_shape):
+    if inp1_shape[-1] != inp2_shape[-2]:
+        return inp1_shape, inp2_shape
+    reversed_shape1, reversed_shape2 = inp1_shape[::-1], inp2_shape[-2::-1]
+    same = 0  # same means the same num of inp1 and inp2
+    prod_shape = 1  # prod_shape means the prod of same shape
+    min_len = min(len(reversed_shape1), len(reversed_shape2))
+    for i in range(min_len):
+        if reversed_shape1[i] == reversed_shape2[i]:
+            same += 1
+            prod_shape *= reversed_shape1[i]
+        else:
+            break
+    ret1_shape, ret2_shape = [], []
+    for i in inp1_shape[:-same]:
+        ret1_shape.append(i)
+    ret1_shape.append(prod_shape)
+    for i in inp2_shape[: -same - 1]:
+        ret2_shape.append(i)
+    ret2_shape.append(prod_shape)
+    ret2_shape.append(inp2_shape[-1])
+    ret1_shape, ret2_shape = _equalize_list_lengths(ret1_shape, ret2_shape)
+    # if ret shape can perform matmul, it can convert einsum to matmul.
+    if _can_perform_matmul(ret1_shape, ret2_shape):
+        return ret1_shape, ret2_shape, True
+    else:
+        return inp1_shape, inp2_shape, False
+
+
 class AIPUOpsConvertor(relay.ExprMutator):
     """Convert some ops to other equivalents."""
 
@@ -101,6 +163,7 @@ class AIPUOpsConvertor(relay.ExprMutator):
             relay.op.get("multiply"),
             relay.op.get("subtract"),
             relay.op.get("divide"),
+            relay.op.get("contrib.aipu_compass.divide_mod"),
             relay.op.get("mod"),
             relay.op.get("equal"),
             relay.op.get("not_equal"),
@@ -510,6 +573,20 @@ class AIPUOpsConvertor(relay.ExprMutator):
 
             return out
 
+        if ret.op == relay.op.get("einsum"):
+            # convert einsum to matmul when equation is "abcd,cde->abe"
+            out_dtype = call.args[0].checked_type.fields[0].dtype
+            inp1 = ret.args[0].fields[0]
+            inp2 = ret.args[0].fields[1]
+            inp1_shape = [int(dim) for dim in call.args[0].checked_type.fields[0].shape]
+            inp2_shape = [int(dim) for dim in call.args[0].checked_type.fields[1].shape]
+            out1_shape, out2_shape, flag = _get_ret_shape(inp1_shape, inp2_shape)
+            if flag:
+                out1 = relay.reshape(inp1, out1_shape)
+                out2 = relay.reshape(inp2, out2_shape)
+                ret = relay.nn.batch_matmul(out1, out2, out_dtype, False, False)
+            else:
+                return ret
         return ret
 
 

@@ -14,7 +14,7 @@ def test_bypass_dequant():
     # print(compass.ir_mod["main"].astext())
     # #[version = "0.0.5"]
     # fn (%input: Tensor[(1, 224, 224, 3), float32] /* ty=Tensor[(1, 224, 224, 3), float32] span=from_string:3:18 */) -> Tensor[(1, 56, 56, 256), float32] {
-    #   %0 = qnn.quantize(%input, 1.18478f /* ty=float32 */, 0 /* ty=int32 */, out_dtype="int8") /* ty=Tensor[(1, 224, 224, 3), int8] */;
+    #   %0 = qnn.quantize(%input, 1.18431f /* ty=float32 */, 0 /* ty=int32 */, out_dtype="int8") /* ty=Tensor[(1, 224, 224, 3), int8] */;
     #   %1 = @tvmgen_default_aipu_compass_main_0(%0) /* ty=Tensor[(1, 56, 56, 256), int8] */;
     #   qnn.dequantize(%1, 0.171154f /* ty=float32 */, 0 /* ty=int32 */, out_dtype="float32") /* ty=Tensor[(1, 56, 56, 256), float32] */
     # } /* ty=fn (Tensor[(1, 224, 224, 3), float32]) -> Tensor[(1, 56, 56, 256), float32] */
@@ -29,7 +29,7 @@ def test_bypass_dequant():
     expect_snippet = """\
 #[version = "0.0.5"]
 fn (%input: Tensor[(1, 224, 224, 3), float32] /* ty=Tensor[(1, 224, 224, 3), float32] span=from_string:3:18 */) -> Tensor[(1, 56, 56, 256), int8] {
-  %0 = qnn.quantize(%input, 1.18478f /* ty=float32 */, 0 /* ty=int32 */, out_dtype="int8") /* ty=Tensor[(1, 224, 224, 3), int8] */;
+  %0 = qnn.quantize(%input, 1.18431f /* ty=float32 */, 0 /* ty=int32 */, out_dtype="int8") /* ty=Tensor[(1, 224, 224, 3), int8] */;
   @tvmgen_default_aipu_compass_main_0(%0) /* ty=Tensor[(1, 56, 56, 256), int8] */
 } /* ty=fn (Tensor[(1, 224, 224, 3), float32]) -> Tensor[(1, 56, 56, 256), int8] */
 """

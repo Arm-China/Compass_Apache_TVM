@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=no-else-return, invalid-name, unused-import
+#
+# This file has been modified by Arm China team.
+#
 """The expression nodes of Relay."""
 from __future__ import absolute_import
 

@@ -65,7 +65,7 @@ def test_logical_greaterorequal_lessorequal(method_v, input_shapes, output_shape
     in_dims = [len(i) for i in input_shapes]
     oos = "OutOfSpec" if min(in_dims) == 0 else ""
     if oos:
-        pytest.xfail(oos)
+        pytest.skip(oos)
     model_name = aipu_testing.gen_model_name(compass_op_type, dim_info, input_shapes, opset_id)
 
     input_types = [TensorProto.FLOAT, TensorProto.FLOAT]
@@ -119,7 +119,7 @@ def test_logical_equal_greater_less(method_v, input_shapes, output_shapes, opset
     in_dims = [len(i) for i in input_shapes]
     oos = "OutOfSpec" if min(in_dims) == 0 else ""
     if oos:
-        pytest.xfail("OutOfSpec")
+        pytest.skip("OutOfSpec")
     model_name = aipu_testing.gen_model_name(compass_op_type, dim_info, input_shapes, opset_id)
 
     input_types = [TensorProto.FLOAT, TensorProto.FLOAT]
@@ -173,7 +173,7 @@ def test_logical_and_or_xor(method_v, input_shapes, output_shapes, opset_id):
     in_dims = [len(i) for i in input_shapes]
     oos = "OutOfSpec" if min(in_dims) == 0 else ""
     if oos:
-        pytest.xfail("OutOfSpec")
+        pytest.skip("OutOfSpec")
     model_name = aipu_testing.gen_model_name(compass_op_type, dim_info, input_shapes, opset_id)
 
     input_types = [TensorProto.BOOL, TensorProto.BOOL]

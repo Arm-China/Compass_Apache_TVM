@@ -7,7 +7,7 @@ from tvm.relay.backend.contrib.aipu_compass import AipuCompass, AipuCompassConfi
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 
-def run_resnet(model, runtime="simulator"):
+def run_resnet(model, runtime="sim"):
     cfg = f"{aipu_testing.DATA_DIR}/tf_{model}.cfg"
     # 1. Create AIPU Compass instance and set configurations.
     compass = AipuCompass(cfg)
@@ -44,19 +44,19 @@ def run_resnet(model, runtime="simulator"):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_resnet_v1_50(runtime):
     run_resnet("resnet_v1_50", runtime)
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_resnet_v1_101(runtime):
     run_resnet("resnet_v1_101", runtime)
 
 
 if __name__ == "__main__":
-    test_resnet_v1_50("rpc")
-    test_resnet_v1_101("rpc")
+    test_resnet_v1_50("sim")
+    test_resnet_v1_101("sim")

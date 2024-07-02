@@ -185,8 +185,8 @@ TVM_DLL const Op& const_pred();
  * \brief Generate a predicate that the lowest n items are True, and others are
  *        False.
  *
- *  def low_true_pred(n: PrimExpr, total: int) -> boolxn {
- *    return [True] * n + [False] * (total - n)
+ *  def low_true_pred(n: PrimExpr) -> boolxlanes {
+ *    return [True] * n + [False] * (lanes - n)
  *  }
  */
 TVM_DLL const Op& low_true_pred();

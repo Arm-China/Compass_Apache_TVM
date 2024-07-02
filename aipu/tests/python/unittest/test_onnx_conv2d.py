@@ -33,15 +33,15 @@ def test_conv2d(
     input_shape, kernel_shape, strides, pads, dilations, group, auto_pad, bias, opset_id
 ):
     if auto_pad in ["SAME_UPPER", "SAME_LOWER", "VALID"] and isinstance(pads, list):
-        pytest.xfail("Can not set pads and auto_pad simultaneously")
+        pytest.skip("Can not set pads and auto_pad simultaneously")
 
     if isinstance(dilations, list):
         if auto_pad in ["SAME_UPPER", "SAME_LOWER"]:
-            pytest.xfail(
+            pytest.skip(
                 "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER"
             )
         if strides != "default":
-            pytest.xfail(
+            pytest.skip(
                 "Can not set strides and dilations simultaneously, rule: strides = 1 if dilations"
             )
 

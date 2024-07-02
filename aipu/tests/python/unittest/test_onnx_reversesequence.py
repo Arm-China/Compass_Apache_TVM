@@ -36,10 +36,10 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 def test_reversesequence(input_shapes, batch_axis, time_axis, const_input, opset_id):
     if aipu_testing.skip_case(input_shapes, batch_axis):
-        pytest.xfail("axis out of input shape")
+        pytest.skip("axis out of input shape")
 
     if aipu_testing.skip_case(input_shapes, time_axis):
-        pytest.xfail("axis out of input shape")
+        pytest.skip("axis out of input shape")
 
     extend_paras = {}
     if batch_axis != "default":
@@ -50,7 +50,7 @@ def test_reversesequence(input_shapes, batch_axis, time_axis, const_input, opset
     op_type = "ReverseSequence"
     dim_info = f"{len(input_shapes[0])}d"
     if dim_info not in ["2d", "3d"]:
-        pytest.xfail("OutOfSpec")
+        pytest.skip("OutOfSpec")
     model_name = aipu_testing.gen_model_name(op_type, dim_info, batch_axis, time_axis, const_input)
 
     if batch_axis == "default":
@@ -63,7 +63,7 @@ def test_reversesequence(input_shapes, batch_axis, time_axis, const_input, opset
     pos_seq_axis = time_axis if time_axis >= 0 else len(input_shapes[0]) + time_axis
 
     if pos_batch_axis == pos_seq_axis:
-        pytest.xfail()
+        pytest.skip()
 
     input_shapes = copy.deepcopy(input_shapes)
     seq_len_shape = [input_shapes[0][pos_batch_axis]]

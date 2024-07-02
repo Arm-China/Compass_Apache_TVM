@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Code to handle the work when deploying a TVM compiled NN model."""
-from tvm import micro
 from .config import AipuCompassConfig
 from .execution_engine import ExecutionEngine
 
@@ -44,10 +43,12 @@ class Deployable:
         file_name : str
             Path to the .tar archive to generate.
         """
+        from tvm import micro  # pylint: disable=import-outside-toplevel
+
         self._check_exportable()
         micro.export_model_library_format(self._compiled_model, file_name=file_name)
 
-    def create_execution_engine(self, rpc_sess=None, devices=None, **kwargs):
+    def create_execution_engine(self, rpc_sess=None, devices=None, with_profile=False, **kwargs):
         """The helper function to create an execution engine from the object of
         class deployable.Deployable directly.
 
@@ -55,15 +56,19 @@ class Deployable:
         ----------
         rpc_sess : tvm.rpc.RPCSession
             The RPC session that is already connected to the RPC server.
-            If it is set, the deployable.
-            Deployable object will be exported and uploaded to the
-            RPC server automatically, and the remaining keyword arguments kwargs
-            will be passed to the invocation of API export.
+            If it is set, the deployable object will be exported and uploaded to the RPC server
+            automatically, and the remaining keyword arguments "kwargs" will be passed to the
+            invocation of API "export".
 
-        devices : tvm._ffi.runtime_ctypes.Device or list of tvm._ffi.runtime_ctypes.Devic
-            The devices on which to execute the compiled NN model.
-            If it is not set, rpc_sess.cpu(0) will be used if the rpc_sess is set,
-            and tvm.cpu(0) will be used if the rpc_sess is not set.
+        devices : tvm._ffi.runtime_ctypes.Device or list of tvm._ffi.runtime_ctypes.Device
+            The devices on which to execute the compiled NN model. If it isn't set, rpc_sess.cpu(0)
+            will be used if the "rpc_sess" is set, and tvm.cpu(0) will be used if the "rpc_sess"
+            isn't set.
+
+        with_profile : bool
+            Whether select the execution engine that with profiling ability or not. If it is True,
+            the underlying class of execution engine will use "VirtualMachineDebug" or
+            "GraphExecutorDebug" instead of "VirtualMachine" or "GraphExecutor".
 
         Returns
         -------
@@ -80,4 +85,4 @@ class Deployable:
             compiled_model = AipuCompassConfig.get().deploy_file
             self.export(compiled_model, **kwargs)
 
-        return ExecutionEngine(compiled_model, rpc_sess, devices)
+        return ExecutionEngine(compiled_model, rpc_sess, devices, with_profile)

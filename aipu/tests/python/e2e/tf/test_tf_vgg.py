@@ -6,7 +6,7 @@ from tvm.relay.backend.contrib.aipu_compass import AipuCompass
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 
-def run_vgg(model, runtime="simulator"):
+def run_vgg(model, runtime="sim"):
     cfg = f"{aipu_testing.DATA_DIR}/tf_{model}.cfg"
     # 1. Create AIPU Compass instance and set configurations.
     compass = AipuCompass(cfg)
@@ -40,19 +40,19 @@ def run_vgg(model, runtime="simulator"):
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_vgg_16(runtime):
     run_vgg("vgg_16", runtime)
 
 
 @pytest.mark.X2_1204
-@pytest.mark.parametrize("runtime", ["rpc", "simulator"])
+@pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_vgg_19(runtime):
     run_vgg("vgg_19", runtime)
 
 
 if __name__ == "__main__":
-    test_vgg_16("simulator")
-    test_vgg_19("simulator")
+    test_vgg_16("sim")
+    test_vgg_19("sim")

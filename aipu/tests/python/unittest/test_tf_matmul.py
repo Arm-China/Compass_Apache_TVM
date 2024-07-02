@@ -41,7 +41,7 @@ def test_matmul(input_shapes, transpose_a_v, transpose_b_v, adjoint_a_v, adjoint
     op_type = "MatMul"
     dim_info = f"{len(input_shapes[0])}d"
     if dim_info == "5d":
-        pytest.xfail("OutOfSpec")
+        pytest.skip("OutOfSpec")
     model_name = aipu_testing.gen_model_name(
         op_type, dim_info, transpose_a_v, transpose_b_v, adjoint_a_v, adjoint_b_v
     )

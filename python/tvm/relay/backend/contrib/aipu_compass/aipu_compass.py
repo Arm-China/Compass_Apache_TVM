@@ -8,7 +8,7 @@ import tvm
 from tvm import relay
 from tvm.relay.backend import Runtime, Executor
 from tvm.relay.op.contrib.aipu_compass.pattern_table import pattern_table_pre, pattern_table_post
-from tvm.aipu.logger import timer, set_logger, INFO, WARN
+from tvm.aipu.logger import timer, set_logger, DEBUG_ONCE, INFO, WARN
 from .config import config_aipu_compass, AipuCompassConfig, AipuCompassBasicConfig
 from .parser import parse_model
 from . import transform as compass_transform
@@ -60,6 +60,8 @@ class AipuCompass:
                 self._disabled_pass.append(pass_name)
 
         set_logger(cfg["log_file"], cfg["log_level"])
+        DEBUG_ONCE(f"TVM {tvm.__version__} ({os.path.dirname(tvm.__file__)})")
+        INFO(f"Current Output Path: {cfg['output_dir']}")
 
     @timer
     def parse(self, update_params=None):
@@ -181,6 +183,7 @@ class AipuCompass:
             relay.transform.MergeComposite(pattern_table_pre(include_float, include_quant)),
             compass_transform.ConvertAIPUOps(),
             relay.transform.MergeComposite(pattern_table_post(include_float, include_quant)),
+            compass_transform.PostPatternRewrite(),
             relay.transform.SimplifyExpr(),
             relay.transform.FoldConstant(),
             compass_transform.GetPostProcessFunction(postprocess_hint_fn),

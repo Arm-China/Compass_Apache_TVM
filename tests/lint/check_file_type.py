@@ -254,12 +254,13 @@ def check_asf_copyright(fname):
 
 
 def main():
-    cmd = ["git", "ls-files"]
+    # Only the files in the patch are checked, which will reduce the running time of this script in CI.
+    cmd = ["git", "log", "--pretty=format:''", "--name-only", "-1"]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     (out, _) = proc.communicate()
     assert proc.returncode == 0, f'{" ".join(cmd)} errored: {out}'
     res = out.decode("utf-8")
-    flist = res.split()
+    flist = res.split()[1:]
     error_list = []
 
     for fname in flist:
@@ -281,7 +282,7 @@ def main():
 
     asf_copyright_list = []
 
-    for fname in res.split():
+    for fname in flist:
         if not check_asf_copyright(fname):
             asf_copyright_list.append(fname)
 

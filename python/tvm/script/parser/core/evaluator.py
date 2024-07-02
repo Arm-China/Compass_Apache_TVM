@@ -15,10 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 """AST Evaluation"""
-
+#
+# This file has been modified by Arm China team.
+#
 import ast
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 
+from tvm import target as tgt
 from . import dispatch, doc
 from .error import ParserError
 
@@ -175,10 +178,14 @@ class ExprEvaluator:
         """
         args = []
         if (
-            isinstance(node, doc.Call)
-            and hasattr(node.func, "attr")
-            and node.func.attr not in ["reads", "writes", "match_buffer", "realize"]
-        ) or isinstance(node, (doc.BinOp, doc.UnaryOp, doc.Compare, doc.BoolOp)):
+            (
+                isinstance(node, doc.Call)
+                and hasattr(node.func, "attr")
+                and node.func.attr not in ["reads", "writes", "match_buffer", "realize"]
+            )
+            or (isinstance(node, doc.Call) and isinstance(node.func, doc.Name))
+            or isinstance(node, (doc.BinOp, doc.UnaryOp, doc.Compare, doc.BoolOp))
+        ):
             if isinstance(node, doc.BinOp):
                 args = [node.left, node.right]
             elif isinstance(node, doc.UnaryOp):
@@ -200,7 +207,7 @@ class ExprEvaluator:
                         if isinstance(p, doc.Slice):
                             check_slices.append(p)
                 for s in check_slices:
-                    if not s.step and s.upper and s.lower:
+                    if not s.step and s.upper:
                         s.step = doc.Constant(
                             1,
                             None,
@@ -232,6 +239,16 @@ class ExprEvaluator:
             ),
         ):
             return node
+        if isinstance(node, doc.keyword):
+            value = self._visit(node.value)
+            return doc.keyword(
+                arg=node.arg,
+                value=value,
+                lineno=node.lineno,
+                col_offset=node.col_offset,
+                end_lineno=node.end_lineno,
+                end_col_offset=node.end_col_offset,
+            )
         if not isinstance(node, (doc.expr, doc.slice)):
             return node
         if isinstance(node, doc.Lambda):
@@ -326,10 +343,27 @@ class ExprEvaluator:
         res : Any
             The evaluation result.
         """
-        value = self._eval_expr(fields["left"])
-        for op, rhs in zip(fields["ops"], fields["comparators"]):
-            value = _eval_op(op, values=[value, self._eval_expr(rhs)])
-        return value
+        # convert (a op x op b op ...) to ((a op x) and (x op b) and (...))
+
+        left_item = self._eval_expr(fields["left"])
+        right_item = self._eval_expr(fields["comparators"][0])
+        eval_value = _eval_op(fields["ops"][0], values=[left_item, right_item])
+
+        n = len(fields["ops"])
+        for i in range(1, n):
+            left_item = right_item
+            right_item = self._eval_expr(fields["comparators"][i])
+            item_value = _eval_op(fields["ops"][i], values=[left_item, right_item])
+            eval_value = _eval_op(
+                doc.And(
+                    fields["lineno"],
+                    fields["col_offset"],
+                    fields["end_lineno"],
+                    fields["end_col_offset"],
+                ),
+                values=[eval_value, item_value],
+            )
+        return eval_value
 
     def _eval_unary_op(self, fields: Dict[str, Any]) -> Any:
         """The doc AST unary operation node evaluating method.
@@ -487,6 +521,14 @@ def _eval_expr(
     res : Any
         The evaluation result.
     """
+    if tgt.AipuInfo.current() is not None:
+        if isinstance(node, doc.Call) and isinstance(node.func, doc.Name):
+            func_name = node.func.id
+            if func_name in ("print", "max", "min"):
+                name_map = {"print": "printf"}
+                err_msg = f'The built-in "{func_name}" isn\'t supported, please use "S.{{}}".'
+                raise ParserError(node, err_msg.format(name_map.get(func_name, func_name)))
+
     node = doc.from_doc(node)
     if isinstance(node, ast.expr):
         node = ast.Expression(body=node)

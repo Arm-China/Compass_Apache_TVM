@@ -20,6 +20,9 @@
  *  Compile executable modules.
  * \file src/target/target.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <dmlc/thread_local.h>
 #include <tvm/ir/transform.h>
 #include <tvm/runtime/device_api.h>
@@ -998,9 +1001,9 @@ std::unordered_map<String, ObjectRef> TargetInternal::QueryDevice(int device_id,
   api->GetAttr(device, runtime::kExist, &ret);
   bool device_exists = ret;
   if (!device_exists) {
-    ICHECK(device_exists) << "Requested reading the parameters for " << target->kind->name
-                          << " from device_id " << device_id << ", but device_id " << device_id
-                          << " doesn't exist.  Using default target parameters.";
+    LOG(INFO) << "Requested reading the parameters for " << target->kind->name << " from device_id "
+              << device_id << ", but device_id " << device_id
+              << " doesn't exist.  Using default target parameters.";
     return output;
   }
 

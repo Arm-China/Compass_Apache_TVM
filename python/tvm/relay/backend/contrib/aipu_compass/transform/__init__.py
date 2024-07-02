@@ -22,8 +22,8 @@ from .build_aipu_subgraph import BuildAipuSubgraph
 from .extract_in_out_quant_ops import ExtractInOutQuantOps
 from .quantization_helper_pre import QuantizationHelperPre
 from .quantization_helper_post import QuantizationHelperPost
-from .set_node_compiler_to_default import SetNodeCompilerToDefault
 from .extract_cellstate_hiddenstate_to_tuple import ExtractCellStateAndHiddenStateToTupleOutput
+from .post_pattern_rewrite import PostPatternRewrite
 
 try:
     from .fuse_ops import AIPUFuseOp
