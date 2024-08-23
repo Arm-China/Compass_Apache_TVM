@@ -17,9 +17,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
         "default",  # relay.floor_mod
     ],
 )
-@pytest.mark.parametrize(
-    "dtype", ["uint8", "int8", "uint16", "int16", "uint32", "int32", "int64", "float32"]
-)
+@pytest.mark.parametrize("dtype", ["uint8", "int8", "uint16", "int16", "uint32", "int32", "int64", "float32"])
 @pytest.mark.parametrize(
     "input_shapes, output_shapes",
     [

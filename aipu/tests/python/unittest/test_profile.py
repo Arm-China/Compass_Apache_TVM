@@ -28,9 +28,7 @@ def test_profiler(gb_target, gb_profile):
 
         # 5. Check the profile.
         local_output_dir = AipuCompassConfig.get().common["output_dir"]
-        runtime_work_dir = os.path.join(
-            local_output_dir, "tvmgen_default_aipu_compass_main_0", "runtime"
-        )
+        runtime_work_dir = os.path.join(local_output_dir, "tvmgen_default_aipu_compass_main_0", "runtime")
 
         aiff_dumps_dir = runtime_work_dir + "/aiff_dumps"
         if gb_profile == "true":

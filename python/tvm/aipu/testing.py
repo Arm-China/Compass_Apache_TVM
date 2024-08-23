@@ -9,7 +9,7 @@ from .. import testing
 from .utils import check_call_aipu_tool
 
 
-def binary_equal(x, y):
+def _binary_equal(x, y):
     """Make sure the binaries cannot differ by more than 1."""
     if not (x.dtype == y.dtype and x.dtype in (np.float16, np.float32)):
         return False
@@ -23,7 +23,7 @@ def binary_equal(x, y):
     return np.isclose(x.view(view_dtype), y.view(view_dtype), rtol=0, atol=1.1) & finite_mask
 
 
-def assert_allclose(actual, desired, rtol=0, atol=1e-6):
+def assert_allclose(actual, desired, rtol=None, atol=None):
     """Simple wrapper of the corresponding API of TVM Testing."""
     actual = np.array(actual)
     desired = np.array(desired)
@@ -31,10 +31,12 @@ def assert_allclose(actual, desired, rtol=0, atol=1e-6):
         actual.dtype == desired.dtype
     ), f'Argument type mismatch: 0-th: "{actual.dtype}" vs. 1-th: "{desired.dtype}".'
 
+    rtol = 0 if rtol is None else rtol
     if np.issubdtype(actual.dtype, np.integer):
-        rtol, atol = 0, 0
+        atol = 0 if atol is None else atol
     else:
-        is_close = binary_equal(actual, desired)
+        atol = 1e-6 if atol is None else atol
+        is_close = _binary_equal(actual, desired)
         actual[is_close] = desired[is_close]
 
     try:

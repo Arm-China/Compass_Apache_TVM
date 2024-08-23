@@ -398,6 +398,21 @@ TIR_DEFINE_BUILTIN_FUNC(undef)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kReadState))
     .set_num_inputs(0);
 
+TIR_DEFINE_BUILTIN_FUNC(precodegen)
+    .set_num_inputs(1)
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kSpecialCallArg));
+
+TIR_DEFINE_BUILTIN_FUNC(vector_literal)
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kSpecialCallArg));
+
+TIR_DEFINE_BUILTIN_FUNC(vector_get_element)
+    .set_num_inputs(2)
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kReadState));
+
+TIR_DEFINE_BUILTIN_FUNC(vector_set_element)
+    .set_num_inputs(3)
+    .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kUpdateState));
+
 TIR_DEFINE_BUILTIN_FUNC(reassign)
     .set_attr<TCallEffectKind>("TCallEffectKind", Integer(CallEffectKind::kUpdateState))
     .set_num_inputs(2);

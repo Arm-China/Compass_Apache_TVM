@@ -23,10 +23,7 @@ def _show_result(boxes, classes, voc, img_id):
     print(f"Total detect {len(classes)} objects:")
     for box, cat in zip(boxes, classes):
         label = voc.load_cats(cat)[0]
-        print(
-            f"{label} with bounding box top:{box[0]}, left:{box[1]}, bottom:{box[2]}, "
-            f"right:{box[3]}"
-        )
+        print(f"{label} with bounding box top:{box[0]}, left:{box[1]}, bottom:{box[2]}, " f"right:{box[3]}")
 
     if os.getenv("SKIP_VISUALIZE") is not None:
         return
@@ -89,9 +86,7 @@ def run_yolo_v2_416(runtime, imgs_number=10):
         img_id = all_img_ids[0]
         img = voc.load_imgs(img_id)[0]
         print(f"Input image: {img}")
-        preprocessed_image = aipu_testing.yolo_v2_preprocess(
-            img["file_path"], im_height=416, im_width=416
-        )
+        preprocessed_image = aipu_testing.yolo_v2_preprocess(img["file_path"], im_height=416, im_width=416)
         outputs = ee.run(preprocessed_image)
 
         boxes, scores, classes = PostProcessor(
@@ -107,9 +102,7 @@ def run_yolo_v2_416(runtime, imgs_number=10):
     predict = {}
     for img_id in img_ids:
         img = voc.load_imgs(img_id)[0]
-        outputs = ee.run(
-            aipu_testing.yolo_v2_preprocess(img["file_path"], im_height=416, im_width=416)
-        )
+        outputs = ee.run(aipu_testing.yolo_v2_preprocess(img["file_path"], im_height=416, im_width=416))
 
         boxes, scores, classes = PostProcessor(
             image_shape=(img["height"], img["width"]), anchors=anchors, num_categories=20
@@ -122,9 +115,7 @@ def run_yolo_v2_416(runtime, imgs_number=10):
             "boxes": boxes,
             "categroies": classes,
         }
-    mean_ap = aipu_testing.calc_mean_ap(
-        voc, predict, "yolo_v2_416", "onnx", map_thres=0.80, runtime=runtime
-    )
+    mean_ap = aipu_testing.calc_mean_ap(voc, predict, "yolo_v2_416", "onnx", map_thres=0.80, runtime=runtime)
     print(f"On VOC2007 test dataset with IoU 0.5, the mAP is {mean_ap}")
 
 

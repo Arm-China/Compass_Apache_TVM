@@ -18,14 +18,14 @@ def _in_block_check():
 
 
 class Pointer(ObjectGeneric):
-    """Represent the concept corresponds to C/C++ pointer.
+    """Represents the concept that corresponds to the C/C++ pointer.
 
     Just like the pointer of C/C++, below operations are supported.
 
-    - Move forward and backward through add or subtract a integer value.
-    - Read and write data as a 1 dimension array.
-    - Check whether is a null pointer or not.
-    - Compare with other pointer instance.
+    - Move forward and backward through adding or subtracting an integer value.
+    - Read and write data as a 1-dimension array.
+    - Check whether it is a null pointer or not.
+    - Compare with the other pointer instance.
     - Cast to another type pointer.
     """
 
@@ -93,7 +93,8 @@ class Pointer(ObjectGeneric):
         # Only here may generate a pointer whose base is another pointer.
         return Pointer(dtype, self.scope, self.base if self.offset == 0 else self)
 
-    def accessible_check(self):
+    def accessible_check(self, indices):
+        """Applied when accessing data, check and report errors."""
         _in_block_check()
         assert not self.dtype.is_void, "Can't access data through void pointer."
         assert isinstance(self.base, Var) and self.base.dtype == "handle", (
@@ -101,26 +102,27 @@ class Pointer(ObjectGeneric):
             "different type and non-zero offset pointer, please define it as a new named pointer "
             "first and access data through the new named pointer."
         )
+        assert not isinstance(indices, tuple), "Pointer only can be used to access 1D data."
+        err_msg = "For accessing data through pointer, the stop of the slice must be given."
+        assert not (isinstance(indices, slice) and indices.stop is None), err_msg
 
     def __getitem__(self, indices):
-        """Read data as a 1 dimension array.
+        """Read data as a 1-dimension array.
 
         Parameters
         ----------
         indices : Union[sgentype, slice]
-            The index used to access the concrete data, multiple data will be read if it's a slice.
+            The index used to access the concrete data. Multiple data will be read if it is a slice.
 
         Returns
         -------
         ret : single or multiple times of the data type of the pointer
             The result data that is read out.
         """
-        self.accessible_check()
-        assert not isinstance(indices, tuple), "Pointer only can be used to access 1D data."
+        self.accessible_check(indices)
 
         if isinstance(indices, slice):
             start = self.offset if indices.start is None else self.offset + indices.start
-            assert indices.stop is not None, "The stop of the slice must be given."
             indices = slice(start, self.offset + indices.stop, indices.step)
         else:
             indices = self.offset + indices
@@ -140,7 +142,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : sgentype
-            The step that the pointer will be moved, in unit of data type of the pointer.
+            The step that the pointer will be moved, in units of data type of the pointer.
 
         Returns
         -------
@@ -156,7 +158,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : sgentype
-            The step that the pointer will be moved, in unit of data type of the pointer.
+            The step that the pointer will be moved, in units of data type of the pointer.
 
         Returns
         -------
@@ -171,7 +173,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : sgentype
-            The step that the pointer will be moved, in unit of data type of the pointer.
+            The step that the pointer will be moved, in units of data type of the pointer.
 
         Returns
         -------
@@ -190,7 +192,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : Pointer
-            The other pointer instance will be compared with.
+            The other pointer instance that will be compared with.
 
         Returns
         -------
@@ -206,7 +208,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : Pointer
-            The other pointer instance will be compared with.
+            The other pointer instance that will be compared with.
 
         Returns
         -------
@@ -222,7 +224,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : Pointer
-            The other pointer instance will be compared with.
+            The other pointer instance that will be compared with.
 
         Returns
         -------
@@ -238,7 +240,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : Pointer
-            The other pointer instance will be compared with.
+            The other pointer instance that will be compared with.
 
         Returns
         -------
@@ -259,7 +261,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : Pointer
-            The other pointer instance will be compared with.
+            The other pointer instance that will be compared with.
 
         Returns
         -------
@@ -275,7 +277,7 @@ class Pointer(ObjectGeneric):
         Parameters
         ----------
         other : Pointer
-            The other pointer instance will be compared with.
+            The other pointer instance that will be compared with.
 
         Returns
         -------

@@ -9,7 +9,7 @@ from tvm import relay
 from tvm.relay.backend import Runtime, Executor
 from tvm.relay.op.contrib.aipu_compass.pattern_table import pattern_table_pre, pattern_table_post
 from tvm.aipu.logger import timer, set_logger, DEBUG_ONCE, INFO, WARN
-from .config import config_aipu_compass, AipuCompassConfig, AipuCompassBasicConfig
+from .config import config_aipu_compass, AipuCompassConfig
 from .parser import parse_model
 from . import transform as compass_transform
 from . import analysis as compass_analysis
@@ -527,23 +527,3 @@ class AipuCompass:
     def load(self, path):
         with open(path) as f:
             self.ir_mod = relay.fromtext(f.read())
-
-
-def sync_compass_output_dir(rpc_sess):
-    """Synchronize files of compass output directory on RPC server to local.
-
-    Parameters
-    ----------
-    rpc_sess : tvm.rpc.RPCSession
-        The RPC session that is already connected to the RPC server.
-    """
-    if rpc_sess is None:
-        return
-    remote_files = [x for x in rpc_sess.list_files(".") if x.startswith("compass_output")]
-
-    local_output_dir = AipuCompassBasicConfig.get().common["output_dir"]
-    for remote_file in remote_files:
-        rel_path = remote_file.split(os.path.sep, 1)[1]
-        with open(os.path.join(local_output_dir, rel_path), "wb") as f:
-            f.write(rpc_sess.download(remote_file))
-            INFO(f'Downloaded "{rel_path}" into "{local_output_dir}".')

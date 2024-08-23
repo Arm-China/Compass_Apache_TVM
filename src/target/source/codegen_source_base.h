@@ -22,6 +22,9 @@
  * \file codegen_source_base.h
  * \brief Common utilities to source code in text form.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_TARGET_SOURCE_CODEGEN_SOURCE_BASE_H_
 #define TVM_TARGET_SOURCE_CODEGEN_SOURCE_BASE_H_
 
@@ -79,6 +82,8 @@ class CodeGenSourceBase {
   void ClearFuncState();
   /*! \brief print the current indented value */
   void PrintIndent();
+  /*! \brief print the current indented value to the specified output stream. */
+  void PrintIndent(std::ostream& os);
   /*!
    * \brief Allocate a variable name for a newly defined var.
    * \param v The variable.

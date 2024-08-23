@@ -67,9 +67,7 @@ def test_reversesequence(input_shapes, batch_axis, time_axis, const_input, opset
 
     input_shapes = copy.deepcopy(input_shapes)
     seq_len_shape = [input_shapes[0][pos_batch_axis]]
-    seq_len = np.random.randint(
-        1, input_shapes[0][pos_seq_axis] + 1, size=seq_len_shape, dtype=np.int64
-    )
+    seq_len = np.random.randint(1, input_shapes[0][pos_seq_axis] + 1, size=seq_len_shape, dtype=np.int64)
     input_shapes.append(seq_len_shape)
 
     input_type = [TensorProto.FLOAT, TensorProto.INT64]

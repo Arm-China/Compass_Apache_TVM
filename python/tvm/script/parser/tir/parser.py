@@ -28,7 +28,7 @@ from tvm.ir import GlobalVar, PrimType, PointerType
 from tvm.tir import Buffer, IterVar, PrimExpr, Var
 from tvm.tir import Let, StringImm, Pointer, convert_to_prim_expr
 from tvm.tir import reassign, vector_set_element
-from tvm.tir.buffer import check_indice_int_dtype
+from tvm.tir.buffer import is_integer_indices
 
 from ...ir_builder import ir as I
 from ...ir_builder import tir as T
@@ -194,12 +194,17 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         defined_vars = _get_defined_vars_in_prim_func(self.var_table)
         if var_name in defined_vars:
             ptr = defined_vars[var_name]
+            if not isinstance(ptr, Pointer):
+                err_msg = f'Type mismatch assignment: "{ptr.dtype}" vs. "{value.dtype}*".'
+                self.report_error(node, err_msg)
+
             if ptr.dtype != value.dtype:
                 self.report_error(
                     node,
-                    f'Type mismatch assignment: "{ptr.dtype}" vs. "{value.dtype}", need to do '
+                    f'Type mismatch assignment: "{ptr.dtype}*" vs. "{value.dtype}*", need to do '
                     "the explicit type conversion for the right hand side(i.e., new value).",
                 )
+
             T.evaluate(reassign(ptr.base, value))
             return ptr
 
@@ -209,10 +214,8 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         frame.__enter__()
         return ptr
     elif isinstance(value, str):
-        self.report_error(
-            node,
-            "Cannot define String in prim func, please define outside the prim func.",
-        )
+        err_msg = "Can't define string inside primitive function, please define it outside."
+        self.report_error(node, err_msg)
         return None
     else:
         value = tvm.runtime.convert(value)
@@ -224,12 +227,14 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         # the same name, then treat it as a definition, otherwise treat is as a assignment.
         if var_name in defined_vars:
             var = defined_vars[var_name]
+            if isinstance(var, Pointer):
+                err_msg = f'Type mismatch assignment: "{var.dtype}*" vs. "{value.dtype}".'
+                self.report_error(node, err_msg)
+
             if value.dtype != var.dtype:
-                self.report_error(
-                    node,
-                    f'Type mismatch assignment: "{var.dtype}" vs. "{value.dtype}", need to do '
-                    "the explicit type conversion for the right hand side(i.e., new value).",
-                )
+                err_msg = f'Type mismatch assignment: "{var.dtype}" vs. "{value.dtype}", need to do'
+                err_msg += " the explicit type conversion for the right hand side(i.e., new value)."
+                self.report_error(node, err_msg)
 
         frame = T.LetStmt(value, var=var)
         frame.add_callback(partial(frame.__exit__, None, None, None))
@@ -393,11 +398,10 @@ def visit_assign(self: Parser, node: doc.Assign) -> None:
         else:
             indices = self.eval_expr(lhs.slice)
 
-        if not check_indice_int_dtype(indices):
-            self.report_error(
-                node,
-                "Indice should be Int dtype. Please explicit cast it into Int dtype.",
-            )
+        if not is_integer_indices(indices):
+            err_msg = "All indices should be integer type, please convert it explicitly."
+            self.report_error(node, err_msg)
+
         target = self.eval_expr(lhs.value)
         if isinstance(target, Var):
             T.evaluate(vector_set_element(target, indices, rhs))
@@ -561,9 +565,7 @@ def visit_function_def(self: Parser, node: doc.FunctionDef) -> None:
                     self.var_table.add(arg.arg, param)
                 self.visit_body(node.body)
             if node.returns is None and self.ret_value is not None:
-                raise RuntimeError(
-                    f"The function {node.name} don't have return type while have return value."
-                )
+                raise RuntimeError(f'The function "{node.name}" lacks return type annotation.')
             self.ret_value = None
     self.function_annotations = supplied_annotation
 
@@ -647,13 +649,22 @@ def visit_if(self: Parser, node: doc.If) -> None:
     """
     with self.var_table.with_frame():
         cond = self.eval_expr(node.test)
-        if isinstance(cond, bool):
+        cond = cond.asobject() if isinstance(cond, tvm.runtime.ObjectGeneric) else cond
+
+        if not isinstance(cond, PrimExpr):
             with self.var_table.with_frame():
-                if cond is True:
+                if bool(cond) is True:
                     self.visit_body(node.body)
                 elif node.orelse:
                     self.visit_body(node.orelse)
             return
+
+        if tvm.DataType(cond.dtype).is_vector:
+            self.report_error(node.test, "The condition required to be a scalar expression.")
+        if cond.dtype == "handle":
+            self.report_error(node.test, "Please check whether the pointer is null explicitly.")
+        if cond.dtype != "bool":
+            cond = tvm.tir._ffi_api._OpNE(cond, tvm.tir.const(0, cond.dtype), cond.span)
 
         with T.If(cond):
             with T.Then():

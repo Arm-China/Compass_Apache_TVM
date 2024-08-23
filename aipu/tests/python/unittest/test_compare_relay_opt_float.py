@@ -99,25 +99,17 @@ def test_multibox_transform_loc():
         num_anchors = 3
         num_classes = 3
 
-        np_cls_prob = np.array([[[0.2, 0.5, 0.3], [0.25, 0.3, 0.45], [0.7, 0.1, 0.2]]]).astype(
+        np_cls_prob = np.array([[[0.2, 0.5, 0.3], [0.25, 0.3, 0.45], [0.7, 0.1, 0.2]]]).astype("float32")
+        np_loc_preds = np.array([[0.1, -0.2, 0.3, 0.2, 0.2, 0.4, 0.5, -0.3, 0.7, -0.2, -0.4, -0.8]]).astype("float32")
+        np_anchors = np.array([[[-0.1, -0.1, 0.1, 0.1], [-0.2, -0.2, 0.2, 0.2], [1.2, 1.2, 1.5, 1.5]]]).astype(
             "float32"
         )
-        np_loc_preds = np.array(
-            [[0.1, -0.2, 0.3, 0.2, 0.2, 0.4, 0.5, -0.3, 0.7, -0.2, -0.4, -0.8]]
-        ).astype("float32")
-        np_anchors = np.array(
-            [[[-0.1, -0.1, 0.1, 0.1], [-0.2, -0.2, 0.2, 0.2], [1.2, 1.2, 1.5, 1.5]]]
-        ).astype("float32")
 
-        cls_prob = relay.var(
-            "cls_prob", relay.ty.TensorType((1, num_anchors, num_classes), "float32")
-        )
+        cls_prob = relay.var("cls_prob", relay.ty.TensorType((1, num_anchors, num_classes), "float32"))
         loc_pred = relay.var("loc_pred", relay.ty.TensorType((1, num_anchors * 4), "float32"))
         anchors = relay.var("anchors", relay.ty.TensorType((1, num_anchors, 4), "float32"))
 
-        mtl = relay.vision.multibox_transform_loc(
-            cls_prob=cls_prob, loc_pred=loc_pred, anchor=anchors
-        ).astuple()
+        mtl = relay.vision.multibox_transform_loc(cls_prob=cls_prob, loc_pred=loc_pred, anchor=anchors).astuple()
 
         expr0 = relay.TupleGetItem(mtl, 0)
         expr1 = relay.TupleGetItem(mtl, 1)
@@ -131,9 +123,7 @@ def test_multibox_transform_loc():
             assert np.allclose(count.numpy(), count_gt.numpy())
             assert np.allclose(valid.numpy(), valid_gt.numpy())
 
-        aipu_testing.compare_relay_opt_float_result(
-            mod, np_cls_prob, np_loc_preds, np_anchors, compare=compare
-        )
+        aipu_testing.compare_relay_opt_float_result(mod, np_cls_prob, np_loc_preds, np_anchors, compare=compare)
 
     test_default_value()
 
@@ -404,9 +394,7 @@ def test_relay_scatter_nd():
 
         for mode in ["add", "update"]:
             data = np.random.random((2, 7, 3)).astype("float64")
-            indices = np.stack((np.random.randint(2, size=5), np.random.randint(7, size=5))).astype(
-                indice_dtype
-            )
+            indices = np.stack((np.random.randint(2, size=5), np.random.randint(7, size=5))).astype(indice_dtype)
             updates = np.ones((5, 3)).astype("float64")
             verify_scatter_nd(data, indices, updates, mode)
 
@@ -690,9 +678,7 @@ def test_upsampling(data_shape, scale_h, scale_w, layout, method, align_corners)
         def compute_cos_distance(x, y):
             """Get cosine similarity."""
             x, y = x[0].numpy(), y.numpy()
-            similarity = np.dot(x.flatten(), y.flatten()) / (
-                np.linalg.norm(x) * (np.linalg.norm(y))
-            )
+            similarity = np.dot(x.flatten(), y.flatten()) / (np.linalg.norm(x) * (np.linalg.norm(y)))
             assert float(format(similarity, ".3f")) >= 0.95
 
         aipu_testing.compare_relay_opt_float_result(mod, data_input, compare=compute_cos_distance)
@@ -1260,9 +1246,7 @@ def test_bitwise_not(dtype):
 
 
 def test_cumulate():
-    def verify(
-        x_shape, axis=0, exclusive=False, relay_cumulate_method=relay.cumsum, dtype="float32"
-    ):
+    def verify(x_shape, axis=0, exclusive=False, relay_cumulate_method=relay.cumsum, dtype="float32"):
         x = relay.var("x", shape=x_shape, dtype=dtype)
         output = relay_cumulate_method(x, axis, dtype, exclusive)
         mod = tvm.IRModule.from_expr(output)

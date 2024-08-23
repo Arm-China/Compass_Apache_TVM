@@ -21,6 +21,9 @@
  * \file const_fold.h
  * \brief Centralized location for constant folding.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_ARITH_CONST_FOLD_H_
 #define TVM_ARITH_CONST_FOLD_H_
 
@@ -154,10 +157,12 @@ inline Optional<PrimExpr> TryConstFold<tir::Add>(PrimExpr a, PrimExpr b) {
 template <>
 inline Optional<PrimExpr> TryConstFold<tir::Sub>(PrimExpr a, PrimExpr b) {
   TVM_ARITH_CONST_PROPAGATION({
-    ICHECK(!((pa && pa->dtype.is_uint() && pa->value == 0U) &&
-             (pb && pb->dtype.is_uint() && pb->value > 0U)))
-        << "Checked failed. Minuend 's value is 0U and it's dtype is uint "
-        << "while Subtrahend's dtype is uint; which will cause a negative uint";
+    if (!(Target::Current(true).defined() && Target::Current()->kind->name == "aipu")) {
+      ICHECK(!((pa && pa->dtype.is_uint() && pa->value == 0U) &&
+               (pb && pb->dtype.is_uint() && pb->value > 0U)))
+          << "Checked failed. Minuend 's value is 0U and it's dtype is uint "
+          << "while Subtrahend's dtype is uint; which will cause a negative uint";
+    }
     const DataType& rtype = a.dtype();
     if (pa && pb) {
       int64_t res = pa->value - pb->value;

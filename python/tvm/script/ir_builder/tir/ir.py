@@ -1284,7 +1284,7 @@ def buffer_store(
     """
     offset = None
     if isinstance(buffer, tir.Pointer):
-        buffer.accessible_check()
+        buffer.accessible_check(indices)
         offset = buffer.offset
         buffer = buffer.buffer
 

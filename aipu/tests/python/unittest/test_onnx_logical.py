@@ -5,9 +5,7 @@ from onnx import TensorProto
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 
-def logical_test_flow(
-    model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id
-):
+def logical_test_flow(model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id):
     output_types = [TensorProto.BOOL]
 
     inputs_info = {"shapes": input_shapes, "data_types": input_types}
@@ -70,9 +68,7 @@ def test_logical_greaterorequal_lessorequal(method_v, input_shapes, output_shape
 
     input_types = [TensorProto.FLOAT, TensorProto.FLOAT]
 
-    logical_test_flow(
-        model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id
-    )
+    logical_test_flow(model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id)
 
 
 @pytest.mark.parametrize(
@@ -124,9 +120,7 @@ def test_logical_equal_greater_less(method_v, input_shapes, output_shapes, opset
 
     input_types = [TensorProto.FLOAT, TensorProto.FLOAT]
 
-    logical_test_flow(
-        model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id
-    )
+    logical_test_flow(model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id)
 
 
 @pytest.mark.parametrize(
@@ -178,6 +172,4 @@ def test_logical_and_or_xor(method_v, input_shapes, output_shapes, opset_id):
 
     input_types = [TensorProto.BOOL, TensorProto.BOOL]
 
-    logical_test_flow(
-        model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id
-    )
+    logical_test_flow(model_name, input_types, input_shapes, output_shapes, op_type, compass_op_type, opset_id)

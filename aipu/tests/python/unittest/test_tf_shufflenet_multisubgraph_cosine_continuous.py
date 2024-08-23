@@ -47,9 +47,7 @@ def test_cosine_continuous():
     output_dir = AipuCompassConfig.get().common["output_dir"]
     for folder in os.listdir(output_dir):
         if folder.startswith("tvmgen_default"):
-            json_file = os.path.join(
-                output_dir, folder, "optimizer", "opt_continuous_similarity.json"
-            )
+            json_file = os.path.join(output_dir, folder, "optimizer", "opt_continuous_similarity.json")
             assert os.path.exists(json_file), f"Continuous sim json {json_file} not existed!"
 
     tf_model = aipu_testing.TFModel(f"{aipu_testing.DATA_DIR}/tf_shufflenet_v2.cfg")

@@ -39,9 +39,7 @@ def test_deformable_conv2d_v2(input_shape, kernel_size, output_channels):
     offset_tensor = torch.rand(input_shape[0], 2 * kernel_size * kernel_size, OH, OW)
     mask_tensor = torch.rand(input_shape[0], kernel_size * kernel_size, OH, OW)
 
-    torch_out = torchvision.ops.deform_conv2d(
-        input_tensor, offset_tensor, weight_tensor, mask=mask_tensor
-    ).numpy()
+    torch_out = torchvision.ops.deform_conv2d(input_tensor, offset_tensor, weight_tensor, mask=mask_tensor).numpy()
 
     input_tensor = warp_const(input_tensor)
     weight_tensor = warp_const(weight_tensor)

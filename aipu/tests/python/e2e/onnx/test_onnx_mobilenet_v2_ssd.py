@@ -100,9 +100,7 @@ def compass_compile(compass, target):
     return compass.build(target=target)
 
 
-def run_ssd_mobilenet(
-    model, runtime="sim", visualize=False, calc_mAP=False, imgs_number=1, map_thres=0
-):
+def run_ssd_mobilenet(model, runtime="sim", visualize=False, calc_mAP=False, imgs_number=1, map_thres=0):
     cfg = f"{aipu_testing.DATA_DIR}/onnx_{model}.cfg"
     # 1. Create AIPU Compass instance and set configurations.
     compass = AipuCompass(cfg)
@@ -137,9 +135,7 @@ def run_ssd_mobilenet(
     for box, cat in zip(out_boxes, out_classes):
         if cat in coco.cats.keys():
             label = coco.load_cats(int(cat))[0]["name"]
-            print(
-                f"{label} with bounding box top:{box[0]}, left:{box[1]}, bottom:{box[2]}, right:{box[3]}"
-            )
+            print(f"{label} with bounding box top:{box[0]}, left:{box[1]}, bottom:{box[2]}, right:{box[3]}")
 
     if visualize:
         ground_truth_boxes = [ann["bbox"] for ann in annotation]
@@ -167,9 +163,7 @@ def run_ssd_mobilenet(
         for img_id in img_ids:
             img = coco.load_imgs(img_id)[0]
             img_path = coco.get_img_path(img["file_name"])
-            outputs = ee.run(
-                aipu_testing.ssd_mobilenet_preprocess(img_path, im_height=300, im_width=300)
-            )
+            outputs = ee.run(aipu_testing.ssd_mobilenet_preprocess(img_path, im_height=300, im_width=300))
 
             out_boxes, out_scores, out_classes = post_process(outputs, img["height"], img["width"])
 
@@ -180,9 +174,7 @@ def run_ssd_mobilenet(
                 "boxes": out_boxes,
                 "categroies": out_classes,
             }
-        mean_ap = aipu_testing.calc_mean_ap(
-            coco, predict, model, "onnx", map_thres=map_thres, runtime=runtime
-        )
+        mean_ap = aipu_testing.calc_mean_ap(coco, predict, model, "onnx", map_thres=map_thres, runtime=runtime)
         print(f"On MSCoCo 2017 validation dataset with IoU 0.5, the mAP is {mean_ap}")
 
 

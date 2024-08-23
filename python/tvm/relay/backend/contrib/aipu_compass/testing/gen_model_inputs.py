@@ -64,6 +64,11 @@ def get_imagenet_input(im_height=224, im_width=224, preprocess_mode="tf_vgg", im
         image_data[:, :, :, 0] -= 123.68  # _R_MEAN
         image_data[:, :, :, 1] -= 116.78  # _G_MEAN
         image_data[:, :, :, 2] -= 103.94  # _B_MEAN
+    elif preprocess_mode == "torch_resnet_qat":
+        mean = [123.675, 116.28, 103.53]
+        var = [58.395, 57.120, 57.375]
+        image_data = (image_data - mean) / var
+        image_data = image_data.astype(np.float32)
     elif preprocess_mode == "tf_inc":
         image_data /= 127.5
         image_data -= 1.0

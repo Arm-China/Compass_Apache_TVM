@@ -54,9 +54,7 @@ def test_split_deformable_conv2d():
     mod_bef = tvm.relay.transform.InferType()(mod_bef)
     ret_bef = relay.create_executor(mod=mod_bef).evaluate()(*inputs).numpy()
     func_aft = relay_test.run_opt_pass(before(), compass_transform.SplitDeformableConv2d())
-    func_aft = relay_test.run_opt_pass(
-        func_aft, relay.transform.ConvertLayout(utils.X86_DESIRED_LAYOUTS)
-    )
+    func_aft = relay_test.run_opt_pass(func_aft, relay.transform.ConvertLayout(utils.X86_DESIRED_LAYOUTS))
     mod_aft = tvm.IRModule.from_expr(func_aft)
     mod_aft = tvm.relay.transform.InferType()(mod_aft)
     ret_aft = relay.create_executor(mod=mod_aft).evaluate()(*inputs).numpy()
@@ -108,9 +106,7 @@ def test_split_deformable_conv2d_v2():
     mod_bef = tvm.relay.transform.InferType()(mod_bef)
     ret_bef = relay.create_executor(mod=mod_bef).evaluate()(*inputs).numpy()
     func_aft = relay_test.run_opt_pass(func, compass_transform.SplitDeformableConv2d())
-    func_aft = relay_test.run_opt_pass(
-        func_aft, relay.transform.ConvertLayout(utils.X86_DESIRED_LAYOUTS)
-    )
+    func_aft = relay_test.run_opt_pass(func_aft, relay.transform.ConvertLayout(utils.X86_DESIRED_LAYOUTS))
     mod_aft = tvm.IRModule.from_expr(func_aft)
     mod_aft = tvm.relay.transform.InferType()(mod_aft)
     ret_aft = relay.create_executor(mod=mod_aft).evaluate()(*inputs).numpy()

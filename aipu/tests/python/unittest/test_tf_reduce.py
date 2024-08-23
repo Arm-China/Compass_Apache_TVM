@@ -32,23 +32,22 @@ def reduce(inp, method, axis, keepdims):
 
 def reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v):
     if aipu_testing.skip_case(input_shapes, axis_v):
-        pytest.skip("axis out of input shape")
+        # axis out of input shape
+        return
 
     if method_v == "Prod":
         if axis_v is None or isinstance(axis_v, list):
-            pytest.skip("Not Supported in TVM Frontend.")
+            # Not Supported in TVM Frontend.
+            return
 
     op_type = f"Reduce{method_v}"
     dim_info = f"{len(input_shapes[0])}d"
 
-    if not keepdims_v:
-        if axis_v is None:
-            pytest.skip("OutOfSpec")
-        else:
-            if isinstance(axis_v, list) and len(axis_v) == len(input_shapes[0]):
-                pytest.skip("OutOfSpec")
-            elif dim_info == "1d":
-                pytest.skip("OutOfSpec")
+    if not keepdims_v and (
+        axis_v is None or (isinstance(axis_v, list) and len(axis_v) == len(input_shapes[0])) or dim_info == "1d"
+    ):
+        # Out of Spec
+        return
 
     model_name = aipu_testing.gen_model_name(op_type, dim_info, axis_v, keepdims_v, "float32")
 
@@ -73,8 +72,6 @@ def reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v):
     aipu_testing.get_test_result(aipu_testing.TFModel(cfg_file), input_data, aipu_output, 0.99)
 
 
-@pytest.mark.parametrize("keepdims_v", [True, False])
-@pytest.mark.parametrize("axis_v", [0, 1, 2, 3, 4, -1, -2, -3, -4, -5, None, [1, 2], [-2, -3]])
 @pytest.mark.parametrize(
     "method_v",
     [
@@ -88,13 +85,8 @@ def reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v):
         "Variance",
     ],
 )
-@pytest.mark.parametrize(
-    "input_shapes",
-    [
-        [[2, 3]],
-        [[2, 3, 4]],
-        [[2, 3, 4, 5]],
-    ],
-)
-def test_reduce(method_v, input_shapes, axis_v, keepdims_v):
-    reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v)
+def test_reduce(method_v):
+    for axis_v in (0, 1, 2, 3, 4, -1, -2, -3, -4, -5, None, [1, 2], [-2, -3]):
+        for keepdims_v in (True, False):
+            for input_shapes in ([[2, 3]], [[2, 3, 4]], [[2, 3, 4, 5]]):
+                reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v)

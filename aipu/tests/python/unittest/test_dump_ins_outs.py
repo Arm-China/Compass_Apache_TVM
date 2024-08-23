@@ -22,9 +22,7 @@ def run_model():
 
     # 5. Check the dump function.
     local_output_dir = AipuCompassConfig.get().common["output_dir"]
-    gbuilder_work_dir = os.path.join(
-        local_output_dir, "tvmgen_default_aipu_compass_main_0", "gbuilder"
-    )
+    gbuilder_work_dir = os.path.join(local_output_dir, "tvmgen_default_aipu_compass_main_0", "gbuilder")
 
     is_ins_dumped = os.path.isfile(gbuilder_work_dir + "/input0_int8.bin")
     is_outs_dumped = os.path.isfile(gbuilder_work_dir + "/output0_int8.bin")

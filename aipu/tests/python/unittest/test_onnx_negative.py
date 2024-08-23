@@ -20,9 +20,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 def test_negative(input_shapes, opset_id):
     op_type = "Neg"
-    model_name = aipu_testing.gen_model_name(
-        op_type, aipu_testing.gen_dim_info(input_shapes), opset_id
-    )
+    model_name = aipu_testing.gen_model_name(op_type, aipu_testing.gen_dim_info(input_shapes), opset_id)
 
     inputs_info = {"shapes": input_shapes}
     outputs_info = {"shapes": [input_shapes[0]]}

@@ -29,6 +29,7 @@ if(NOT ${USE_AIPU} MATCHES ${IS_FALSE_PATTERN})
     aipu/src/runtime/*.cc
     aipu/src/runtime/compass/*.cc
     aipu/src/runtime/pipeline/*.cc
+    aipu/src/runtime/relax_vm/*.cc
   )
   list(APPEND RUNTIME_SRCS ${RUNTIME_AIPU_SRCS})
 

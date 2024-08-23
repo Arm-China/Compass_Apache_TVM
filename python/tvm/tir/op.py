@@ -439,6 +439,28 @@ def undef():
     return call_intrin("int32", "tir.undef")
 
 
+def precodegen(x, dtype=None):
+    """Indicate that the given TIR expression need to or already be processed
+    before codegen.
+
+    Parameters
+    ----------
+    x : Union[tir.PrimExpr, str]
+        The TIR expression will be precodegened, or the precodegened string.
+
+    dtype : Optional[Union[tvm.DataType, str]]
+        The output data type.
+
+    Returns
+    -------
+    ret : tir.PrimExpr
+        The precodegen expression.
+    """
+    if dtype is None:
+        dtype = x.dtype if isinstance(x, PrimExpr) else "void"
+    return call_intrin(dtype, "tir.precodegen", x)
+
+
 def reassign(var, value):
     """Create a expression that represent reassignment for the given variable.
 

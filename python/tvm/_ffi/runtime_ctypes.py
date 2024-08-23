@@ -236,6 +236,10 @@ class DataType(ctypes.Structure):
         return self.bytes * self.lanes
 
     @property
+    def total_bits(self):
+        return self.bits * self.lanes
+
+    @property
     def is_void(self):
         return self.type_code == DataTypeCode.HANDLE and self.bits == 0 and self.lanes == 0
 
@@ -244,8 +248,16 @@ class DataType(ctypes.Structure):
         return self.type_code == DataTypeCode.INT
 
     @property
+    def is_int16(self):
+        return self.is_int and self.bits == 16
+
+    @property
     def is_uint(self):
         return self.type_code == DataTypeCode.UINT
+
+    @property
+    def is_uint16(self):
+        return self.is_uint and self.bits == 16
 
     @property
     def is_bool(self):
@@ -784,3 +796,30 @@ def can_implicit_convert(src_dtype, dst_dtype):
         return False
 
     return True
+
+
+_DTYPE2RANGE = {"bool": (0, 1), "int8": (-128, 127), "uint8": (0, 255)}
+_DTYPE2RANGE.update({"int16": (-32768, 32767), "uint16": (0, 65535)})
+_DTYPE2RANGE.update({"int32": (-2147483648, 2147483647), "uint32": (0, 4294967295)})
+_DTYPE2RANGE.update({"float16": (-65504.0, 65504.0)})
+_DTYPE2RANGE.update({"float32": (-3.4028234663852886e38, 3.4028234663852886e38)})
+
+
+def get_range(dtype):
+    """Get the minimum and maximum value of the given data type."""
+    dtype = DataType(dtype)
+    elem_dtype = dtype.element_of
+
+    if elem_dtype not in _DTYPE2RANGE and dtype.is_integer:
+        bits = dtype.bits
+        min_val = 0 if dtype.is_uint else -(2 ** (bits - 1))
+        max_val = (2**bits - 1) if dtype.is_uint else (2 ** (bits - 1) - 1)
+        _DTYPE2RANGE[elem_dtype] = (min_val, max_val)
+
+    return _DTYPE2RANGE[elem_dtype]
+
+
+def int_within_range(x, dtype):
+    """Whether the given integer value "x" is in the range of the specified integer data type."""
+    min_value, max_value = get_range(dtype)
+    return min_value <= x <= max_value

@@ -390,21 +390,19 @@ inline const char* DLDataTypeCode2Str(DLDataTypeCode type_code) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, DLDataType t) {  // NOLINT(*)
-  if (t.bits == 1 && t.lanes == 1 && t.code == kDLUInt) {
-    os << "bool";
-    return os;
-  }
   if (DataType(t).is_void()) {
     return os << "void";
   }
-  if (t.code < DataType::kCustomBegin) {
+  if (t.code == kDLUInt && t.bits == 1) {
+    os << "bool";
+  } else if (t.code < DataType::kCustomBegin) {
     os << DLDataTypeCode2Str(static_cast<DLDataTypeCode>(t.code));
   } else {
     os << "custom[" << GetCustomTypeName(t.code) << "]";
   }
   if (t.code == kTVMOpaqueHandle) return os;
   int16_t lanes = static_cast<int16_t>(t.lanes);
-  os << static_cast<int>(t.bits);
+  if (!(t.code == kDLUInt && t.bits == 1)) os << static_cast<int>(t.bits);
   if (lanes > 1) {
     os << 'x' << lanes;
   } else if (lanes < -1) {

@@ -28,13 +28,18 @@ namespace runtime {
     }                                                               \
   } while (false)
 
-class ParamInfo {
+class ParamInfo : public Object {
   // Things that will interface with user directly.
  public:
   explicit ParamInfo(DataType dtype, size_t size) : dtype(dtype), size(size) {}
 
   DataType dtype;
   size_t size;
+};
+
+class ParamInfoRef : public ObjectRef {
+ public:
+  TVM_DEFINE_OBJECT_REF_METHODS(ParamInfoRef, ObjectRef, ParamInfo);
 };
 
 class AipuDriver {

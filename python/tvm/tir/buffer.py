@@ -22,30 +22,28 @@ from numbers import Integral
 
 import tvm._ffi
 from tvm._ffi.base import string_types
-from tvm.ir import PointerType, PrimExpr, PrimType, Range
-from tvm.runtime import Object, Scriptable, convert
+from tvm.ir import PointerType, PrimExpr, PrimType, Range, Array
+from tvm.runtime import Object, Scriptable, convert, DataType
 
 from . import _ffi_api
 
 
-def check_indice_int_dtype(indices):
-    """check if indice is of int dtype"""
-    if isinstance(indices, (list, tuple)):
-        for elt in indices:
-            if not check_indice_int_dtype(elt):
-                return False
-    if isinstance(indices, float):
-        return False
-    if hasattr(indices, "dtype"):
-        dtype = indices.dtype
-        if not (dtype.startswith("int") or dtype.startswith("uint")):
-            return False
+def is_integer_indices(indices):
+    """Whether the data type of all indices is integer or not."""
+    if isinstance(indices, (list, tuple, Array)):
+        return all(is_integer_indices(x) for x in indices)
     if isinstance(indices, slice):
-        for _attr in ["start", "stop", "step"]:
-            attr = getattr(indices, _attr)
-            if not check_indice_int_dtype(attr):
-                return False
-    return True
+        return (
+            (indices.start is None or is_integer_indices(indices.start))
+            and (indices.stop is None or is_integer_indices(indices.stop))
+            and (indices.step is None or is_integer_indices(indices.step))
+        )
+
+    if isinstance(indices, int):
+        return True
+    if isinstance(indices, PrimExpr):
+        return DataType(indices.dtype).is_integer
+    return False
 
 
 @tvm._ffi.register_object("tir.Buffer")
@@ -199,8 +197,8 @@ class Buffer(Object, Scriptable):
 
             The offset indices of the element in the flattened buffer.
         """
-        if not check_indice_int_dtype(indices):
-            raise TypeError("Indice should be Int dtype. Please explicit cast it into Int dtype.")
+        if not is_integer_indices(indices):
+            raise TypeError("All indices should be integer type, please convert it explicitly.")
 
         return _ffi_api.BufferOffsetOf(self, indices)  # type: ignore
 
@@ -212,8 +210,8 @@ class Buffer(Object, Scriptable):
         if not isinstance(indices, (tuple, list)):
             indices = [indices]
 
-        if not check_indice_int_dtype(indices):
-            raise TypeError("Indice should be Int dtype. Please explicit cast it into Int dtype.")
+        if not is_integer_indices(indices):
+            raise TypeError("All indices should be integer type, please convert it explicitly.")
 
         has_slice = any(isinstance(i, slice) for i in indices)
         has_step = any(isinstance(i, slice) and i.step is not None for i in indices)

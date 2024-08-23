@@ -142,36 +142,6 @@ PrimExpr low_true_pred(PrimExpr n, int lanes, Span span) {
   return tir::Call(DataType::Bool(lanes), tir::builtin::low_true_pred(), {n}, span);
 }
 
-bool WithinRange(PrimExpr imm, DataType dtype) {
-  dtype = dtype.element_of();
-  int64_t value = Downcast<IntImm>(imm)->value;
-  int64_t dtype_min = Downcast<IntImm>(min_value(dtype))->value;
-  int64_t dtype_max = Downcast<IntImm>(max_value(dtype))->value;
-  if (dtype_min <= value && value <= dtype_max) {
-    return true;
-  }
-  return false;
-}
-
-void TryNarrowImmType(PrimExpr& lhs, PrimExpr& rhs) {
-  DataType ltype = lhs->dtype;
-  DataType rtype = rhs->dtype;
-
-  // Only handle the situation that all operands are integers, and one's bits greater than another.
-  if (ltype.bits() == rtype.bits()) return;
-  if (!((ltype.is_int() || ltype.is_uint()) && (rtype.is_int() || rtype.is_uint()))) return;
-
-  if (lhs->IsInstance<IntImmNode>() && !rhs->IsInstance<IntImmNode>() && WithinRange(lhs, rtype)) {
-    lhs = cast(rtype, lhs);
-    return;
-  }
-
-  if (!lhs->IsInstance<IntImmNode>() && rhs->IsInstance<IntImmNode>() && WithinRange(rhs, ltype)) {
-    rhs = cast(ltype, rhs);
-    return;
-  }
-}
-
 void BroadcastToMatchLanes(PrimExpr& op_a, PrimExpr& op_b) {  // NOLINT(*)
   DataType dtype_a = op_a.dtype();
   DataType dtype_b = op_b.dtype();
@@ -191,11 +161,6 @@ void BroadcastToMatchLanes(PrimExpr& op_a, PrimExpr& op_b) {  // NOLINT(*)
 void BinaryOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {  // NOLINT(*)
   CHECK(lhs.defined()) << "ValueError: `lhs` is null in the binary operator";
   CHECK(rhs.defined()) << "ValueError: `rhs` is null in the binary operator";
-
-  if (Target::Current().defined() && Target::Current()->kind->name == "aipu") {
-    TryNarrowImmType(lhs, rhs);
-  }
-
   if (lhs.dtype() == rhs.dtype()) return;
 
   BroadcastToMatchLanes(lhs, rhs);
@@ -285,11 +250,6 @@ void BinaryOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {  // NOLINT(*)
 void ShiftOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {
   CHECK(lhs.defined()) << "ValueError: `lhs` is null in the shift operator";
   CHECK(rhs.defined()) << "ValueError: `rhs` is null in the shift operator";
-
-  if (Target::Current().defined() && Target::Current()->kind->name == "aipu") {
-    TryNarrowImmType(lhs, rhs);
-  }
-
   if (lhs.dtype() == rhs.dtype()) return;
 
   BroadcastToMatchLanes(lhs, rhs);
@@ -315,6 +275,27 @@ void ShiftOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {
   // All operands already are guaranteed to be integer.
   rhs = cast(ltype, rhs);
   return;
+}
+
+void CompareOpMatchTypes(PrimExpr& lhs, PrimExpr& rhs, Span span) {
+  CHECK(lhs.defined()) << "ValueError: `lhs` is null in the compare operator";
+  CHECK(rhs.defined()) << "ValueError: `rhs` is null in the compare operator";
+  if (lhs.dtype() == rhs.dtype()) return;
+
+  if (Target::Current().defined() && Target::Current()->kind->name == "aipu") {
+    DataType ltype = lhs.dtype();
+    DataType rtype = rhs.dtype();
+
+    // Skip the unsafe comparison check for the situation that both operands are constants, because
+    // it can be correctly handled by the later constant folding.
+    if (!(lhs->IsInstance<IntImmNode>() && rhs->IsInstance<IntImmNode>()) &&
+        ((ltype.is_int() && rtype.is_uint() && rtype.bits() >= ltype.bits()) ||
+         (ltype.is_uint() && rtype.is_int() && ltype.bits() >= rtype.bits()))) {
+      LOG(FATAL) << "Unsafe unsigned and signed comparison, \"" << ltype << "\" vs. \"" << rtype
+                 << "\", please do the type conversion explicitly.";
+    }
+  }
+  return BinaryOpMatchTypes(lhs, rhs, span);
 }
 
 PrimExpr ret(PrimExpr value, Span span) {
@@ -656,35 +637,35 @@ PrimExpr likely(PrimExpr cond, Span span) {
 // operator>
 PrimExpr operator>(PrimExpr a, PrimExpr b) { return greater(a, b); }
 PrimExpr greater(PrimExpr a, PrimExpr b, Span span) {
-  BinaryOpMatchTypes(a, b, span);
+  CompareOpMatchTypes(a, b, span);
   if (auto ret = arith::TryConstFold<tir::GT>(a, b)) return ret.value();
   return tir::GT(a, b, span);
 }
 
 PrimExpr operator>=(PrimExpr a, PrimExpr b) { return greater_equal(a, b); }
 PrimExpr greater_equal(PrimExpr a, PrimExpr b, Span span) {
-  BinaryOpMatchTypes(a, b, span);
+  CompareOpMatchTypes(a, b, span);
   if (auto ret = arith::TryConstFold<tir::GE>(a, b)) return ret.value();
   return tir::GE(a, b, span);
 }
 
 PrimExpr operator<(PrimExpr a, PrimExpr b) { return less(a, b); }
 PrimExpr less(PrimExpr a, PrimExpr b, Span span) {
-  BinaryOpMatchTypes(a, b, span);
+  CompareOpMatchTypes(a, b, span);
   if (auto ret = arith::TryConstFold<tir::LT>(a, b)) return ret.value();
   return tir::LT(a, b, span);
 }
 
 PrimExpr operator<=(PrimExpr a, PrimExpr b) { return less_equal(a, b); }
 PrimExpr less_equal(PrimExpr a, PrimExpr b, Span span) {
-  BinaryOpMatchTypes(a, b, span);
+  CompareOpMatchTypes(a, b, span);
   if (auto ret = arith::TryConstFold<tir::LE>(a, b)) return ret.value();
   return tir::LE(a, b, span);
 }
 
 PrimExpr operator==(PrimExpr a, PrimExpr b) { return equal(a, b); }
 PrimExpr equal(PrimExpr a, PrimExpr b, Span span) {
-  BinaryOpMatchTypes(a, b, span);
+  CompareOpMatchTypes(a, b, span);
   if (auto ret = arith::TryConstFold<tir::EQ>(a, b)) return ret.value();
   if (arith::IsVScaleCall(a) && arith::IsVScaleCall(b)) return true;
   return tir::EQ(a, b, span);
@@ -692,7 +673,7 @@ PrimExpr equal(PrimExpr a, PrimExpr b, Span span) {
 
 PrimExpr operator!=(PrimExpr a, PrimExpr b) { return not_equal(a, b); }
 PrimExpr not_equal(PrimExpr a, PrimExpr b, Span span) {
-  BinaryOpMatchTypes(a, b, span);
+  CompareOpMatchTypes(a, b, span);
   if (auto ret = arith::TryConstFold<tir::NE>(a, b)) return ret.value();
   return tir::NE(a, b, span);
 }

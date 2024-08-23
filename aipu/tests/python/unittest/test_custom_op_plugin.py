@@ -135,9 +135,7 @@ def gen_topk_model(path):
     with tf_compat_v1.Session(graph=g) as sess:
         sess.run(tf_compat_v1.global_variables_initializer())
         output_nodes = ["TopKV2"]
-        frozen_graph_def = tf_compat_v1.graph_util.convert_variables_to_constants(
-            sess, sess.graph_def, output_nodes
-        )
+        frozen_graph_def = tf_compat_v1.graph_util.convert_variables_to_constants(sess, sess.graph_def, output_nodes)
         with open(path, "wb") as f:
             f.write(frozen_graph_def.SerializeToString())
 

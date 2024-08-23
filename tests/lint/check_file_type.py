@@ -175,13 +175,14 @@ ALLOW_SPECIFIC_FILE = {
     # Hexagon
     "src/runtime/hexagon/rpc/android_bash.sh.template",
     "src/runtime/hexagon/profiler/lwp_handler.S",
-    # Zhouyi NPU documentation related files
+    # Zhouyi NPU documentation related files.
     "aipu/docs/images/rpc_server_arch.svg",
     "aipu/docs/images/multi_task.png",
     "aipu/docs/images/graph_parition_solution.png",
     "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/input0.bin",
     "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/output.bin",
     "aipu/samples/tf_mobilenet_v1_bare_metal/bsp/lib/libbm_bsp.a",
+    "aipu/docs/dsl/_templates/footer.html",
 }
 
 
@@ -214,7 +215,7 @@ def filename_allowed(name):
     if name in ALLOW_SPECIFIC_FILE:
         return True
 
-    # aipu_dsl_doc/*.jpg
+    # Zhouyi NPU documentation related files.
     if name.startswith("aipu/docs/dsl/_static/") and name.endswith(".jpg"):
         return True
 

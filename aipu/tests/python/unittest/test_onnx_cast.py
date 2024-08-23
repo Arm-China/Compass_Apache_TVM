@@ -47,8 +47,6 @@ def test_cast(input_shapes, from_type, to_type):
     }
 
     cfg_file = aipu_testing.get_model_cfg_path(model_info, "onnx")
-    input_data = aipu_testing.get_op_input(
-        model_name, input_shapes, {"from_type": from_type, "to_type": to_type}
-    )
+    input_data = aipu_testing.get_op_input(model_name, input_shapes, {"from_type": from_type, "to_type": to_type})
     aipu_output = aipu_testing.get_tvm_output(cfg_file, input_data)
     aipu_testing.get_test_result(aipu_testing.ONNXModel(cfg_file), input_data, aipu_output, 0.99)

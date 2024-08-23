@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 import numpy as np
 import pytest
 import tvm
@@ -319,7 +322,7 @@ def test_isnan():
     z = te.var("z", "int32")
     assert str(tvm.tir.isnan(z)) == "T.bool(False)"
     k = te.var("k", "int8x2")
-    assert str(tvm.tir.isnan(k).dtype) == "uint1x2"
+    assert str(tvm.tir.isnan(k).dtype) == "boolx2"
 
 
 def test_equality():

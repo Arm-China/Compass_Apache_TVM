@@ -20,9 +20,7 @@ def test_simplify_pad():
         return relay.Function(relay.analysis.free_vars(expr), expr)
 
     def expected():
-        expr = relay.nn.conv2d(
-            data, weight, padding=(3, 3, 3, 3), data_layout="NHWC", kernel_layout="HWIO"
-        )
+        expr = relay.nn.conv2d(data, weight, padding=(3, 3, 3, 3), data_layout="NHWC", kernel_layout="HWIO")
         return relay.Function(relay.analysis.free_vars(expr), expr)
 
     after = relay_test.run_opt_pass(before(), compass_transform.SimplifyPad())

@@ -37,9 +37,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
         [3, 1],
     ],
 )
-def test_avgpool2d(
-    input_shapes, kernel_shape, pads, strides, auto_pad, count_include_pad, ceil_mode, opset_id
-):
+def test_avgpool2d(input_shapes, kernel_shape, pads, strides, auto_pad, count_include_pad, ceil_mode, opset_id):
     if auto_pad not in ["NOTSET", "default"] and isinstance(pads, list):
         pytest.skip("pads cannot be used simultaneously with auto_pad attribute")
 

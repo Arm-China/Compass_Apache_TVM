@@ -13,9 +13,7 @@ def test_spacetodepth(input_shapes, blocksize):
 
     # output tensor is [N, C * blocksize * blocksize, H/blocksize, W/blocksize]
     n, c, h, w = input_shapes[0]
-    output_shapes = [
-        [int(n), int(c * blocksize * blocksize), int(h / blocksize), int(w / blocksize)]
-    ]
+    output_shapes = [[int(n), int(c * blocksize * blocksize), int(h / blocksize), int(w / blocksize)]]
 
     inputs_info = {"shapes": input_shapes}
     outputs_info = {"shapes": output_shapes}

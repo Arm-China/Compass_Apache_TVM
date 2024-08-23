@@ -75,9 +75,7 @@ def test_slice(input_shapes, starts, ends, axes, steps, opset_id):
 
     op_type = "Slice"
     dim_info = f"{len(input_shapes[0])}d"
-    model_name = aipu_testing.gen_model_name(
-        op_type, dim_info, starts, ends, axes, steps, output_shapes, opset_id
-    )
+    model_name = aipu_testing.gen_model_name(op_type, dim_info, starts, ends, axes, steps, output_shapes, opset_id)
 
     input_types = [TensorProto.FLOAT]
     inp_data_list = [None]

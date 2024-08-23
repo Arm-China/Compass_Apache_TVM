@@ -7,9 +7,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 def biasadd(conv):
     b = conv.shape[-1]
-    biases = tf.compat.v1.get_variable(
-        "biases", [b], dtype=tf.float32, initializer=tf.constant_initializer(0.1)
-    )
+    biases = tf.compat.v1.get_variable("biases", [b], dtype=tf.float32, initializer=tf.constant_initializer(0.1))
     return tf.nn.bias_add(conv, biases)
 
 

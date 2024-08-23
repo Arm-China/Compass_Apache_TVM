@@ -2584,7 +2584,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
 
     def _gen_cast(self, cast):
         attrs = cast.attrs
-
+        ignore_scale_zp = "true" if cast.args[0].checked_type.dtype == "int32" else "false"
         self._gen_basic_layer_items("Cast", cast.args, cast)
         dtype_mapping = {
             "bool": "uint8",
@@ -2594,24 +2594,27 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         self._ir_text += textwrap.dedent(
             f"""
             to_dtype={dtype}
+            ignore_scale_zp={ignore_scale_zp}
+            clip_mode=SATURATION
             """
         )
 
     def _gen_qnn_cast(self, call):
+        ignore_scale_zp = "true" if call.args[0].checked_type.dtype == "int32" else "false"
         func = call.op
         if func == relay.op.get("qnn.requantize"):
             self._gen_basic_layer_items("Cast", call.args[0], call)
             self._ir_text += textwrap.dedent(
                 f"""
                 to_dtype={call.attrs.out_dtype}
-                ignore_scale_zp=false
+                ignore_scale_zp={ignore_scale_zp}
+                clip_mode=SATURATION
                 """
             )
             return
 
         quantize = func.body
         cast = quantize.args[0]
-
         self._gen_basic_layer_items("Cast", cast.args, call)
         dtype_mapping = {
             "bool": "uint8",
@@ -2625,7 +2628,8 @@ class CodeGenAipuCompass(relay.ExprFunctor):
         self._ir_text += textwrap.dedent(
             f"""
             to_dtype={dtype}
-            ignore_scale_zp=false
+            ignore_scale_zp={ignore_scale_zp}
+            clip_mode=SATURATION
             """
         )
 

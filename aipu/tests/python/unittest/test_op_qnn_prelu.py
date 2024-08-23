@@ -59,9 +59,7 @@ def test_qnn_prelu():
         x_data, x_dequantized, alpha_dequantized, output_scale, output_zero_point, input_zero_point
     )
 
-    op_res = relay.create_executor("graph", device=tvm.cpu(0), target="llvm").evaluate(func)(
-        x_data, alpha_data
-    )
+    op_res = relay.create_executor("graph", device=tvm.cpu(0), target="llvm").evaluate(func)(x_data, alpha_data)
 
     np.testing.assert_equal(op_res.numpy(), golden_output)
 

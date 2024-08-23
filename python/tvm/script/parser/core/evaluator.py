@@ -20,8 +20,9 @@
 #
 import ast
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+import numpy as np
 
-from tvm import target as tgt
+from tvm import error, target as tgt
 from . import dispatch, doc
 from .error import ParserError
 
@@ -70,6 +71,14 @@ def _get_builtin_or_none(name: str):
     if isinstance(builtins, dict):
         return builtins.get(name)
     return None
+
+
+def _check_literal_type(eval_result, node, parser):
+    if tgt.AipuInfo.current() is not None:
+        if isinstance(eval_result, (np.integer, np.floating, np.bool_)):
+            err_msg = "The scalar literal only can be represented by instance of Python built-in "
+            err_msg += f'type, i.e., int, float, bool, but got: "{type(eval_result)}".'
+            parser.report_error(node, err_msg)
 
 
 class ExprEvaluator:
@@ -226,6 +235,8 @@ class ExprEvaluator:
         if isinstance(node, doc.Name):
             if node.id not in self.value_table and not _get_builtin_or_none(node.id):
                 raise ParserError(node, f"Undefined variable: {node.id}")
+            if node.id in self.value_table:
+                _check_literal_type(self.value_table[node.id], node, self.parser)
             return node
         if isinstance(
             node,
@@ -284,6 +295,8 @@ class ExprEvaluator:
                 value = self._eval_slice(fields)
             else:
                 value = self._eval_expr(node.__class__(**fields))
+        except error.DiagnosticError:
+            raise
         except Exception as e:  # pylint: disable=broad-except,invalid-name
             self.parser.report_error(node, e)
         return self._add_intermediate_result(value)
@@ -303,6 +316,8 @@ class ExprEvaluator:
         """
         try:
             value = self._eval_expr(node)
+        except error.DiagnosticError:
+            raise
         except Exception as e:  # pylint: disable=broad-except,invalid-name
             self.parser.report_error(node, str(e))
         return self._add_intermediate_result(value)
@@ -440,7 +455,17 @@ class ExprEvaluator:
         res : Any
             The evaluation result.
         """
-        return _eval_expr(v, self.value_table)
+        if tgt.AipuInfo.current() is not None:
+            if isinstance(v, doc.Call) and isinstance(v.func, doc.Name):
+                func_name = v.func.id
+                if func_name in ("print", "max", "min"):
+                    name_map = {"print": "printf"}
+                    err_msg = f'The built-in "{func_name}" isn\'t supported, please use "S.{{}}".'
+                    self.parser.report_error(v, err_msg.format(name_map.get(func_name, func_name)))
+
+        ret = _eval_expr(v, self.value_table)
+        _check_literal_type(ret, v, self.parser)
+        return ret
 
 
 def eval_expr(
@@ -521,14 +546,6 @@ def _eval_expr(
     res : Any
         The evaluation result.
     """
-    if tgt.AipuInfo.current() is not None:
-        if isinstance(node, doc.Call) and isinstance(node.func, doc.Name):
-            func_name = node.func.id
-            if func_name in ("print", "max", "min"):
-                name_map = {"print": "printf"}
-                err_msg = f'The built-in "{func_name}" isn\'t supported, please use "S.{{}}".'
-                raise ParserError(node, err_msg.format(name_map.get(func_name, func_name)))
-
     node = doc.from_doc(node)
     if isinstance(node, ast.expr):
         node = ast.Expression(body=node)

@@ -3,8 +3,8 @@
 import os
 import glob
 from tvm import contrib
-from tvm.relay.backend.contrib.aipu_compass import AipuCompass, ExecutionEngine
-from tvm.relay.backend.contrib.aipu_compass import AipuCompassConfig, sync_compass_output_dir
+from tvm.aipu.utils import sync_compass_output_dir
+from tvm.relay.backend.contrib.aipu_compass import AipuCompass, ExecutionEngine, AipuCompassConfig
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 

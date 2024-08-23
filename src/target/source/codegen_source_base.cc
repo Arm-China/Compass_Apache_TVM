@@ -20,6 +20,9 @@
 /*!
  * \file codegen_source_base.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "codegen_source_base.h"
 
 #include <algorithm>
@@ -72,6 +75,12 @@ std::string CodeGenSourceBase::GetVarID(const tir::VarNode* v) const {
 void CodeGenSourceBase::PrintIndent() {
   for (int i = 0; i < indent_; ++i) {
     this->stream << ' ';
+  }
+}
+
+void CodeGenSourceBase::PrintIndent(std::ostream& os) {
+  for (int i = 0; i < indent_; ++i) {
+    os << ' ';
   }
 }
 

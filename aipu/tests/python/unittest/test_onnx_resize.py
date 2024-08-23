@@ -41,9 +41,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 def test_resize(input_shapes, mode, coordinate_transformation_mode, scales, opset_id):
     op_type = "Resize"
-    model_name = aipu_testing.gen_model_name(
-        op_type, mode, coordinate_transformation_mode, scales, opset_id
-    )
+    model_name = aipu_testing.gen_model_name(op_type, mode, coordinate_transformation_mode, scales, opset_id)
 
     extend_attrs = {
         "mode": mode,

@@ -27,9 +27,7 @@ def test_onehot(input_shapes, depth_v, on_value_v, off_value_v, axis_v):
         dim_info = f"{len(input_shapes[0])}d"
     else:
         dim_info = "scalar"
-    model_name = aipu_testing.gen_model_name(
-        op_type, dim_info, depth_v, on_value_v, off_value_v, axis_v, "int32"
-    )
+    model_name = aipu_testing.gen_model_name(op_type, dim_info, depth_v, on_value_v, off_value_v, axis_v, "int32")
 
     depth_v = random.randint(1, 10) if depth_v == "random" else depth_v
     on_value_v = None if on_value_v == "default" else on_value_v

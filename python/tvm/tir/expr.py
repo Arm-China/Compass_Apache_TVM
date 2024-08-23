@@ -414,7 +414,11 @@ class Var(PrimExprWithOp):
     @property
     def addr(self):
         from .pointer import Pointer  # pylint: disable=import-outside-toplevel
+        from ..aipu.utils import VALID_ADDR_DTYPES  # pylint: disable=import-outside-toplevel
 
+        err_msg = f"Only support get address of variable whose type is one of {VALID_ADDR_DTYPES}, "
+        err_msg += f'but got: "{self.dtype}".'
+        assert self.dtype in VALID_ADDR_DTYPES, err_msg
         return Pointer(self.dtype, "local", self)
 
 

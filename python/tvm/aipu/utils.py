@@ -7,9 +7,25 @@ import operator
 import functools
 from subprocess import run, STDOUT
 import numpy as np
-import tvm
-from .. import autotvm, contrib, rpc, tir, DataType
+from .. import autotvm, contrib, rpc, tir, target as tgt, DataType, get_range, int_within_range
 from .logger import INFO
+
+
+HW_NATIVE_STORAGE_DTYPES = ("int8", "uint8", "int16", "uint16", "int32", "uint32", "float16")
+HW_NATIVE_STORAGE_DTYPES += ("float32",)
+_HW_NATIVE_SCALAR_DTYPES = HW_NATIVE_STORAGE_DTYPES + ("bool",)
+HW_NATIVE_VDTYPES = ("int8x32", "uint8x32", "int16x16", "uint16x16", "int32x8", "uint32x8")
+HW_NATIVE_VDTYPES += ("float16x16", "float32x8")
+HW_NATIVE_MASK_TYPES = ("boolx8", "boolx16", "boolx32")
+VALID_ADDR_DTYPES = HW_NATIVE_STORAGE_DTYPES + HW_NATIVE_VDTYPES + ("float32x16",)
+
+
+def is_hw_native_scalar_dtype(dtype):
+    return str(dtype) in _HW_NATIVE_SCALAR_DTYPES
+
+
+def is_hw_native_dtype(dtype):
+    return str(dtype) in (_HW_NATIVE_SCALAR_DTYPES + HW_NATIVE_VDTYPES + HW_NATIVE_MASK_TYPES)
 
 
 _EXE_NAME2TOOL_NAME = {
@@ -106,29 +122,29 @@ def abspath(path, base_dir=None):
 def get_rpc_session(
     session_timeout=600, rpc_key=None, tracker_host=None, tracker_port=None, priority=1
 ):
-    """Connect to the RPC tracker and get a RPC session with the RPC key.
+    """Connect to the RPC tracker and get an RPC session with the RPC key.
 
     Parameters
     ----------
     session_timeout : Optional[float]
-        The duration of the session, allows server to kill
+        The duration of the session, which allows the server to kill
         the connection when duration is longer than this value.
-        When duration is zero, it means the request must always be kept alive.
+        When duration is zero, it means that the request must always be kept alive.
 
     rpc_key : Optional[str]
-        The type key of the device(default=None).
+        The type key of the device.
         If rpc_key = "None", get it from env "AIPU_TVM_RPC_KEY".
 
     tracker_host : Optional[str]
-        The hostname or IP address of RPC tracker(default = None).
+        The hostname or IP address of the RPC tracker.
         If tracker_host = "None", get it from env "AIPU_TVM_RPC_TRACKER_IP".
 
     tracker_port: Optional[int, str]
-        The port of PRC tracker(default = None)
+        The port of the RPC tracker.
         If tracker_port = "None", get it from env "AIPU_TVM_RPC_TRACKER_PORT".
 
     priority : Optional[int]
-        The priority of the request(default=1).
+        The priority of the request.
         If priority = "None", get it from env "AIPU_TVM_RPC_PRIORITY".
 
     Returns
@@ -173,6 +189,36 @@ def check_remote(rpc_key=None, tracker_host=None, tracker_port=None):
     return True
 
 
+def sync_compass_output_dir(rpc_sess, filter_fn=lambda x: True):
+    """Synchronize files of compass output directory on RPC server to local.
+
+    Parameters
+    ----------
+    rpc_sess : tvm.rpc.RPCSession
+        The RPC session that is already connected to the RPC server.
+
+    filter_fn : Optional[Callable[[str], bool]]
+        The function used to select the files that need to be synchronized to local. It will be
+        called for each file, only the files whose return value are True will be selected.
+    """
+    from tvm.relay.backend.contrib import (  # pylint: disable=import-outside-toplevel
+        aipu_compass,
+    )
+
+    err_msg = f'The arg "rpc_sess" expect a RPC session, but got: "{type(rpc_sess)}".'
+    assert isinstance(rpc_sess, rpc.RPCSession), err_msg
+
+    remote_files = tuple(
+        x for x in rpc_sess.list_files(".") if x.startswith("compass_output") and filter_fn(x)
+    )
+    local_output_dir = aipu_compass.AipuCompassBasicConfig.get().common["output_dir"]
+
+    for remote_file in remote_files:
+        rel_path = remote_file.split(os.path.sep, 1)[1]
+        open(f"{local_output_dir}/{rel_path}", "wb").write(rpc_sess.download(remote_file))
+        INFO(f'Downloaded "{rel_path}" into "{local_output_dir}".')
+
+
 def prod_const(arr):
     """Reduce product the given input sequence to a constant value."""
     const_arr = []
@@ -186,101 +232,133 @@ def prod_const(arr):
 
 def canonicalize_target(target):
     """Canonicalize target and return tvm.target.Target."""
-    if isinstance(target, tvm.target.Target):
+    if isinstance(target, tgt.Target):
         return target
     assert isinstance(target, str), f"Unsupported target type: {type(target)}."
     if not target.startswith("aipu"):
         target = "aipu -mcpu=" + target
-    return tvm.target.Target(target)
+    return tgt.Target(target)
 
 
-def vec_type(dtype):
-    """Get the corresponding vector version of the given data type."""
+def hw_native_vdtype(dtype):
+    """Get the corresponding hardware native vector data type.
+
+    Parameters
+    ----------
+    dtype : Union[str, DataType]
+        The given data type, can be any scalar or vector data type except boolean ones.
+
+    Returns
+    -------
+    ret: DataType
+        The corresponding hardware native vector data type.
+
+    Examples
+    --------
+    .. code-block:: python
+
+        # Generate from string objects.
+        i8x32 = hw_native_vdtype("int8")
+        fp32x8 = hw_native_vdtype("float32")
+
+        # Generate from DataType objects.
+        u16x16 = hw_native_vdtype(DataType("uint16"))
+        i32x8 = hw_native_vdtype(DataType("int32"))
+
+    See Also
+    --------
+    - :doc:`../../language_basics/types`
+    """
     scalar_dtype = DataType(dtype)
+    assert not scalar_dtype.is_bool, "Does not support boolean data type."
     return scalar_dtype.with_lanes(256 // scalar_dtype.bits)
-
-
-_DTYPE2RANGE = {"bool": (0, 1)}
-for _dtype in ("uint8", "int8", "uint16", "int16", "uint32", "int32", "float16", "float32"):
-    _range = (np.finfo if DataType(_dtype).is_float else np.iinfo)(_dtype)
-    _DTYPE2RANGE[_dtype] = (_range.min, _range.max)
-
-
-def get_range(dtype):
-    """Get the minimum and maximum value of the given data type."""
-    return _DTYPE2RANGE[DataType(dtype).element_of]
 
 
 # Don't set value here, set it through environment variable "AIPU_TVM_RANDOM_SEED".
 _RANDOM_SEED = None
 
 
-def rand(shape, dtype, low=None, high=None, enable_corner_values=True):
-    """Random values in a given shape, dtype and [low, high) range (includes low, excludes high).
+def rand(shape, dtype, low=None, high=None, enable_corner_values=True, return_python_type=False):
+    """Random values in a given shape, dtype and [low, high) range (including low, excluding high).
 
     Parameters
     ----------
-    shape : Union[int,Tuple[int],List[int]]
-        The element number will rand
+    shape : Union[int, Tuple[int], List[int]]
+        The element number on which rand is performed.
 
     dtype : str
-        The data type
+        The data type.
 
-    low : Optional[int,float]
-        The maximum threshold for rand range, default is None
+    low : Optional[int, float]
+        The minimum threshold for the rand range.
 
-    high : Optional[int,float]
-        The minimum threshold for rand range, default is None
+    high : Optional[int, float]
+        The maximum threshold for the rand range.
 
-    enable_corner_values: Optional[bool]
-        Whether the corner values are forced included or not, default is True. Note:
-        1. The corner values contains: low or dtype minimum value, high or dtype maximum value,
-        zero value when zero in random range;
-        2. When value is True and elements number is less than corner values' number, it's
-        uncertain that corner values are forced included: whether corner values are existed
-        depends on randomness.
+    enable_corner_values : Optional[bool]
+        Whether the corner values are forced to be included.
+        Note:
+        1. The corner values contain: low or dtype minimum value, high or dtype maximum value,
+        and zero value when zero is in the random range.
+        2. When the value is True and the number of elements is less than the number of corner
+        values, it is uncertain whether corner values are forced to be included: the existence of
+        corner values depends on randomness.
+
+    return_python_type : Optional[bool]
+        Whether return the result as Python native type or not, if it is False, the result are
+        returned as NumPy type.
 
     Returns
     -------
-    out: Union[float,int,numpy.ndarray]
-        Rand values, scalar when shape is 1 or numpy.ndarray when shape is tuple of int
+    out: Union[float, int, List[float], List[int], numpy.ndarray]
+        Rand values, scalar when shape is 1 or numpy.ndarray when shape is a tuple of int.
 
     Examples
     --------
     .. code-block:: python
 
-        a = rand(100,"int8")
-        b = rand((4,16), "float16", low=-100, high=100)
+        # Generate NumPy objects.
+        ndarray_i8_a = rand(100, "int8")
+        ndarray_fp16_b = rand((4, 16), "float16", low=-100, high=100)
+        ndarray_int16_c = rand((1,), "int16")
+        numpy_fp32_c = rand(1, low=0, "float32")
+
+        # Generate Python native type objects.
+        float_list_d = rand((2, 30), "float32", high=5.5, return_python_type=True)
+        int_value_e = rand(1, "int32", enable_corner_values=False, return_python_type=True)
+        int_list_f = rand((1,), "int8", return_python_type=True)
 
     """
     global _RANDOM_SEED
     if _RANDOM_SEED is None:
         _RANDOM_SEED = os.getenv("AIPU_TVM_RANDOM_SEED") or np.random.randint(0, 2**31)
         np.random.seed(int(_RANDOM_SEED))
-        INFO(f'The NumPy random seed is "{_RANDOM_SEED}".')
+        INFO(f'Reproduce with the random seed by "setenv AIPU_TVM_RANDOM_SEED {_RANDOM_SEED}".')
 
-    dtype = str(dtype)
-    if dtype == "bool":
+    err_msg = f'The arg "dtype" expect one of {_HW_NATIVE_SCALAR_DTYPES}, but got: "{dtype}".'
+    assert is_hw_native_scalar_dtype(dtype), err_msg
+    dtype_str = dtype
+    dtype = DataType(dtype)
+
+    if dtype.is_bool:
         out = np.random.uniform(size=shape) < 0.5
-        return out[0] if shape == 1 else out
+        out = out[0] if shape == 1 else out
+        return out.tolist() if return_python_type else out
 
-    if dtype.startswith("float"):
-        dtype = "float32" if dtype == "float64" else dtype
-        np_dtype_info = np.finfo(dtype)
-        max_eps = 1e-5
-        rand_func = lambda low, high: np.random.uniform(low, high, shape).astype(dtype)
-    else:
-        np_dtype_info = np.iinfo(dtype)
-        max_eps = 1
-        rand_func = lambda low, high: np.random.randint(low, high, shape, dtype)
-
-    minv = np_dtype_info.min if low is None else low
-    maxv = np_dtype_info.max if high is None else high - max_eps
+    minv, maxv = get_range(dtype)
+    minv = minv if low is None else low
+    maxv = maxv if high is None else (high - (1e-5 if dtype.is_float else 1))
     if minv == maxv:
-        return getattr(np, dtype)(minv) if shape == 1 else np.full(shape, minv, dtype=dtype)
+        return getattr(np, dtype_str)(minv) if shape == 1 else np.full(shape, minv, dtype=dtype_str)
 
     assert minv < maxv
-    out = rand_func(minv, maxv)
+    if dtype.is_float:
+        # Use normal distribution to generate more elements with decimal part.
+        std_dev = min((float(maxv) - minv) / 6, 1e6 if dtype.is_float32 else 700)
+        mean = (float(minv) + maxv) / 2
+        out = np.random.normal(mean, std_dev, shape).clip(minv, maxv).astype(dtype_str)
+    else:
+        out = np.random.randint(minv, maxv, shape, dtype_str)
 
     corner_values = (minv, 0, maxv) if minv < 0 < maxv else (minv, maxv)
     if enable_corner_values and out.size > len(corner_values):
@@ -293,7 +371,8 @@ def rand(shape, dtype, low=None, high=None, enable_corner_values=True):
             out[idx] = val
             occupied_indices.append(idx)
 
-    return out[0] if shape == 1 else out
+    out = out[0] if shape == 1 else out
+    return out.tolist() if return_python_type else out
 
 
 def double_elem_width(vdtype, allow_64bit=False):
@@ -314,3 +393,60 @@ def half_elem_width(vdtype, double_lanes=True):
     # For the type u16x8, maybe the expect result type is u8x8 instead of u8x16.
     new_lanes = vdtype.lanes * 2 if double_lanes else vdtype.lanes
     return vdtype.with_bits(vdtype.bits // 2).with_lanes(new_lanes)
+
+
+def get_binary_op_result_type(ltype_or_lhs, rtype_or_rhs):
+    """Infer the binary operation result type through the same logic of C++ "BinaryOpMatchTypes", in
+    addition, adjusting integer literal type is considered."""
+    ltype_or_lhs = DataType(ltype_or_lhs) if isinstance(ltype_or_lhs, str) else ltype_or_lhs
+    rtype_or_rhs = DataType(rtype_or_rhs) if isinstance(rtype_or_rhs, str) else rtype_or_rhs
+    ltype_or_lhs = DataType("float32") if isinstance(ltype_or_lhs, float) else ltype_or_lhs
+    rtype_or_rhs = DataType("float32") if isinstance(rtype_or_rhs, float) else rtype_or_rhs
+    ltype_or_lhs = DataType("bool") if isinstance(ltype_or_lhs, bool) else ltype_or_lhs
+    rtype_or_rhs = DataType("bool") if isinstance(rtype_or_rhs, bool) else rtype_or_rhs
+    assert all(isinstance(x, (DataType, int)) for x in (ltype_or_lhs, rtype_or_rhs))
+
+    if all(isinstance(x, int) for x in (ltype_or_lhs, rtype_or_rhs)):
+        return "int32"
+
+    ltype, rtype = ltype_or_lhs, rtype_or_rhs
+    # Only handle the situation that all operands are integers. For the situation that all operands
+    # are floating, because can't know whether a float literal can be represented by float16 or not,
+    # so can't do this. For other situations, "binary_op_match_types" is good enough.
+    if isinstance(ltype_or_lhs, int):
+        if rtype.is_integer and int_within_range(ltype_or_lhs, rtype):
+            return rtype.element_of
+        ltype = DataType("int32")
+
+    if isinstance(rtype_or_rhs, int):
+        if ltype.is_integer and int_within_range(rtype_or_rhs, ltype):
+            return ltype.element_of
+        rtype = DataType("int32")
+
+    if ltype == rtype:
+        return ltype.element_of
+
+    # Promote to higher bits, e.g., i8 + i16 -> i16 + i16, fp16 + fp32 -> fp32 + fp32.
+    if (
+        (ltype.is_float and rtype.is_float)
+        or (ltype.is_int and rtype.is_int)
+        or (ltype.is_uint and rtype.is_uint)
+    ):
+        return (ltype if ltype.bits > rtype.bits else rtype).element_of
+
+    # Cast int -> float when the other operand is float.
+    if ltype.is_float and rtype.is_integer:
+        return ltype.element_of
+    if ltype.is_integer and rtype.is_float:
+        return rtype.element_of
+
+    # Handle mixing signed and unsigned integers.
+    assert (ltype.is_int and rtype.is_uint) or (ltype.is_uint and rtype.is_int)
+
+    if ltype.bits > rtype.bits:
+        return ltype.element_of
+    if ltype.bits < rtype.bits:
+        return rtype.element_of
+
+    # The width of signed and unsigned integers is same.
+    return (ltype if ltype.is_uint else rtype).element_of

@@ -15,18 +15,12 @@ def infer_output_shape(input_shape, split, axis):
         if input_value in [0, 1]:
             split = [input_value]
         else:
-            if (
-                input_value % 2 and input_value % 3
-            ):  # set split value specifically due to the input_value is odd number
+            if input_value % 2 and input_value % 3:  # set split value specifically due to the input_value is odd number
                 sub_split = random.randint(0, input_value)
                 split = [int(input_value - sub_split), sub_split]
             else:
-                split = (
-                    [2] * int(input_value / 2) if input_value % 3 else [3] * int(input_value / 3)
-                )
-    assert (
-        sum(split) == input_value
-    ), "Sum of the split values must be equal to the dim value at axis specified"
+                split = [2] * int(input_value / 2) if input_value % 3 else [3] * int(input_value / 3)
+    assert sum(split) == input_value, "Sum of the split values must be equal to the dim value at axis specified"
 
     output_shapes = []
     sub_output_shape = input_shape.copy()

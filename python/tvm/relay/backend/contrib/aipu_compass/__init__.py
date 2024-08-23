@@ -3,5 +3,5 @@
 """AIPU Compass backend of Relay."""
 from .config import AipuCompassConfig, AipuCompassBasicConfig
 from . import engine
-from .aipu_compass import AipuCompass, sync_compass_output_dir
+from .aipu_compass import AipuCompass
 from .execution_engine import ExecutionEngine

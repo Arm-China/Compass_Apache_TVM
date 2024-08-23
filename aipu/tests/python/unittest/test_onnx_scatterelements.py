@@ -9,9 +9,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 
 @pytest.mark.parametrize("axis", [1, 2, 3, 4, -1, -2, -3, -4, -5, "default"])
-@pytest.mark.parametrize(
-    "input_shapes", [[[5, 10]], [[5, 6, 7]], [[5, 6, 7, 8]], [[3, 4, 5, 6, 7]]]
-)
+@pytest.mark.parametrize("input_shapes", [[[5, 10]], [[5, 6, 7]], [[5, 6, 7, 8]], [[3, 4, 5, 6, 7]]])
 @pytest.mark.parametrize("reduction", ["default", "add"])
 @pytest.mark.parametrize("opset_id", [13, 16])
 def test_scatterelements(input_shapes, axis, reduction, opset_id):
@@ -32,17 +30,13 @@ def test_scatterelements(input_shapes, axis, reduction, opset_id):
     for i in range(input_rank):
         indices_shape.append(random.randint(1, input_shapes[0][i]))
 
-    model_name = aipu_testing.gen_model_name(
-        op_type, dim_info, axis, reduction, indices_shape, opset_id
-    )
+    model_name = aipu_testing.gen_model_name(op_type, dim_info, axis, reduction, indices_shape, opset_id)
 
     _axis = axis if axis != "default" else 0
 
     indice_max_value = input_shapes[0][_axis]  # [-s, s-1]
 
-    indice_value = np.random.randint(
-        -indice_max_value, indice_max_value, size=indices_shape, dtype=np.int64
-    )
+    indice_value = np.random.randint(-indice_max_value, indice_max_value, size=indices_shape, dtype=np.int64)
 
     updates_shape = indices_shape.copy()
     input_shapes.append(indices_shape)

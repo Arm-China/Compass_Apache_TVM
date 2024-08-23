@@ -29,21 +29,15 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 )
 @pytest.mark.parametrize("input_shape", [[2, 6, 51, 52]])
 @pytest.mark.parametrize("bias", [True, False])
-def test_conv2d(
-    input_shape, kernel_shape, strides, pads, dilations, group, auto_pad, bias, opset_id
-):
+def test_conv2d(input_shape, kernel_shape, strides, pads, dilations, group, auto_pad, bias, opset_id):
     if auto_pad in ["SAME_UPPER", "SAME_LOWER", "VALID"] and isinstance(pads, list):
         pytest.skip("Can not set pads and auto_pad simultaneously")
 
     if isinstance(dilations, list):
         if auto_pad in ["SAME_UPPER", "SAME_LOWER"]:
-            pytest.skip(
-                "Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER"
-            )
+            pytest.skip("Dilation not supported for AutoPadType::SAME_UPPER or AutoPadType::SAME_LOWER")
         if strides != "default":
-            pytest.skip(
-                "Can not set strides and dilations simultaneously, rule: strides = 1 if dilations"
-            )
+            pytest.skip("Can not set strides and dilations simultaneously, rule: strides = 1 if dilations")
 
     op_type = "Conv"
     alias_type = "Conv2D"

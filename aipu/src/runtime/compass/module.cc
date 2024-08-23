@@ -152,6 +152,21 @@ PackedFunc AipuCompassModuleNode::GetFunction(const String& name,
     });
   } else if (name == "compass_execute") {
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) { aipu_driver_.Run(); });
+  } else if (name == "compass_get_param_info") {
+    return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
+      int idx = args[0];
+      bool is_input = args[1];
+      ICHECK_GE(idx, 0) << "The index mismatched.";
+      if (is_input) {
+        ICHECK_LT(idx, in_params_.size()) << "The index mismatched.";
+        const ParamInfo* info = &in_params_[idx];
+        *rv = GetRef<ParamInfoRef>(info);
+      } else {
+        ICHECK_LT(idx, out_params_.size()) << "The index mismatched.";
+        const ParamInfo* info = &out_params_[idx];
+        *rv = GetRef<ParamInfoRef>(info);
+      }
+    });
   } else if (name == "compass_get_outputs") {
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
       // Check information of arguments match those of parameters.
@@ -390,6 +405,79 @@ TVM_REGISTER_GLOBAL("aipu_compass.AipuBmModuleNode")
       obj->Init();
       return Module(obj);
     });
+
+class AipuCompassBinaryNode : public ModuleNode {
+  // This object would just warp aipu.bin but not initlize aipu driver.
+ public:
+  // Member are same as AipuCompassModuleNode
+  NDArray aipu_bin;
+  std::string func_name;
+  std::string target;
+  std::string umd_dtcm_sz;
+
+ public:
+  const char* type_key() const final;
+  void SaveToBinary(dmlc::Stream* stream) final;
+  int GetPropertyMask() const final;
+
+ private:
+  // TVM runtime execution mechanism relevant.
+  PackedFunc GetFunction(const String& name, const ObjectPtr<Object>& sptr_to_self) final;
+};
+
+const char* AipuCompassBinaryNode::type_key() const { return "aipu_compass.AipuCompassBinaryNode"; }
+
+int AipuCompassBinaryNode::GetPropertyMask() const {
+  return ModulePropertyMask::kBinarySerializable | ModulePropertyMask::kRunnable;
+}
+
+void AipuCompassBinaryNode::SaveToBinary(dmlc::Stream* stream) {
+  aipu_bin.Save(stream);
+  stream->Write(func_name);
+  stream->Write(target);
+  stream->Write(umd_dtcm_sz);
+}
+
+PackedFunc AipuCompassBinaryNode::GetFunction(const String& name,
+                                              const ObjectPtr<Object>& sptr_to_self) {
+  ICHECK_EQ(sptr_to_self.get(), this);
+
+  if (name == "get_compass_module") {
+    return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
+      // create compass module and initlize
+      static auto compass_fn = Registry::Get("aipu_compass.AipuCompassModuleNode");
+      *rv = std::move((*compass_fn)(aipu_bin, func_name, target, umd_dtcm_sz));
+    });
+  }
+  return nullptr;
+}
+
+static Module CreateAIPUCompassBinary(NDArray aipu_bin, std::string func_name, std::string target,
+                                      std::string umd_dtcm_sz) {
+  ObjectPtr<AipuCompassBinaryNode> obj = make_object<AipuCompassBinaryNode>();
+  obj->aipu_bin = aipu_bin;
+  obj->func_name = func_name;
+  obj->target = target;
+  obj->umd_dtcm_sz = umd_dtcm_sz;
+  return Module(obj);
+}
+
+TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassBinaryNode").set_body_typed(CreateAIPUCompassBinary);
+
+static Module BinaryModuleLoadFromBinary(void* stream) {
+  dmlc::Stream* strm = static_cast<dmlc::Stream*>(stream);
+
+  ObjectPtr<AipuCompassBinaryNode> obj = make_object<AipuCompassBinaryNode>();
+
+  if ((obj->aipu_bin.Load(strm) == false) || (strm->Read(&(obj->func_name)) == false) ||
+      (strm->Read(&(obj->target)) == false) || (strm->Read(&(obj->umd_dtcm_sz)) == false)) {
+    LOG(FATAL) << "Load aipu_compass.AipuCompassBinaryNode from binary failed!";
+  }
+  return Module(obj);
+}
+
+TVM_REGISTER_GLOBAL("runtime.module.loadbinary_aipu_compass.AipuCompassBinaryNode")
+    .set_body_typed(BinaryModuleLoadFromBinary);
 
 }  // namespace runtime
 }  // namespace tvm

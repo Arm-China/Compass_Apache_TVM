@@ -22,11 +22,35 @@
 from typing import Type
 
 from tvm import tir, target as tgt
-from tvm._ffi.runtime_ctypes import DataType, DataTypeCode
+from tvm._ffi.runtime_ctypes import DataType, int_within_range
 from tvm.tir import IntImm
-from tvm.tir.expr import FloatImm
 
 from .._core import OpMethod, doc, register_op
+
+
+def _try_adjust_int_literal_type(lhs, rhs):
+    # Only handle the situation that all operands are integers. For the situation that all operands
+    # are floating, because can't know whether a float literal can be represented by float16 or not,
+    # so can't do this. For other situations, C++ "BinaryOpMatchTypes" is good enough.
+    if isinstance(lhs, int) and isinstance(rhs, tir.PrimExpr):
+        rtype = DataType(rhs.dtype)
+        if rtype.is_integer and int_within_range(lhs, rtype):
+            return IntImm(rtype.element_of, lhs), rhs
+
+    if isinstance(lhs, tir.PrimExpr) and isinstance(rhs, int):
+        ltype = DataType(lhs.dtype)
+        if ltype.is_integer and int_within_range(rhs, ltype):
+            return lhs, IntImm(ltype.element_of, rhs)
+
+    return lhs, rhs
+
+
+def _gen_binary_wrapper(func):
+    def _wrapper(a, b):
+        a, b = _try_adjust_int_literal_type(a, b)
+        return func(a, b)
+
+    return _wrapper
 
 
 def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
@@ -58,126 +82,31 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
         else:
             return tir.Or(a, b)
 
-    def _get_type_str(dtype: str):
-        if DataType(dtype).lanes == 1:
-            return dtype
-        index = dtype.find("x")
-        return dtype[0:index]
-
-    def _auto_broadcast(a, b, op):
-
-        if isinstance(a, int):
-            if hasattr(b, "dtype"):
-                if (
-                    DataType(b.dtype).type_code == DataTypeCode.INT
-                    or DataType(b.dtype).type_code == DataTypeCode.UINT
-                ):
-                    a = IntImm(_get_type_str(b.dtype), a)
-                elif DataType(b.dtype).type_code == DataTypeCode.FLOAT:
-                    a = FloatImm(_get_type_str(b.dtype), a)
-            elif isinstance(b, float):
-                a = FloatImm("float32", a)
-            else:
-                a = IntImm("int32", a)
-        elif isinstance(a, float):
-            if DataType(b.dtype).type_code == DataTypeCode.FLOAT:
-                a = FloatImm(_get_type_str(b.dtype), a)
-            else:
-                a = FloatImm("float32", a)
-
-        assert isinstance(a, tir.PrimExpr), "Operand should be a PrimExpr."
-        if isinstance(b, int):
-            if (
-                DataType(a.dtype).type_code == DataTypeCode.INT
-                or DataType(a.dtype).type_code == DataTypeCode.UINT
-            ):
-                b = IntImm(_get_type_str(a.dtype), b)
-            elif DataType(a.dtype).type_code == DataTypeCode.FLOAT:
-                b = FloatImm(_get_type_str(a.dtype), b)
-        elif isinstance(b, float):
-            b = FloatImm(_get_type_str(a.dtype), b)
-
-        if DataType(a.dtype).lanes == DataType(b.dtype).lanes:
-            return op(a, b)
-        elif DataType(a.dtype).lanes == 1 and DataType(a.dtype).lanes != DataType(b.dtype).lanes:
-            broadcast_a = tir.Broadcast(a, DataType(b.dtype).lanes)
-            return op(broadcast_a, b)
-        elif DataType(b.dtype).lanes == 1 and DataType(a.dtype).lanes != DataType(b.dtype).lanes:
-            broadcast_b = tir.Broadcast(b, DataType(a.dtype).lanes)
-            return op(a, broadcast_b)
-        else:
-            raise TypeError("do not know how to deal with it.")
-
-    def _no_span(func):
-        def _wrapper(a, b):
-            return func(a, b, None)
-
-        return _wrapper
-
-    def _check_compare_operands(a, b):
-        def _get_dtype(x):
-            if isinstance(x, int):
-                return DataType("int32")
-            if isinstance(x, float):
-                return DataType("float32")
-            return DataType(x.dtype)
-
-        a_dtype, b_dtype = _get_dtype(a), _get_dtype(b)
-        if (a_dtype.is_uint and b_dtype.is_int and a_dtype.bits >= b_dtype.bits) or (
-            b_dtype.is_uint and a_dtype.is_int and b_dtype.bits >= a_dtype.bits
-        ):
-            err_msg = "Unsafe unsigned and signed comparison, do the type conversion explicitly."
-            raise TypeError(err_msg)
-
-    def _eq(a, b):
-        _check_compare_operands(a, b)
-        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpEQ))
-
-    def _ne(a, b):
-        _check_compare_operands(a, b)
-        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpNE))
-
-    def _lt(a, b):
-        _check_compare_operands(a, b)
-        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpLT))
-
-    def _le(a, b):
-        _check_compare_operands(a, b)
-        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpLE))
-
-    def _gt(a, b):
-        _check_compare_operands(a, b)
-        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpGT))
-
-    def _ge(a, b):
-        _check_compare_operands(a, b)
-        return _auto_broadcast(a, b, _no_span(tir._ffi_api._OpGE))
-
     def r(op: Type, i: int, m: OpMethod):  # pylint: disable=invalid-name
         register_op(ty, op, i)(m)
 
     for i in [0, 1]:
         # Case 1. binop
-        # doc.Add <-- is overloaded
-        # doc.Sub <-- is overloaded
-        # doc.Mult <-- is overloaded
-        # doc.Div <-- is overloaded
-        # doc.FloorDiv <-- is overloaded
-        # doc.Mod <-- is overloaded
-        # doc.LShift <-- is overloaded
-        # doc.RShift <-- is overloaded
-        # doc.BitOr <-- is overloaded
-        # doc.BitXor <-- is overloaded
-        # doc.BitAnd <-- is overloaded
+        r(doc.Add, i, _gen_binary_wrapper(lambda a, b: a + b))
+        r(doc.Sub, i, _gen_binary_wrapper(lambda a, b: a - b))
+        r(doc.Mult, i, _gen_binary_wrapper(lambda a, b: a * b))
+        r(doc.Div, i, _gen_binary_wrapper(lambda a, b: a / b))
+        r(doc.FloorDiv, i, _gen_binary_wrapper(lambda a, b: a // b))
+        r(doc.Mod, i, _gen_binary_wrapper(lambda a, b: a % b))
+        r(doc.LShift, i, lambda a, b: a << b)
+        r(doc.RShift, i, lambda a, b: a >> b)
+        r(doc.BitOr, i, _gen_binary_wrapper(lambda a, b: a | b))
+        r(doc.BitXor, i, _gen_binary_wrapper(lambda a, b: a ^ b))
+        r(doc.BitAnd, i, _gen_binary_wrapper(lambda a, b: a & b))
         # doc.MatMult <-- not implemented
-        # doc.Pow <-- not implemented
+        r(doc.Pow, i, _gen_binary_wrapper(lambda a, b: a**b))
         # Case 2. cmpop
-        r(doc.Eq, i, _eq)
-        r(doc.NotEq, i, _ne)
-        r(doc.Lt, i, _lt)
-        r(doc.LtE, i, _le)
-        r(doc.Gt, i, _gt)
-        r(doc.GtE, i, _ge)
+        r(doc.Eq, i, _gen_binary_wrapper(lambda a, b: tir._ffi_api._OpEQ(a, b, None)))
+        r(doc.NotEq, i, _gen_binary_wrapper(lambda a, b: tir._ffi_api._OpNE(a, b, None)))
+        r(doc.Lt, i, _gen_binary_wrapper(lambda a, b: a < b))
+        r(doc.LtE, i, _gen_binary_wrapper(lambda a, b: a <= b))
+        r(doc.Gt, i, _gen_binary_wrapper(lambda a, b: a > b))
+        r(doc.GtE, i, _gen_binary_wrapper(lambda a, b: a >= b))
         # doc.Is <-- not implemented
         # doc.IsNot <-- not implemented
         # doc.In <-- not implemented
