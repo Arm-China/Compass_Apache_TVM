@@ -4,6 +4,7 @@
 import os
 import re
 import operator
+import textwrap
 import functools
 from subprocess import run, STDOUT
 import numpy as np
@@ -17,7 +18,6 @@ _HW_NATIVE_SCALAR_DTYPES = HW_NATIVE_STORAGE_DTYPES + ("bool",)
 HW_NATIVE_VDTYPES = ("int8x32", "uint8x32", "int16x16", "uint16x16", "int32x8", "uint32x8")
 HW_NATIVE_VDTYPES += ("float16x16", "float32x8")
 HW_NATIVE_MASK_TYPES = ("boolx8", "boolx16", "boolx32")
-VALID_ADDR_DTYPES = HW_NATIVE_STORAGE_DTYPES + HW_NATIVE_VDTYPES + ("float32x16",)
 
 
 def is_hw_native_scalar_dtype(dtype):
@@ -28,27 +28,144 @@ def is_hw_native_dtype(dtype):
     return str(dtype) in (_HW_NATIVE_SCALAR_DTYPES + HW_NATIVE_VDTYPES + HW_NATIVE_MASK_TYPES)
 
 
+def is_hw_native_vdtype(dtype):
+    return str(dtype) in HW_NATIVE_VDTYPES
+
+
+class _ControlOption:
+    _acceptable_names = {
+        "debug": ("d", "dbg", "debug"),
+        "profile": ("p", "prf", "profile", "profiler", "profilor"),
+        "emu": ("e", "emu", "emulate", "emulator", "emulater"),
+        "random_pause": ("rp", "random_pause", "random-pause", "randompause"),
+        "asm": ("a", "asm", "assembly"),
+        "random_seed": ("rs", "random_seed", "random-seed", "randomseed"),
+        "rpc": ("r", "rpc"),
+    }
+    _help_msg = textwrap.dedent(
+        f'''
+        Supported Options:
+            {", ".join(_acceptable_names["debug"])}
+                Add "-O0 -g" to OpenCL compiler, generate OpenCL debugger config file, dump input
+                and output files.
+            {", ".join(_acceptable_names["emu"])}
+                Dump all needed files for running on emulator.
+            {", ".join(_acceptable_names["profile"])}
+                Add profile relevant options to "aipugb", "aipudumper", and generate the report
+                automatically when running on remote device through RPC.
+            {", ".join(_acceptable_names["random_pause"])}
+                Pause each TEC thread a random length of time after each synchronization point when
+                running PySim, used to reproduce and debug the multiple TEC synchronization bug.
+            {", ".join(_acceptable_names["asm"])}
+                Dump the Compass assembly code during compiling the generated Compass OpenCL code.
+            {", ".join(f"{x}=<seed>" for x in _acceptable_names["random_seed"])}
+                Set the random seed used by function "rand", so the flaky test cases can be
+                reproduced easily.
+            {", ".join(f"{x}[=<rpc_key>]" for x in _acceptable_names["rpc"])}
+                Run the DSL program on a remote device through RPC, if the RPC key isn't given, the
+                value of environment variable "AIPU_TVM_RPC_KEY" will be used.
+        Example:
+            setenv AIPU_TVM_DSL "e;p"
+            setenv AIPU_TVM_DSL "d;rs=1195868741"
+            setenv AIPU_TVM_DSL "r=juno,X2_1204;p"'''
+    )
+
+    def __init__(self):
+        self.is_debug = False
+        self.is_emu = False
+        self.is_profile = False
+        self.is_random_pause = False
+        self.is_asm = False
+        self.random_seed = None
+        self.random_seed_is_set = False
+        self.is_rpc = False
+        self.rpc_key = None
+
+        options = set(x.strip() for x in os.getenv("AIPU_TVM_DSL", "").split(";")) - {""}
+        normalized_options = []
+        for option in options:
+            msg = f'Unsupported option "{option}" in environment "AIPU_TVM_DSL"\n{self._help_msg}'
+
+            name, *value = option.split("=", maxsplit=1)
+            value = None if len(value) == 0 else value[0]
+
+            if name in self._acceptable_names["debug"]:
+                self.is_debug = True
+                normalized_options.append("debug")
+            elif name in self._acceptable_names["emu"]:
+                self.is_emu = True
+                normalized_options.append("emu")
+            elif name in self._acceptable_names["profile"]:
+                self.is_profile = True
+                normalized_options.append("profile")
+            elif name in self._acceptable_names["random_pause"]:
+                self.is_random_pause = True
+                normalized_options.append("random_pause")
+            elif name in self._acceptable_names["asm"]:
+                self.is_asm = True
+                normalized_options.append("asm")
+            elif name in self._acceptable_names["random_seed"]:
+                assert value is not None and value.isdigit(), msg
+                self.random_seed = int(value)
+                normalized_options.append(f"random_seed={self.random_seed}")
+            elif name in self._acceptable_names["rpc"]:
+                self.is_rpc = True
+                self.rpc_key = os.getenv("AIPU_TVM_RPC_KEY") if value is None else value
+                normalized_options.append("rpc" if value is None else f"rpc={self.rpc_key}")
+            else:
+                raise ValueError(msg)
+
+        if len(normalized_options) != 0:
+            INFO(f'AIPU_TVM_DSL is set to "{"; ".join(normalized_options)}"')
+
+
+control_option = _ControlOption()
+
+
+VALID_PTR_ELEMENT_DTYPES = HW_NATIVE_STORAGE_DTYPES + ("void",)
+ALIAS2ELEMENT_DTYPE = {
+    "i8": "int8",
+    "u8": "uint8",
+    "i16": "int16",
+    "u16": "uint16",
+    "i32": "int32",
+    "u32": "uint32",
+    "fp16": "float16",
+    "fp32": "float32",
+}
+
+
+def resolve_dtype_alias(dtype):
+    """Replace the alias in the given data type to the corresponding complete form."""
+    if not isinstance(dtype, str):
+        return dtype
+
+    for k, v in ALIAS2ELEMENT_DTYPE.items():
+        dtype = dtype.replace(k, v)
+    return DataType(dtype)
+
+
 _EXE_NAME2TOOL_NAME = {
     "aipuopt": "Optimizer",
     "aipugb": "GBuilder",
     "aipugsim": "GSim",
     "aipurun": "AIPURun",
     "aipu_profiler": "Profiler",
+    "aipudumper": "Dumper",
 }
 
 
 def check_call_aipu_tool(cmd, work_dir=os.getcwd()):
     """Call tools of AIPUBuilder through sub process and check the return code."""
     work_dir = os.path.abspath(work_dir)
-    old_cwd = os.getcwd()
-    if work_dir != old_cwd:
+    if work_dir != os.getcwd():
         os.makedirs(work_dir, exist_ok=True)
-        os.chdir(work_dir)
 
     exe_name = cmd[0]
     log_file = f"{work_dir}/{exe_name}.log"
     with open(log_file, "w", encoding="utf-8") as f:
-        f.write(f"Command Line: {' '.join(cmd)}\n")
+        f.write(f"Current Working Directory: {work_dir}\nCommand Line: {' '.join(cmd)}\n")
+        f.write("Standard Output & Error:\n")
         f.flush()
         env = None
         if exe_name == "aipuopt":
@@ -60,6 +177,7 @@ def check_call_aipu_tool(cmd, work_dir=os.getcwd()):
             cmd,
             stdout=f,
             stderr=STDOUT,
+            cwd=work_dir,
             check=False,
             encoding="utf-8",
             env=env,
@@ -79,9 +197,6 @@ def check_call_aipu_tool(cmd, work_dir=os.getcwd()):
                     break
             if count_errors != 0:
                 break
-
-    if old_cwd != os.getcwd():
-        os.chdir(old_cwd)
 
     if ret_code != 0 or count_errors != 0:
         raise RuntimeError(
@@ -154,7 +269,7 @@ def get_rpc_session(
     """
     # Override logic of RPC key is special, function argument has higher priority.
     rpc_key = rpc_key or os.getenv("AIPU_TVM_RPC_KEY")
-    assert rpc_key, 'Set RPC key through arg or env "AIPU_TVM_RPC_KEY".'
+    assert rpc_key, 'Set RPC key through arg or env "AIPU_TVM_RPC_KEY", "AIPU_TVM_DSL".'
 
     tracker_host = os.getenv("AIPU_TVM_RPC_TRACKER_IP") or tracker_host
     assert tracker_host, 'Set RPC tracker host through arg or env "AIPU_TVM_RPC_TRACKER_IP".'
@@ -201,12 +316,10 @@ def sync_compass_output_dir(rpc_sess, filter_fn=lambda x: True):
         The function used to select the files that need to be synchronized to local. It will be
         called for each file, only the files whose return value are True will be selected.
     """
-    from tvm.relay.backend.contrib import (  # pylint: disable=import-outside-toplevel
-        aipu_compass,
-    )
+    from tvm.relay.backend.contrib import aipu_compass  # pylint: disable=import-outside-toplevel
 
-    err_msg = f'The arg "rpc_sess" expect a RPC session, but got: "{type(rpc_sess)}".'
-    assert isinstance(rpc_sess, rpc.RPCSession), err_msg
+    msg = f'The arg "rpc_sess" expect a RPC session, but got: "{type(rpc_sess)}".'
+    assert isinstance(rpc_sess, rpc.RPCSession), msg
 
     remote_files = tuple(
         x for x in rpc_sess.list_files(".") if x.startswith("compass_output") and filter_fn(x)
@@ -232,6 +345,11 @@ def prod_const(arr):
 
 def canonicalize_target(target):
     """Canonicalize target and return tvm.target.Target."""
+    if "AIPU_TVM_GBUILDER_TARGET" in os.environ:
+        target = os.environ["AIPU_TVM_GBUILDER_TARGET"]
+    elif control_option.rpc_key is not None:
+        target = control_option.rpc_key.split(",")[1]
+
     if isinstance(target, tgt.Target):
         return target
     assert isinstance(target, str), f"Unsupported target type: {type(target)}."
@@ -272,10 +390,6 @@ def hw_native_vdtype(dtype):
     scalar_dtype = DataType(dtype)
     assert not scalar_dtype.is_bool, "Does not support boolean data type."
     return scalar_dtype.with_lanes(256 // scalar_dtype.bits)
-
-
-# Don't set value here, set it through environment variable "AIPU_TVM_RANDOM_SEED".
-_RANDOM_SEED = None
 
 
 def rand(shape, dtype, low=None, high=None, enable_corner_values=True, return_python_type=False):
@@ -329,14 +443,14 @@ def rand(shape, dtype, low=None, high=None, enable_corner_values=True, return_py
         int_list_f = rand((1,), "int8", return_python_type=True)
 
     """
-    global _RANDOM_SEED
-    if _RANDOM_SEED is None:
-        _RANDOM_SEED = os.getenv("AIPU_TVM_RANDOM_SEED") or np.random.randint(0, 2**31)
-        np.random.seed(int(_RANDOM_SEED))
-        INFO(f'Reproduce with the random seed by "setenv AIPU_TVM_RANDOM_SEED {_RANDOM_SEED}".')
+    if not control_option.random_seed_is_set:
+        seed = control_option.random_seed or np.random.randint(0, 2**31)
+        np.random.seed(seed)
+        control_option.random_seed_is_set = True
+        INFO(f'Reproduce with the random seed by "setenv AIPU_TVM_DSL rs={seed}".')
 
-    err_msg = f'The arg "dtype" expect one of {_HW_NATIVE_SCALAR_DTYPES}, but got: "{dtype}".'
-    assert is_hw_native_scalar_dtype(dtype), err_msg
+    msg = f'The arg "dtype" expect one of {_HW_NATIVE_SCALAR_DTYPES}, but got: "{dtype}".'
+    assert is_hw_native_scalar_dtype(dtype), msg
     dtype_str = dtype
     dtype = DataType(dtype)
 

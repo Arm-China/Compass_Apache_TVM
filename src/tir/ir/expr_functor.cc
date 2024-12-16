@@ -38,7 +38,7 @@ void ExprVisitor::VisitExpr_(const SizeVarNode* op) {
 void ExprVisitor::VisitExpr_(const AnyNode* op) {}
 
 void ExprVisitor::VisitExpr_(const BufferLoadNode* op) {
-  this->VisitExpr(op->predicate);
+  if (op->predicate.defined()) this->VisitExpr(op->predicate.value());
   VisitArray(op->indices, [this](const PrimExpr& e) { this->VisitExpr(e); });
 }
 
@@ -127,9 +127,11 @@ PrimExpr ExprMutator::VisitExpr_(const AnyNode* op) { return GetRef<PrimExpr>(op
 
 PrimExpr ExprMutator::VisitExpr_(const BufferLoadNode* op) {
   auto fmutate = [this](const PrimExpr& e) { return this->VisitExpr(e); };
-  PrimExpr predicate = this->VisitExpr(op->predicate);
+  PrimExpr predicate;
+  if (op->predicate.defined()) predicate = this->VisitExpr(op->predicate.value());
   Array<PrimExpr> indices = op->indices.Map(fmutate);
-  if (indices.same_as(op->indices) && predicate.same_as(op->predicate)) {
+  if (indices.same_as(op->indices) &&
+      (!predicate.defined() || predicate.same_as(op->predicate.value()))) {
     return GetRef<PrimExpr>(op);
   } else {
     return BufferLoad(op->buffer, indices, predicate);

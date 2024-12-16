@@ -168,6 +168,23 @@ def _scatter_elements(bb: BlockBuilder, call: Call) -> Expr:
     )
 
 
+@register_legalize("relax.scatter_nd")
+def _scatter_nd(bb: BlockBuilder, call: Call) -> Expr:
+    # TODO(relax-team): Support native scatter_nd without te extern
+    def scatter_nd(data, indices, updates, reduction):
+        axes = list(range(len(indices.shape)))
+        indices = topi.transpose(indices, axes[-1:] + axes[:-1])
+        return topi.scatter_nd(data, indices, updates, reduction)
+
+    return bb.call_te(
+        scatter_nd,
+        call.args[0],
+        call.args[1],
+        call.args[2],
+        call.attrs.reduction,
+    )
+
+
 @register_legalize("relax.layout_transform")
 def _layout_transform(bb: BlockBuilder, call: Call) -> Expr:
     def te_layout_transform(data, name):
@@ -181,6 +198,9 @@ def _layout_transform(bb: BlockBuilder, call: Call) -> Expr:
             name=name,
         )
 
+    def set_axis_sep(axis_sep: list, sch: tir.schedule, buffer_type: str):
+        sch.set_axis_separator(primfunc_name, (buffer_type, 0), axis_separators=axis_sep)
+
     index_map: tvm.tir.IndexMap = call.attrs.index_map
     pad_value = call.attrs.pad_value
     if pad_value is not None:
@@ -192,8 +212,10 @@ def _layout_transform(bb: BlockBuilder, call: Call) -> Expr:
             pad_value = float(0.0)
 
     axis_separators: tvm.tir.IndexMap.AXIS_SEPARATOR = call.attrs.axis_separators
+    input_axis_separators: tvm.tir.IndexMap.AXIS_SEPARATOR = call.attrs.input_axis_separators
+
     # Convert to list from array
-    axis_separators = list(map(lambda x: x.value, axis_separators))
+    axis_separators = [int(sep) for sep in axis_separators]
     primfunc_name = "te_layout_transform"
     _, padding_predicate = index_map.non_surjective_inverse(call.args[0].struct_info.shape)
     if not isinstance(padding_predicate, tvm.tir.expr.IntImm):
@@ -206,8 +228,9 @@ def _layout_transform(bb: BlockBuilder, call: Call) -> Expr:
     # Create TIR schedule to apply layout changes with axis separators
     sch = tir.Schedule(tir_func)
     sch.transform_layout(primfunc_name, ("write", 0), index_map, pad_value)
-    if len(axis_separators) != 0:
-        sch.set_axis_separator(primfunc_name, ("write", 0), axis_separators=axis_separators)
+    set_axis_sep(axis_separators, sch, "write")
+    if input_axis_separators is not None:
+        set_axis_sep(input_axis_separators, sch, "read")
     gvar = bb.add_func(sch.mod["main"], primfunc_name)
     output_shape = index_map.map_shape(list(call_args[0].struct_info.shape))
     output_dtype = call_args[0].struct_info.dtype

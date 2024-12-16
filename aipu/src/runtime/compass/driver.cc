@@ -92,11 +92,22 @@ void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
   // "aipu_create_job" will failed for simulaltor.
   ConfigGraphItems();
 
-  // Create job with the loaded AIPU binary program.
-  status_ = aipu_create_job(ctx_, graph_id_, &job_id_, &job_cfg_);
-  AIPU_DRIVER_HANDLE_ERROR(status_);
+  uint32_t ds_num = 0;
+#ifndef __QNX__
+  aipu_dynshape_num_t dynshape_num = {0};
+  dynshape_num.graph_id = graph_id_;
+  dynshape_num.ds_num = &ds_num;
+  status_ = aipu_ioctl(ctx_, AIPU_IOCTL_GET_DS_NUM, &dynshape_num);
+#endif
+  // dynamic graph create job would fail if no input shape info.
+  if (ds_num == 0) {
+    // Create job with the loaded AIPU binary program.
+    status_ = aipu_create_job(ctx_, graph_id_, &job_id_, &job_cfg_);
+    AIPU_DRIVER_HANDLE_ERROR(status_);
 
-  ConfigJobItems();
+    ConfigJobItems();
+  }
+
   return;
 }
 
@@ -117,6 +128,86 @@ void AipuDriver::SetInputs(const std::vector<DLTensor*>& inputs) {
     AIPU_DRIVER_HANDLE_ERROR(status_);
   }
   return;
+}
+
+void AipuDriver::SetOutputs(const std::vector<DLTensor*>& outputs) {
+#ifndef __QNX__
+  for (uint32_t i = 0; i < outputs.size(); ++i) {
+    ICHECK(outputs[i]->data != nullptr);
+
+    DLTensor* out_tensor = outputs[i];
+    NDArray nd_arr = NDArray::FromExternalDLTensor(*out_tensor);
+    if (out_tensor->device.device_type != kDLCPU) {
+      nd_arr = NDArray::NewFromDLTensor(out_tensor, Device{kDLCPU, 0});
+    }
+
+    status_ = aipu_load_output_tensor(ctx_, job_id_, i, nd_arr->data);
+    AIPU_DRIVER_HANDLE_ERROR(status_);
+  }
+  return;
+#endif
+}
+
+void AipuDriver::SetInputsWithDynamicShape(const std::vector<DLTensor*>& inputs) {
+#ifndef __QNX__
+  aipu_dynshape_num_t dynshape_num = {0};
+  dynshape_num.graph_id = graph_id_;
+  uint32_t ds_num = 0;
+  dynshape_num.ds_num = &ds_num;
+  status_ = aipu_ioctl(ctx_, AIPU_IOCTL_GET_DS_NUM, &dynshape_num);
+  AIPU_DRIVER_HANDLE_ERROR(status_);
+  ICHECK(ds_num == inputs.size());
+  aipu_dynshape_param_t dynshape_param = {0};
+  dynshape_param.input_shape_cnt = ds_num;
+  std::vector<std::vector<uint32_t>> dyn_shapes;
+  dyn_shapes.resize(inputs.size());
+  std::vector<aipu_dynshape_item_t> config_items;
+  config_items.resize(inputs.size());
+  dynshape_param.shape_items = &config_items[0];
+  for (uint32_t i = 0; i < inputs.size(); ++i) {
+    aipu_dynshape_dim_num_t dynshape_dim_num = {0};
+    dynshape_dim_num.graph_id = graph_id_;
+    dynshape_dim_num.ds_idx = i;
+    dynshape_dim_num.max_threshhold = true;
+    uint32_t ds_dim_num = 0;
+    dynshape_dim_num.ds_dim_num = &ds_dim_num;
+    status_ = aipu_ioctl(ctx_, AIPU_IOCTL_GET_DS_DIM_NUM, &dynshape_dim_num);
+    AIPU_DRIVER_HANDLE_ERROR(status_);
+    ICHECK(static_cast<int32_t>(ds_dim_num) == inputs[i]->ndim);
+
+    std::vector<uint32_t> ds_dim_data;
+    ds_dim_data.resize(ds_dim_num);
+
+    aipu_dynshape_info_t dynshape_info = {0};
+    dynshape_info.graph_id = graph_id_;
+    dynshape_info.ds_idx = i;
+    dynshape_info.max_threshhold = true;
+    dynshape_info.ds_data = &ds_dim_data[0];
+    status_ = aipu_ioctl(ctx_, AIPU_IOCTL_GET_DS_INFO, &dynshape_info);
+    AIPU_DRIVER_HANDLE_ERROR(status_);
+    config_items[i].ds_idx = i;
+    for (uint32_t dim_id = 0; dim_id < ds_dim_num; dim_id++) {
+      ICHECK_GE(ds_dim_data[dim_id], inputs[i]->shape[dim_id]);
+      dyn_shapes[i].push_back(inputs[i]->shape[dim_id]);
+    }
+    config_items[i].ds_data = &dyn_shapes[i][0];
+  }
+
+  // need recreate job to flush the io size
+  if (job_id_ != 0) {
+    status_ = aipu_clean_job(ctx_, job_id_);
+    AIPU_DRIVER_HANDLE_ERROR(status_);
+    job_id_ = 0;
+  }
+  job_cfg_.dynshape = &dynshape_param;
+  status_ = aipu_create_job(ctx_, graph_id_, &job_id_, &job_cfg_);
+  AIPU_DRIVER_HANDLE_ERROR(status_);
+  ConfigJobItems();
+
+  SetInputs(inputs);
+  job_cfg_.dynshape = nullptr;
+  return;
+#endif
 }
 
 void AipuDriver::GetOutputs(const std::vector<DLTensor*>& outputs) {
@@ -303,6 +394,24 @@ void AipuDriver::MarkOutputShared(int* outputs_fds) {
     }
   }
 #endif
+}
+
+std::vector<int64_t> AipuDriver::GetOutputShape(uint32_t idx) {
+  std::vector<int64_t> ret;
+#ifndef __QNX__
+  aipu_tensor_desc_t desc = {0};
+  status_ =
+      aipu_get_tensor_descriptor(ctx_, graph_id_, AIPU_TENSOR_TYPE_OUT_TENSOR_SHAPE, idx, &desc);
+  AIPU_DRIVER_HANDLE_ERROR(status_);
+  uint32_t dim = desc.size / sizeof(uint32_t);
+  std::vector<uint32_t> shape(dim, 0);
+
+  aipu_get_tensor(ctx_, job_id_, AIPU_TENSOR_TYPE_OUT_TENSOR_SHAPE, idx, &shape[0]);
+  for (auto dim_val : shape) {
+    ret.push_back(dim_val);
+  }
+#endif
+  return ret;
 }
 
 void AipuDriver::DeinitGraphJob() {

@@ -115,6 +115,7 @@ def layout_transform(
     index_map: Union[Callable, IndexMap],
     pad_value: Optional[Union[int, float, PrimValue]] = None,
     axis_separators: Optional[Union[int, IndexMap.AXIS_SEPARATOR]] = None,
+    input_axis_separators: Optional[Union[int, IndexMap.AXIS_SEPARATOR]] = None,
 ):
     """Modifies the layout of a tensor.
 
@@ -158,7 +159,12 @@ def layout_transform(
     if axis_separators is None:
         axis_separators = []
 
-    return _ffi_api.layout_transform(x, index_map, pad_value, axis_separators)  # type: ignore
+    if input_axis_separators is None:
+        input_axis_separators = []
+
+    return _ffi_api.layout_transform(
+        x, index_map, pad_value, axis_separators, input_axis_separators
+    )
 
 
 def permute_dims(x: Expr, axes: Optional[List[int]] = None) -> Expr:
@@ -505,3 +511,42 @@ def scatter_elements(
 
     """
     return _ffi_api.scatter_elements(data, indices, updates, axis, reduction)  # type: ignore
+
+
+def scatter_nd(data: Expr, indices: Expr, updates: Expr, reduction: str = "update") -> Expr:
+    """Scatter updates into an array according to indices.
+
+    Parameters
+    ----------
+    data: relax.Expr
+        The input data to be updated.
+
+    indices: relax.Expr
+        The index positions to update in `data`.
+
+    updates: relax.Expr
+        Values to replace to.
+
+    reduction: str
+        Type of reduction to apply: update, add, mul, max, min.
+        It is "update" by default.
+
+    Returns
+    -------
+    result : relax.Expr
+        The result has the same shape as data.
+
+    Examples
+    --------
+    .. code-block:: python
+
+       # inputs
+       data = [1, 2, 3, 4, 5, 6, 7, 8]
+       indices = [[4], [3], [1], [7]]
+       updates = [9, 10, 11, 12]
+
+       # output
+       output = [1, 11, 3, 10, 9, 6, 7, 12]
+
+    """
+    return _ffi_api.scatter_nd(data, indices, updates, reduction)  # type: ignore

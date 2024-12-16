@@ -156,6 +156,7 @@ class RuntimeContext implements Disposable {
   arrayGetItem: PackedFunc;
   arrayGetSize: PackedFunc;
   arrayMake: PackedFunc;
+  arrayConcat: PackedFunc;
   stringMake: PackedFunc;
   getFFIString: PackedFunc;
   getSysLib: PackedFunc;
@@ -173,6 +174,7 @@ class RuntimeContext implements Disposable {
   applyRepetitionPenalty: PackedFunc;
   applyPresenceAndFrequencyPenalty: PackedFunc;
   applySoftmaxWithTemperature: PackedFunc;
+  concatEmbeddings: PackedFunc | undefined;
 
   private autoDisposeScope: Array<Array<Disposable | undefined>> = [];
 
@@ -180,6 +182,7 @@ class RuntimeContext implements Disposable {
     this.arrayGetItem = getGlobalFunc("runtime.ArrayGetItem");
     this.arrayGetSize = getGlobalFunc("runtime.ArraySize");
     this.arrayMake = getGlobalFunc("runtime.Array");
+    this.arrayConcat = getGlobalFunc("tvmjs.runtime.ArrayConcat");
     this.stringMake = getGlobalFunc("runtime.String");
     this.getFFIString = getGlobalFunc("runtime.GetFFIString");
     this.getSysLib = getGlobalFunc("runtime.SystemLib");
@@ -197,6 +200,11 @@ class RuntimeContext implements Disposable {
     this.applyRepetitionPenalty = getGlobalFunc("vm.builtin.apply_repetition_penalty");
     this.applyPresenceAndFrequencyPenalty = getGlobalFunc("vm.builtin.apply_presence_and_frequency_penalty");
     this.applySoftmaxWithTemperature = getGlobalFunc("vm.builtin.apply_softmax_with_temperature");
+    try {
+      this.concatEmbeddings = getGlobalFunc("tvmjs.runtime.ConcatEmbeddings");
+    } catch {
+      // TODO: remove soon. Older artifacts do not have this, try-catch for backward compatibility.
+    }
   }
 
   dispose(): void {
@@ -205,6 +213,7 @@ class RuntimeContext implements Disposable {
     this.arrayGetItem.dispose();
     this.arrayGetSize.dispose();
     this.arrayMake.dispose();
+    this.arrayConcat.dispose();
     this.stringMake.dispose();
     this.getFFIString.dispose();
     this.arrayCacheGet.dispose();
@@ -220,6 +229,7 @@ class RuntimeContext implements Disposable {
     this.applyRepetitionPenalty.dispose();
     this.applyPresenceAndFrequencyPenalty.dispose();
     this.applySoftmaxWithTemperature.dispose();
+    this.concatEmbeddings?.dispose();
   }
 
   beginScope(): void {
@@ -516,11 +526,20 @@ export class NDArray implements Disposable {
   /**
    * Create a view of the array.
    * @param shape The shape of the view.
+   * @param dtype The data type of the new array.
    * @returns The new sliced ndarray.
    */
-  view(shape: Array<number>): NDArray {
+  view(shape: Array<number>, dtype?: string): NDArray {
     const shapeArray = shape.map((value) => new Scalar(value, "int"));
-    return this.ctx.ndarrayCreateView(this, this.ctx.makeShapeTuple(...shapeArray));
+    if (dtype === undefined) {
+      dtype = this.dtype;
+    }
+    return this.ctx.ndarrayCreateView(
+      this,
+      this.ctx.makeShapeTuple(...shapeArray),
+      this.dtype,
+      /*relative_byte_offset=*/ new Scalar(0, "int"),
+    );
   }
 
   /**
@@ -563,7 +582,10 @@ export class NDArray implements Disposable {
    * @param data The source data array.
    * @returns this
    */
-  copyFrom(data: NDArray | Array<number> | Float32Array): this {
+  copyFrom(
+    data: NDArray | Array<number> | Float32Array | Float64Array |
+      Int32Array | Int8Array | Uint8Array | Uint8ClampedArray
+  ): this {
     if (data instanceof NDArray) {
       this.lib.checkCall(
         (this.lib.exports.TVMArrayCopyFromTo as ctypes.FTVMArrayCopyFromTo)(
@@ -596,6 +618,8 @@ export class NDArray implements Disposable {
         buffer = Int8Array.from(data).buffer;
       } else if (this.dtype === "uint8") {
         buffer = Uint8Array.from(data).buffer;
+      } else if (this.dtype === "uint32") {
+        buffer = Uint32Array.from(data).buffer;
       } else {
         throw new Error("Unsupported data type " + this.dtype);
       }
@@ -1011,6 +1035,7 @@ export class Instance implements Disposable {
   private asyncifyHandler: AsyncifyHandler;
   private initProgressCallback: Array<InitProgressCallback> = [];
   private rng: LinearCongruentialGenerator;
+  private deviceLostIsError = true;  // whether device.lost is due to actual error or dispose()
 
   /**
    * Internal function(registered by the runtime)
@@ -1104,11 +1129,14 @@ export class Instance implements Disposable {
   }
 
   dispose(): void {
+    this.deviceLostIsError = false;  // prevent dispose to trigger device.lost error
     // order matters
     // ctx release goes back into lib.
     this.ctx.dispose();
     this.lib.dispose();
+    // Cannot set deviceLostIsError back to true here because GPUDevice.destroy() is asynchronous.
   }
+
   /**
    * Obtain the runtime information in readable format.
    */
@@ -1382,11 +1410,7 @@ export class Instance implements Disposable {
    * @returns Parameters read.
    */
   getParamsFromCacheByName(paramNames: Array<string>): TVMObject {
-    // Convert Array<string> to Array<TVMString>
-    const paramNamesTVM: TVMString[] = [];
-    paramNames.forEach(paramName => { paramNamesTVM.push(this.makeString(paramName)) });
-    return (this.ctx.paramModuleFromCacheByName(
-      this.makeTVMArray(paramNamesTVM)) as Module).getFunction("get_params")();
+    return (this.ctx.paramModuleFromCacheByName(paramNames) as Module).getFunction("get_params")();
   }
 
   /**
@@ -1432,13 +1456,15 @@ export class Instance implements Disposable {
    * @param device The device to be fetched to.
    * @param cacheScope The scope identifier of the cache
    * @param cacheType The type of the cache: "cache" or "indexedDB"
+   * @param signal An optional AbortSignal to abort the fetch
    * @returns The meta data
    */
   async fetchNDArrayCache(
     ndarrayCacheUrl: string,
     device: DLDevice,
     cacheScope = "tvmjs",
-    cacheType = "cache"
+    cacheType = "cache",
+    signal?: AbortSignal,
   ): Promise<any> {
     let artifactCache: ArtifactCacheTemplate;
     if (cacheType === undefined || cacheType.toLowerCase() === "cache") {
@@ -1453,7 +1479,8 @@ export class Instance implements Disposable {
     const list = await artifactCache.fetchWithCache(jsonUrl, "json");
     await this.fetchNDArrayCacheInternal(
       ndarrayCacheUrl,
-      list["records"] as Array<NDArrayShardEntry>, device, artifactCache);
+      list["records"] as Array<NDArrayShardEntry>, device, artifactCache,
+      signal);
     this.cacheMetadata = { ...this.cacheMetadata, ...(list["metadata"] as Record<string, any>) };
   }
 
@@ -1465,12 +1492,14 @@ export class Instance implements Disposable {
    * @param list The list of array data.
    * @param device The device to store the data to.
    * @param artifactCache The artifact cache
+   * @param signal An optional AbortSignal to abort the fetch
    */
   private async fetchNDArrayCacheInternal(
     ndarrayCacheUrl: string,
     list: Array<NDArrayShardEntry>,
     device: DLDevice,
-    artifactCache: ArtifactCacheTemplate
+    artifactCache: ArtifactCacheTemplate,
+    signal?: AbortSignal,
   ) {
     const perf = compact.getPerformance();
     const tstart = perf.now();
@@ -1525,7 +1554,7 @@ export class Instance implements Disposable {
         const shard = list[i];
         const dataUrl = new URL(shard.dataPath, ndarrayCacheUrl).href;
         try {
-          await artifactCache.addToCache(dataUrl, "arraybuffer");
+          await artifactCache.addToCache(dataUrl, "arraybuffer", signal);
         } catch (err) {
           this.env.logger("Error: Cannot fetch " + dataUrl + " err= " + err);
           throw err;
@@ -1873,7 +1902,44 @@ export class Instance implements Disposable {
   makeTVMArray(
     inputs: Array<TVMObjectBase>
   ): TVMArray {
-    return this.ctx.arrayMake(...inputs) as TVMArray;
+    const CALL_STACK_LIMIT = 30000;
+    const inputsLength = inputs.length;
+    if (inputsLength <= CALL_STACK_LIMIT) {
+      return this.ctx.arrayMake(...inputs) as TVMArray;
+    }
+    // If too many elements, TypeScript would complain `Maximum call stack size exceeded`
+    // So we make several arrays and concatenate them
+    const listOfArrays: Array<TVMArray> = [];
+    for (let begin = 0; begin < inputsLength; begin += CALL_STACK_LIMIT) {
+      const end = Math.min(inputsLength, begin + CALL_STACK_LIMIT);
+      const chunk: Array<TVMObjectBase> = inputs.slice(begin, end);
+      listOfArrays.push(this.ctx.arrayMake(...chunk) as TVMArray);
+    }
+    return this.ctx.arrayConcat(...listOfArrays) as TVMArray;
+  }
+
+  /**
+   * Join a sequence of NDArrays that represent embeddings.
+   * @param inputs A list of embeddings in NDArrays, each array i has shape (m_i, hidden_size).
+   * @returns An NDArray of shape (\sum_{i} {m}, hidden_size)
+   */
+  concatEmbeddings(embeddings: Array<NDArray>): NDArray {
+    // 1. Check shape validity
+    const hidden_size = embeddings[0].shape[1];
+    embeddings.forEach((input) => {
+      if (input.shape.length !== 2 || input.shape[1] !== hidden_size) {
+        throw new Error("Expect embeddings to concatenate have shape (m_i, hidden_size).");
+      }
+    })
+
+    // 2. Call global func
+    if (this.ctx.concatEmbeddings === undefined) {
+      throw new Error(
+        "Global function tvmjs.runtime.ConcatEmbeddings was " +
+        "not found, but called concatEmbeddings."
+      );
+    }
+    return this.ctx.concatEmbeddings(...embeddings) as NDArray;
   }
 
   /**
@@ -2082,6 +2148,18 @@ export class Instance implements Disposable {
    * @param device The given GPU device.
    */
   initWebGPU(device: GPUDevice): void {
+    device.addEventListener("uncapturederror", (event) => {
+      console.error("A WebGPU error was not captured: ", event);
+    });
+
+    device.lost.then((info: any) => {
+      if (this.deviceLostIsError) {
+        console.error("Device lost, calling Instance.dispose(). Please initialize again. ", info);
+        this.dispose();
+      }
+    });
+    this.deviceLostIsError = true;
+
     const webGPUContext = new WebGPUContext(
       this.memory, device
     );
@@ -2230,6 +2308,14 @@ export class Instance implements Disposable {
       const tp = typeof val;
       const valueOffset = argsValue + i * SizeOf.TVMValue;
       const codeOffset = argsCode + i * SizeOf.I32;
+
+      // Convert string[] to a TVMArray of TVMString, hence treated as a TVMObject
+      if (val instanceof Array && val.every(e => typeof e === "string")) {
+        const tvmStringArray: TVMString[] = [];
+        val.forEach(e => { tvmStringArray.push(this.makeString(e)) });
+        val = this.makeTVMArray(tvmStringArray);
+      }
+
       if (val instanceof NDArray) {
         if (!val.isView) {
           stack.storePtr(valueOffset, val.getHandle());
@@ -2424,6 +2510,7 @@ export class Instance implements Disposable {
     switch (tcode) {
       case ArgTypeCode.Int:
       case ArgTypeCode.UInt:
+      case ArgTypeCode.TVMArgBool:
         return this.memory.loadI64(rvaluePtr);
       case ArgTypeCode.Float:
         return this.memory.loadF64(rvaluePtr);

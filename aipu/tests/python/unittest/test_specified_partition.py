@@ -38,16 +38,14 @@ def test_specified_partition():
     compass.partition(fallback_indices=[7])
     main_func_text = compass.ir_mod["main"].astext()
 
-    expect_snippet = """\
+    expect = """\
 #[version = "0.0.5"]
 fn (%x0: Tensor[(1, 224, 224, 3), float32] /* ty=Tensor[(1, 224, 224, 3), float32] */) -> Tensor[(1, 222, 222, 32), float32] {
   %0 = @tvmgen_default_aipu_compass_main_0(%x0) /* ty=Tensor[(1, 222, 222, 32), float32] */;
   nn.softmax(%0) /* ty=Tensor[(1, 222, 222, 32), float32] */
 } /* ty=fn (Tensor[(1, 224, 224, 3), float32]) -> Tensor[(1, 222, 222, 32), float32] */
 """
-    assert (
-        main_func_text == expect_snippet.strip()
-    ), f"\nExpect snippet:\n{expect_snippet}\n\nActual snippet:\n{main_func_text}\n"
+    assert main_func_text == expect.strip(), f"\nExpect snippet:\n{expect}\n\nActual snippet:\n{main_func_text}\n"
 
     compass.ir_mod = mod
     compass.optimize()

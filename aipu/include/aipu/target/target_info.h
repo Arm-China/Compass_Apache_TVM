@@ -7,6 +7,7 @@
 #ifndef AIPU_TARGET_TARGET_INFO_H_
 #define AIPU_TARGET_TARGET_INFO_H_
 
+#include <aipu/runtime/utils.h>
 #include <tvm/target/target.h>
 
 #include <unordered_map>
@@ -17,8 +18,7 @@ class AipuInfoObj final : public Object {
  public:
   // The AIPU configuration name.
   String name;
-  // The generation number of AIPU chip.
-  int generation = -1;
+  int core_count = -1;
   int tec_count = -1;
   // The size of a single piece local SRAM in bytes.
   int lsram_size_per_piece = -1;
@@ -31,7 +31,7 @@ class AipuInfoObj final : public Object {
 
   void VisitAttrs(AttrVisitor* v) {
     v->Visit("name", &name);
-    v->Visit("generation", &generation);
+    v->Visit("core_count", &core_count);
     v->Visit("tec_count", &tec_count);
     v->Visit("lsram_size_per_piece", &lsram_size_per_piece);
     v->Visit("lsram_piece_count", &lsram_piece_count);
@@ -51,19 +51,12 @@ class AipuInfoObj final : public Object {
 class AipuInfo final : public ObjectRef {
   // Methods of current class.
  public:
-  bool IsX1() const { return (*this)->generation == 3; }
-  bool IsX2() const { return (*this)->generation == 4; }
-  bool IsX3() const { return (*this)->generation == 5; }
+  bool IsX1() const { return StrStartsWith((*this)->name, "X1"); }
+  bool IsX2() const { return StrStartsWith((*this)->name, "X2"); }
+  bool IsX3() const { return StrStartsWith((*this)->name, "X3"); }
   bool IsV1() const { return IsX1(); }
   bool IsV2() const { return IsX2(); }
   bool IsV3() const { return IsX3(); }
-
-  /*!
-   * \brief The size of the tec_count.
-   *
-   * \return The tec_count of corresponding AIPU configuration.
-   */
-  int TecCount() const;
 
   /*!
    * \brief Hardware vector width in bits.
@@ -122,7 +115,7 @@ class AipuInfo final : public ObjectRef {
   TVM_DEFINE_OBJECT_REF_METHODS(AipuInfo, ObjectRef, AipuInfoObj);
 
  private:
-  AipuInfo(String name, int generation, int tec_count, int lsram_size_per_piece,
+  AipuInfo(String name, int core_count, int tec_count, int lsram_size_per_piece,
            int lsram_piece_count, int gsram_size_per_piece, int gsram_piece_count);
 
   static const std::unordered_map<String, AipuInfo> kValidConfigs;

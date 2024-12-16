@@ -310,6 +310,21 @@ def matmul_out_dtype(inputs, out_dtype):
             a = flatten_to_nd(inputs[0], a_shape, 2)
             b = _op.transpose(inputs[1])
             output = _op.nn.dense(a, b, out_dtype=out_dtype)
+        elif a_rank == 1 or b_rank == 1:
+            a, b = inputs
+            _a_shape = tuple(a_shape.data.numpy())
+            _b_shape = tuple(b_shape.data.numpy())
+            if a_rank == 1:
+                axis = -2
+                a = _op.expand_dims(a, axis=0)
+                batches = _b_shape[:-2]
+                a = _op.broadcast_to(a, (*batches, 1, _a_shape[0]))
+            else:
+                axis = -1
+                b = _op.expand_dims(b, axis=-1)
+                batches = _a_shape[:-2]
+                b = _op.broadcast_to(b, (*batches, _b_shape[0], 1))
+            return _op.squeeze(_op.nn.batch_matmul(a, b, transpose_b=False), axis=axis)
         else:
             a = inputs[0]
             b = inputs[1]
@@ -4587,6 +4602,23 @@ class If(OnnxOpConverter):
                     "Attempting to unify ranks but this may produce incorrect results."
                 )
                 warnings.warn(warning_msg)
+                # Skip constant If node to avoid irrational broadcast
+                if isinstance(inputs[0], tvm.relay.expr.Constant):
+                    predicate = inputs[0].data.asnumpy()[0]
+                    node_name = attr["tvm_custom"]["name"]
+                    warn_msg_begin = f"Predicate of If node {node_name} is always "
+                    if predicate == np.bool_(True):
+                        warnings.warn(
+                            warn_msg_begin
+                            + "true so only then branch would be executed. Removing else branch. "
+                        )
+                        else_expr = then_expr
+                    elif predicate == np.bool_(False):
+                        warnings.warn(
+                            warn_msg_begin
+                            + "false so only else branch would be executed. Removing then branch. "
+                        )
+                        then_expr = else_expr
                 if len(then_shape) < len(else_shape):
                     then_expr = _op.broadcast_to_like(then_expr, else_expr)
                 else:
@@ -6550,6 +6582,7 @@ class SequenceAt(OnnxOpConverter):
 
 # compatible operators that do NOT require any conversion.
 _identity_list = []
+
 
 # _convert_map defines maps of name to converter functor(callable)
 # for 1 to 1 mapping, use Renamer if nothing but name is different

@@ -277,7 +277,8 @@ class StmtVisitor(StmtFunctor):
         self.visit_expr(buf_store.value)
         for idx in buf_store.indices:
             self.visit_expr(idx)
-        self.visit_expr(buf_store.predicate)
+        if buf_store.predicate is not None:
+            self.visit_expr(buf_store.predicate)
 
     def visit_buffer_realize(self, buffer_realize):
         for bound in buffer_realize.bounds:
@@ -431,11 +432,13 @@ class StmtMutator(StmtFunctor):
     def visit_buffer_store(self, buf_store):
         new_value = self.visit_expr(buf_store.value)
         new_indices = [self.visit_expr(idx) for idx in buf_store.indices]
-        new_pred = self.visit_expr(buf_store.predicate)
+        new_pred = None
+        if buf_store.predicate is not None:
+            new_pred = self.visit_expr(buf_store.predicate)
         if (
             new_value == buf_store.value
             and new_indices == list(buf_store.indices)
-            and new_pred == buf_store.predicate
+            and (new_pred is None or new_pred == buf_store.predicate)
         ):
             return buf_store
         return _stmt.BufferStore(buf_store.buffer, new_value, new_indices, new_pred, buf_store.span)

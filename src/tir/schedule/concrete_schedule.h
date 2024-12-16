@@ -87,8 +87,9 @@ class ConcreteScheduleNode : public ScheduleNode {
 
  public:
   /******** Schedule: Sampling ********/
-  ExprRV SampleCategorical(const Array<Integer>& candidates, const Array<FloatImm>& probs,
-                           Optional<Integer> decision = NullOpt) override;
+  ExprRV SampleCategorical(const Array<runtime::Int>& candidates,
+                           const Array<runtime::Float>& probs,
+                           Optional<runtime::Int> decision = NullOpt) override;
   Array<ExprRV> SamplePerfectTile(const LoopRV& loop_rv, int n, int max_innermost_factor,
                                   Optional<Array<Integer>> decision = NullOpt) override;
   Array<ExprRV> SamplePartitionedTile(const LoopRV& loop_rv, int n, int partition_pos,
@@ -108,7 +109,7 @@ class ConcreteScheduleNode : public ScheduleNode {
   LoopRV Fuse(const Array<LoopRV>& loop_rvs, bool preserve_unit_iters) override;
   LoopRV Merge(const Array<LoopRV>& loop_rvs) override;
   Array<LoopRV> Split(const LoopRV& loop_rv, const Array<Optional<ExprRV>>& factors,
-                      bool preserve_unit_iters) override;
+                      bool preserve_unit_iters, bool disable_predication) override;
   Array<LoopRV> LoopPartition(const LoopRV& loop_rv, const Array<Optional<ExprRV>>& factors,
                               bool preserve_unit_iters) override;
   void Reorder(const Array<LoopRV>& ordered_loop_rvs) override;

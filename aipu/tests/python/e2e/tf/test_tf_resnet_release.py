@@ -43,14 +43,12 @@ def run_resnet(model, runtime="sim"):
     aipu_testing.get_test_result(tf_model, image, outputs, runtime=runtime)
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_resnet_v1_50(runtime):
     run_resnet("resnet_v1_50", runtime)
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_resnet_v1_101(runtime):

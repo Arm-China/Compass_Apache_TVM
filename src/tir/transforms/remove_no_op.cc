@@ -217,7 +217,8 @@ class NoOpRemover : public arith::IRMutatorWithAnalyzer {
     // values to be written is a no-op.
     // PrimExpr stores_existing_value = store->value == BufferLoad(store->buffer, store->indices);
     PrimExpr stores_existing_value =
-        store->value - BufferLoad(store->buffer, store->indices) == make_zero(store->value->dtype);
+        store->value - BufferLoad(store->buffer, store->indices, store->predicate);
+    stores_existing_value = stores_existing_value == make_zero(store->value->dtype);
     if (touch_pattern_.has_value()) {
       Stmt context_arg = context_ ? GetRef<Stmt>(context_) : Stmt(store);
       stores_existing_value =

@@ -96,7 +96,7 @@ def _gen_topk(call):
 
 
 gt_relay_ir = """fn (%Placeholder: Tensor[(6, 4, 10, 3), float32] /* ty=Tensor[(6, 4, 10, 3), float32] span=Placeholder:0:0 */) -> (Tensor[(6, 2, 10, 3), float32], Tensor[(6, 2, 10, 3), int64]) {
-  %0 = custom_topk(%Placeholder, __dict__={"axis"=1, "select_index"="random", "dtype"="int64", "largest"=1, "sorted"=1, "ret_type"="both", "k"=2}) /* ty=(Tensor[(6, 2, 10, 3), float32], Tensor[(6, 2, 10, 3), int64]) span=TopKV2:0:0 */;
+  %0 = custom_topk(%Placeholder, __dict__={"axis"=1, "select_index"="random", "dtype"="int64", "largest"=1, "sorted"=True, "ret_type"="both", "k"=2}) /* ty=(Tensor[(6, 2, 10, 3), float32], Tensor[(6, 2, 10, 3), int64]) span=TopKV2:0:0 */;
   %1 = %0.0 /* ty=Tensor[(6, 2, 10, 3), float32] span=TopKV2:0:0 */;
   %2 = %0.1 /* ty=Tensor[(6, 2, 10, 3), int64] span=TopKV2:0:0 */;
   (%1, %2) /* ty=(Tensor[(6, 2, 10, 3), float32], Tensor[(6, 2, 10, 3), int64]) */

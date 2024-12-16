@@ -214,7 +214,9 @@ class ExprVisitor(ExprFunctor):
     def visit_buffer_load(self, buf_load):
         for idx in buf_load.indices:
             self.visit_expr(idx)
-        self.visit_expr(buf_load.predicate)
+
+        if buf_load.predicate is not None:
+            self.visit_expr(buf_load.predicate)
 
     def visit_producer_load(self, producer_load):
         for idx in producer_load.indices:
@@ -348,8 +350,13 @@ class ExprMutator(ExprFunctor):
 
     def visit_buffer_load(self, buf_load):
         new_indices = [self.visit_expr(idx) for idx in buf_load.indices]
-        new_pred = self.visit_expr(buf_load.predicate)
-        if new_indices == list(buf_load.indices) and new_pred == buf_load.predicate:
+        new_pred = None
+        if buf_load.predicate is not None:
+            new_pred = self.visit_expr(buf_load.predicate)
+
+        if new_indices == list(buf_load.indices) and (
+            new_pred is None or new_pred == buf_load.predicate
+        ):
             return buf_load
         return _expr.BufferLoad(buf_load.buffer, new_indices, new_pred, buf_load.span)
 

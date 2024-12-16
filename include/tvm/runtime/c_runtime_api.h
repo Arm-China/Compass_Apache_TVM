@@ -76,7 +76,7 @@
 #endif
 
 // TVM version
-#define TVM_VERSION "0.16.0"
+#define TVM_VERSION "0.18.0"
 
 // TVM Runtime is DLPack compatible.
 #include <dlpack/dlpack.h>
@@ -84,6 +84,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -191,11 +192,12 @@ typedef enum {
   kTVMBytes = 12U,
   kTVMNDArrayHandle = 13U,
   kTVMObjectRValueRefArg = 14U,
+  kTVMArgBool = 15U,
   // Extension codes for other frameworks to integrate TVM PackedFunc.
   // To make sure each framework's id do not conflict, use first and
   // last sections to mark ranges.
   // Open an issue at the repo if you need a section of code.
-  kTVMExtBegin = 15U,
+  kTVMExtBegin = 16U,
   kTVMNNVMFirst = 16U,
   kTVMNNVMLast = 20U,
   // The following section of code is used for non-reserved types.

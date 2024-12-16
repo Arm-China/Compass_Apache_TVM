@@ -23,8 +23,11 @@ except ImportError as exc:
 
 
 # Resetting the signals registered by AIPUBuilder.
-signal.signal(signal.SIGABRT, signal.SIG_DFL)
-signal.signal(signal.SIGSEGV, signal.SIG_DFL)
+try:
+    signal.signal(signal.SIGABRT, signal.SIG_DFL)
+    signal.signal(signal.SIGSEGV, signal.SIG_DFL)
+except ValueError:  # ValueError: signal only works in main thread
+    pass
 
 
 # Workaround for the slow OPT on Python3.8.5 CPU environment.

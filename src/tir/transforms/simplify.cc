@@ -53,6 +53,7 @@ struct SimplifyConfigNode : public tvm::AttrsNode<SimplifyConfigNode> {
   bool convert_boolean_to_and_of_ors;
   bool apply_constraints_to_boolean_branches;
   bool disable_var_inline;
+  bool convert_float_div_with_imm_to_mul;
 
   TVM_DECLARE_ATTRS(SimplifyConfigNode, "tir.transform.SimplifyConfig") {
     TVM_ATTR_FIELD(transitively_prove_inequalities)
@@ -84,6 +85,10 @@ struct SimplifyConfigNode : public tvm::AttrsNode<SimplifyConfigNode> {
     TVM_ATTR_FIELD(disable_var_inline)
         .describe("If true, disable all var inline")
         .set_default(false);
+
+    TVM_ATTR_FIELD(convert_float_div_with_imm_to_mul)
+        .describe("If true, convert float division to multiplication by reciprocal")
+        .set_default(true);
   }
 
   RewriteSimplifier::Extension GetEnabledExtensions() const {
@@ -98,6 +103,9 @@ struct SimplifyConfigNode : public tvm::AttrsNode<SimplifyConfigNode> {
     if (apply_constraints_to_boolean_branches) {
       flags = RewriteSimplifier::Extension(flags |
                                            RewriteSimplifier::kApplyConstraintsToBooleanBranches);
+    }
+    if (convert_float_div_with_imm_to_mul) {
+      flags = RewriteSimplifier::Extension(flags | RewriteSimplifier::kConvertFloatDivWithImmToMul);
     }
     return flags;
   }

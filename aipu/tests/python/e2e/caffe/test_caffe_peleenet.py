@@ -43,7 +43,6 @@ def run_peleenet(model, runtime):
     aipu_testing.get_test_result(caffe_model, image, outputs, runtime=runtime)
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_peleenet(runtime):

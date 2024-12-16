@@ -762,7 +762,7 @@ class ThreadScopePropagate : public StmtExprMutator {
 
     auto it = buf_remap_.find(op->buffer->data);
     if (it != buf_remap_.end()) {
-      return BufferLoad(it->second, op->indices, op->span);
+      return BufferLoad(it->second, op->indices, op->predicate, op->span);
     } else {
       return expr;
     }
@@ -775,7 +775,7 @@ class ThreadScopePropagate : public StmtExprMutator {
 
     auto it = buf_remap_.find(op->buffer->data);
     if (it != buf_remap_.end()) {
-      return BufferStore(it->second, op->value, op->indices, op->span);
+      return BufferStore(it->second, op->value, op->indices, op->predicate, op->span);
     } else {
       return stmt;
     }
@@ -820,7 +820,7 @@ class ThreadScopePropagate : public StmtExprMutator {
     }
   }
 
-  std::unordered_map<Var, Buffer, ObjectPtrHash, ObjectPtrEqual> buf_remap_;
+  std::unordered_map<Var, Buffer> buf_remap_;
   std::unordered_set<Buffer, ObjectPtrHash, ObjectPtrEqual> external_buffers_;
 
   // The current thread scope.
@@ -970,8 +970,11 @@ class BufferBindUnwrapper : public StmtExprMutator {
     const BufferEntry& e = GetBufferEntry(op->buffer);
 
     if (e.remap) {
+      ICHECK(!op->predicate.defined()) << "Predicated buffer load is not currently supported in "
+                                          "storage flatten pass.";
       return BufferLoad(e.remap->target,
-                        remap_indices(op->indices, e.remap->begins, e.remap->extents), op->span);
+                        remap_indices(op->indices, e.remap->begins, e.remap->extents),
+                        op->predicate, op->span);
     } else {
       return expr;
     }
@@ -984,8 +987,11 @@ class BufferBindUnwrapper : public StmtExprMutator {
     const BufferEntry& e = GetBufferEntry(op->buffer);
 
     if (e.remap) {
+      ICHECK(!op->predicate.defined()) << "Predicated buffer store is not currently supported in "
+                                          "storage flatten pass.";
       return BufferStore(e.remap->target, op->value,
-                         remap_indices(op->indices, e.remap->begins, e.remap->extents), op->span);
+                         remap_indices(op->indices, e.remap->begins, e.remap->extents),
+                         op->predicate, op->span);
     } else {
       return stmt;
     }
@@ -1468,7 +1474,9 @@ class StorageFlattener : public StmtExprMutator {
 
     auto flattened_indices = correct_shape_buffer->ElemOffset(op->indices);
 
-    Stmt body = BufferStore(e.flattened_buffer, value, flattened_indices, op->span);
+    ICHECK(!op->predicate.defined()) << "Predicated buffer store is not currently supported in "
+                                        "storage flatten pass.";
+    Stmt body = BufferStore(e.flattened_buffer, value, flattened_indices, op->predicate, op->span);
     if (create_bound_attributes_ && ShapeIsValid(e.buffer->shape)) {
       shape_collector_.push_back(std::make_pair(e.buffer->data, e.buffer->shape));
     }
@@ -1633,8 +1641,10 @@ class StorageFlattener : public StmtExprMutator {
       correct_shape_buffer = BufferWithShape(e.buffer, (*iter).second);
     }
 
+    ICHECK(!op->predicate.defined()) << "Predicated buffer load is not currently supported in "
+                                        "storage flatten pass.";
     auto flattened_indices = correct_shape_buffer->ElemOffset(op->indices);
-    PrimExpr val = BufferLoad(e.flattened_buffer, flattened_indices, op->span);
+    PrimExpr val = BufferLoad(e.flattened_buffer, flattened_indices, op->predicate, op->span);
 
     if (op->dtype == DataType::Bool()) {
       ICHECK_EQ(e.flattened_buffer->dtype, DataType::Int(8))

@@ -67,7 +67,7 @@ def test_simplify_conv_pad():
 
         zz = run_opt_pass(conv, transform.FoldExplicitPadding())
         expected = run_opt_pass(after, transform.InferType())
-        assert tvm.ir.structural_equal(zz, expected)
+        tvm.ir.assert_structural_equal(zz, expected)
 
         mod1 = tvm.IRModule.from_expr(conv)
         mod2 = tvm.IRModule.from_expr(zz)
@@ -190,7 +190,7 @@ def test_simplify_pool_pad():
         zz = run_opt_pass(pool, transform.FoldExplicitPadding())
         expected = run_opt_pass(after, transform.InferType())
 
-        assert tvm.ir.structural_equal(zz, expected)
+        tvm.ir.assert_structural_equal(zz, expected)
 
         mod1 = tvm.IRModule.from_expr(pool)
         mod2 = tvm.IRModule.from_expr(zz)
@@ -314,7 +314,7 @@ def test_fold_pad_qconv2d():
     a = run_opt_pass(before(), relay.transform.FoldExplicitPadding())
     b = run_opt_pass(expected(), transform.InferType())
 
-    assert tvm.ir.structural_equal(a, b, map_free_vars=True), "Actual = \n" + str(a)
+    tvm.ir.assert_structural_equal(a, b, map_free_vars=True)
 
 
 def test_pad_qconv2d_no_fold():
@@ -340,9 +340,7 @@ def test_pad_qconv2d_no_fold():
     a = run_opt_pass(get_expr(), relay.transform.FoldExplicitPadding())
     b = run_opt_pass(get_expr(), transform.InferType())
 
-    assert tvm.ir.structural_equal(a, b, map_free_vars=True), (
-        "\nActual = \n" + str(a) + "\nExpected = \n" + str(b)
-    )
+    tvm.ir.assert_structural_equal(a, b, map_free_vars=True)
 
 
 if __name__ == "__main__":

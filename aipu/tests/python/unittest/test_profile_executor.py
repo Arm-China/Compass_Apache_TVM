@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 import os
+import pytest
 from tvm.relay.backend.contrib.aipu_compass import AipuCompass
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
@@ -24,6 +25,7 @@ def run_profile_executor():
     print(ee.profile(preprocessed_image))
 
 
+@pytest.mark.REQUIRE_RPC
 def test_profile_vm():
     os.environ["AIPU_TVM_EXECUTOR"] = "vm"
     try:
@@ -32,6 +34,7 @@ def test_profile_vm():
         del os.environ["AIPU_TVM_EXECUTOR"]
 
 
+@pytest.mark.REQUIRE_RPC
 def test_profile_graph():
     os.environ["AIPU_TVM_EXECUTOR"] = "graph"
     try:

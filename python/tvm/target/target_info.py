@@ -55,15 +55,15 @@ class AipuInfo(runtime.Object):
 
     @property
     def is_x1(self):
-        return self.generation == 3
+        return self.name.startswith("X1")
 
     @property
     def is_x2(self):
-        return self.generation == 4
+        return self.name.startswith("X2")
 
     @property
     def is_x3(self):
-        return self.generation == 5
+        return self.name.startswith("X3")
 
     @property
     def is_v1(self):
@@ -76,17 +76,6 @@ class AipuInfo(runtime.Object):
     @property
     def is_v3(self):
         return self.is_x3
-
-    @property
-    def tec_count(self):
-        """The size of the tec_count.
-
-        Returns
-        -------
-        tec_count : int
-            The tec_count of corresponding AIPU configuration.
-        """
-        return _ffi_api.AipuInfo_TecCount(self)
 
     @property
     def vector_width(self):

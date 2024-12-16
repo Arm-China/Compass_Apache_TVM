@@ -870,10 +870,10 @@ inline bool is_one(const PrimExpr& x) { return is_const_int(x, 1); }
 
 /*!
  * \brief Check whether all items of the predicate are true.
- * \param pred The predicate that need to be checked.
+ * \param predicate The predicate that need to be checked.
  * \return whether all items of the predicate are true.
  */
-bool is_all_true_pred(PrimExpr pred);
+bool is_all_true_pred(Optional<PrimExpr> predicate);
 
 /*!
  * \brief Check whether x is a constant integer 0

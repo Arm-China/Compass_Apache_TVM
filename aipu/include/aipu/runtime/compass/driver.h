@@ -7,7 +7,12 @@
 #define AIPU_RUNTIME_COMPASS_DRIVER_H_
 
 // AIPU driver C API header file.
+#ifndef __QNX__
+#include <internal/internal_api.h>
+#else
 #include <standard_api.h>
+#endif
+
 #include <tvm/runtime/container/string.h>
 #include <tvm/runtime/data_type.h>
 
@@ -50,6 +55,8 @@ class AipuDriver {
   void Init(const std::string& aipu_bin, const std::string& work_dir, const std::string& target,
             const std::string& umd_dtcm_sz, const std::string& func_name);
   void SetInputs(const std::vector<DLTensor*>& inputs);
+  void SetOutputs(const std::vector<DLTensor*>& outputs);
+  void SetInputsWithDynamicShape(const std::vector<DLTensor*>& inputs);
   void Run();
   void GetOutputs(const std::vector<DLTensor*>& outputs);
   void DumpProfileData();
@@ -60,6 +67,9 @@ class AipuDriver {
   void SetInputShared(int* inputs_fds);
   void MarkOutputShared(uint64_t* outputs_pa);
   void SetInputShared(uint64_t* inputs_pa);
+
+  // As to dynamic shapes, this interface get output shape.
+  std::vector<int64_t> GetOutputShape(uint32_t idx);
   // Internal supporting.
  private:
   void ConfigEnvItems();

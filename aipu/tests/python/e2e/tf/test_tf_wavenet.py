@@ -42,7 +42,6 @@ def run_wavenet(model, runtime):
     assert opt_result < 0.21
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_wavenet(runtime):

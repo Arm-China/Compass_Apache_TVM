@@ -22,6 +22,10 @@
  * \brief Rewrite-rule based simplification.
  */
 // Acknowledgement: Most rewrite-rules are from Halide.
+
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "rewrite_simplify.h"
 
 #include <tvm/arith/analyzer.h>
@@ -543,6 +547,7 @@ PrimExpr RewriteSimplifier::Impl::VisitExpr_(const SubNode* op) {
   PVar<IntImm> c1, c2, c3;
   // Pattern var for lanes in broadcast and ramp
   PVar<PrimExpr> lanes;
+
   // Vector rules
   if (op->dtype.is_scalable_or_fixed_length_vector()) {
     TVM_TRY_REWRITE(ramp(b1, s1, lanes) - ramp(b2, s2, lanes), ramp(b1 - b2, s1 - s2, lanes));
@@ -697,9 +702,15 @@ PrimExpr RewriteSimplifier::Impl::VisitExpr_(const SubNode* op) {
     TVM_TRY_RECURSIVE_REWRITE(x - (y + c1), (x - y) + (0 - c1));
     TVM_TRY_RECURSIVE_REWRITE(x - (y - z), (x + z) - y);
     TVM_TRY_RECURSIVE_REWRITE(x - y * c1, x + y * (0 - c1));
-  } else if (op->dtype.is_float()) {
+  } else {
     // Cancellation rules.  Deliberately off of the integer path, to
     // avoid introducing checks on the side effects for the fast path.
+    //
+    // These simplifications do not preserve NaN/Inf that may occur in
+    // the inputs.  For IEEE floats, `NaN - NaN` is `NaN`, and does
+    // not cancel out.  However, since models should not encounter NaN
+    // in the first place, this allows better simplification for the
+    // supported path.
     TVM_TRY_REWRITE_IF(x - x, ZeroWithTypeLike(x),
                        SideEffect(x.Eval()) <= CallEffectKind::kReadState);
     TVM_TRY_REWRITE_IF((x + y) - y, x, SideEffect(y.Eval()) <= CallEffectKind::kReadState);
@@ -766,10 +777,12 @@ PrimExpr RewriteSimplifier::Impl::VisitExpr_(const DivNode* op) {
   PVar<PrimExpr> lanes;
 
   // x / 2.0 = x * 0.5
-  if (const FloatImmNode* ptr = op->b.as<FloatImmNode>()) {
-    ICHECK(op->dtype.is_float() || op->dtype.is_bfloat16() ||
-           datatype::Registry::Global()->GetTypeRegistered(op->dtype.code()));
-    return op->a * make_const(op->b.dtype(), 1.0 / ptr->value);
+  if (enabled_extensions_ & kConvertFloatDivWithImmToMul) {
+    if (const FloatImmNode* ptr = op->b.as<FloatImmNode>()) {
+      ICHECK(op->dtype.is_float() || op->dtype.is_bfloat16() ||
+             datatype::Registry::Global()->GetTypeRegistered(op->dtype.code()));
+      return op->a * make_const(op->b.dtype(), 1.0 / ptr->value);
+    }
   }
 
   // Vector rules
@@ -1136,8 +1149,15 @@ PrimExpr RewriteSimplifier::Impl::VisitExpr_(const FloorDivNode* op) {
                        x + floordiv(y, z), CanProveGreaterEqual(z.Eval(), 0));
     TVM_TRY_REWRITE_IF(matches_one_of(floordiv(y + x * z, z), floordiv(y + z * x, z)),
                        floordiv(y, z) + x, CanProveGreaterEqual(z.Eval(), 0));
+    TVM_TRY_REWRITE_IF(floordiv(x * z * c1 + y, z * c1), x + floordiv(y, z * c1),
+                       CanProveGreaterEqual(z.Eval() * c1.Eval(), 0));
 
     TVM_TRY_REWRITE_IF(floordiv(x - floormod(x, c1), c1), floordiv(x, c1), c1.Eval()->value != 0);
+
+    // Scalable divisor
+    TVM_TRY_REWRITE_IF(floordiv(x, y), ZeroWithTypeLike(x),
+                       ContainsVscaleCall(y.Eval()) && CanProveGreaterEqual(x.Eval(), 0) &&
+                           CanProveGreaterEqual(y.Eval(), 0) && CanProve(x.Eval() < y.Eval()));
   }
   return ret;
 }
@@ -1229,6 +1249,14 @@ PrimExpr RewriteSimplifier::Impl::VisitExpr_(const FloorModNode* op) {
         matches_one_of(floormod(x - floormod(x, z), y), floormod(floormod(x, z) - x, y)),
         ZeroWithTypeLike(x),
         CanProveEqual(y.Eval() - z.Eval(), 0) || CanProveEqual(y.Eval() + z.Eval(), 0));
+
+    TVM_TRY_REWRITE_IF(floormod(x * z * c1 + y, z * c1), floormod(y, z * c1),
+                       CanProveGreaterEqual(z.Eval() * c1.Eval(), 0));
+
+    // Scalable divisor
+    TVM_TRY_REWRITE_IF(floormod(x, y), x,
+                       ContainsVscaleCall(y.Eval()) && CanProveGreaterEqual(x.Eval(), 0) &&
+                           CanProveGreaterEqual(y.Eval(), 0) && CanProve(x.Eval() < y.Eval()));
 
     if (floormod(x, c1).Match(ret)) {
       int64_t c1val = c1.Eval()->value;
@@ -1415,6 +1443,16 @@ PrimExpr RewriteSimplifier::Impl::VisitExpr_(const MinNode* op) {
       }
     }
 
+    // vscale expression comparison
+    if (ContainsVscaleCall(op->a) || ContainsVscaleCall(op->b)) {
+      if (analyzer_->CanProve(op->a <= op->b)) {
+        return op->a;
+      }
+      if (analyzer_->CanProve(op->b <= op->a)) {
+        return op->b;
+      }
+    }
+
     // canonicalization
     TVM_TRY_RECURSIVE_REWRITE(min(min(x, c1), y), min(min(x, y), c1));
     TVM_TRY_RECURSIVE_REWRITE_IF(min(c1 - x, c2), c1 - max(x, c1 - c2), c2.Eval()->value != 0);
@@ -1598,6 +1636,16 @@ PrimExpr RewriteSimplifier::Impl::VisitExpr_(const MaxNode* op) {
       }
     }
 
+    // vscale expression comparison
+    if (ContainsVscaleCall(op->a) || ContainsVscaleCall(op->b)) {
+      if (analyzer_->CanProve(op->a >= op->b)) {
+        return op->a;
+      }
+      if (analyzer_->CanProve(op->b >= op->a)) {
+        return op->b;
+      }
+    }
+
     // canonicalization
     TVM_TRY_RECURSIVE_REWRITE(max(max(x, c1), y), max(max(x, y), c1));
     TVM_TRY_RECURSIVE_REWRITE_IF(max(c1 - x, c2), c1 - min(x, c1 - c2), c2.Eval()->value != 0);
@@ -1643,6 +1691,7 @@ PrimExpr RewriteSimplifier::Impl::ApplyRewriteRules(EQ ret) {
   // Pattern var match IntImm
   PVar<IntImm> c1, c2;
   PVar<PrimExpr> lanes;
+  PConst<PrimExpr> ctrue(make_const(ret->dtype, true));
 
   // vector rule
   if (ret->dtype.is_scalable_or_fixed_length_vector()) {
@@ -1663,6 +1712,17 @@ PrimExpr RewriteSimplifier::Impl::ApplyRewriteRules(EQ ret) {
     TVM_TRY_REWRITE(c1 - x == c2, x == c1 - c2);
     TVM_TRY_REWRITE(x + c1 == c2, x == c2 - c1);
     TVM_TRY_RECURSIVE_REWRITE(x * y == 0, x == 0 || y == 0);
+    TVM_TRY_REWRITE(x == x, ctrue);
+  } else {
+    // Mimic the cancellation rules for SubNode.  For Index datatypes,
+    // we skip the check for side effects.
+    //
+    // These simplifications do not preserve NaN/Inf that may occur in
+    // the inputs.  For IEEE floats, `NaN - NaN` is `NaN`, and does
+    // not cancel out.  However, since models should not encounter NaN
+    // in the first place, this allows better simplification for the
+    // supported path.
+    TVM_TRY_REWRITE_IF(x == x, ctrue, SideEffect(x.Eval()) <= CallEffectKind::kReadState);
   }
   return std::move(ret);
 }

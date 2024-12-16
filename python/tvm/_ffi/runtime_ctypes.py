@@ -51,7 +51,8 @@ class ArgTypeCode(object):
     BYTES = 12
     NDARRAY_HANDLE = 13
     OBJECT_RVALUE_REF_ARG = 14
-    EXT_BEGIN = 15
+    BOOL = 15
+    EXT_BEGIN = 16
 
 
 class TVMByteArray(ctypes.Structure):
@@ -227,6 +228,20 @@ class DataType(ctypes.Structure):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def itemsize(self):
+        """Get the number of bytes of a single element of this data type. When the number of lanes
+        is greater than 1, the itemsize is the size of the vector type.
+
+        Returns
+        -------
+        itemsize : int
+            The number of bytes of a single element of this data type
+        """
+        lanes_as_int = ctypes.c_int16(self.lanes).value
+        if lanes_as_int < 0:
+            raise ValueError("Cannot determine itemsize for scalable vector types")
+        return (self.bits * self.lanes + 7) // 8
+
     @property
     def bytes(self):
         return (self.bits + 7) // 8
@@ -252,12 +267,20 @@ class DataType(ctypes.Structure):
         return self.is_int and self.bits == 16
 
     @property
+    def is_int32(self):
+        return self.is_int and self.bits == 32
+
+    @property
     def is_uint(self):
         return self.type_code == DataTypeCode.UINT
 
     @property
     def is_uint16(self):
         return self.is_uint and self.bits == 16
+
+    @property
+    def is_uint32(self):
+        return self.is_uint and self.bits == 32
 
     @property
     def is_bool(self):
@@ -289,7 +312,7 @@ class DataType(ctypes.Structure):
 
     @property
     def is_scalar(self):
-        return self.lanes == 1
+        return self.lanes in (0, 1)
 
     @property
     def is_vector(self):
@@ -340,7 +363,7 @@ class DataType(ctypes.Structure):
 
     @property
     def element_of(self):
-        return str(self.with_lanes(1))
+        return str(self if self.is_scalar else self.with_lanes(1))
 
 
 if ml_dtypes is not None:
@@ -658,10 +681,24 @@ class Device(ctypes.Structure):
         Returns
         -------
         total_global_memory : int or None
-            Return the global memory available on device in bytes.
+            Return the total size of global memory on device in bytes.
             Return None if the device does not support this feature.
         """
         return self._GetDeviceAttr(self.device_type, self.device_id, 14)
+
+    @property
+    def available_global_memory(self):
+        """Return size of the available global memory.
+
+        Supported devices include CUDA.
+
+        Returns
+        -------
+        available_global_memory : int or None
+            Return the amount of unallocated global memory on device in bytes.
+            Return None if the device does not support this feature.
+        """
+        return self._GetDeviceAttr(self.device_type, self.device_id, 15)
 
     def texture_spatial_limit(self):
         """Returns limits for textures by spatial dimensions

@@ -19,10 +19,12 @@
 # This file has been modified by Arm China team.
 #
 import ast
+import inspect
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 import numpy as np
 
 from tvm import error, target as tgt
+from tvm.tir import Pointer
 from . import dispatch, doc
 from .error import ParserError
 
@@ -74,11 +76,13 @@ def _get_builtin_or_none(name: str):
 
 
 def _check_literal_type(eval_result, node, parser):
-    if tgt.AipuInfo.current() is not None:
-        if isinstance(eval_result, (np.integer, np.floating, np.bool_)):
-            err_msg = "The scalar literal only can be represented by instance of Python built-in "
-            err_msg += f'type, i.e., int, float, bool, but got: "{type(eval_result)}".'
-            parser.report_error(node, err_msg)
+    if tgt.AipuInfo.current() is None:
+        return
+
+    if isinstance(eval_result, (np.integer, np.floating, np.bool_)):
+        msg = "The scalar literal only can be represented by instance of Python built-in type, "
+        msg += f'i.e., int, float, bool, but got: "{type(eval_result)}".'
+        parser.report_error(node, msg)
 
 
 class ExprEvaluator:
@@ -297,8 +301,8 @@ class ExprEvaluator:
                 value = self._eval_expr(node.__class__(**fields))
         except error.DiagnosticError:
             raise
-        except Exception as e:  # pylint: disable=broad-except,invalid-name
-            self.parser.report_error(node, e)
+        except Exception as err:  # pylint: disable=broad-except
+            self.parser.report_error(node, err)
         return self._add_intermediate_result(value)
 
     def _eval_lambda(self, node: doc.Lambda) -> Any:
@@ -318,8 +322,8 @@ class ExprEvaluator:
             value = self._eval_expr(node)
         except error.DiagnosticError:
             raise
-        except Exception as e:  # pylint: disable=broad-except,invalid-name
-            self.parser.report_error(node, str(e))
+        except Exception as err:  # pylint: disable=broad-except
+            self.parser.report_error(node, err)
         return self._add_intermediate_result(value)
 
     def _eval_bool_op(self, fields: Dict[str, Any]) -> Any:
@@ -442,6 +446,29 @@ class ExprEvaluator:
 
         return slice(lower, upper, step)
 
+    def _pre_eval_expr(self, v):
+        if tgt.AipuInfo.current() is None:
+            return
+
+        if isinstance(v, doc.Call) and isinstance(v.func, doc.Name):
+            func_name = v.func.id
+            if func_name in ("print", "max", "min"):
+                name_map = {"print": "printf"}
+                msg = f'The built-in "{func_name}" isn\'t supported, please use "S.{{}}".'
+                self.parser.report_error(v, msg.format(name_map.get(func_name, func_name)))
+
+            func = self.value_table[func_name]
+            if inspect.isfunction(func) and not func.__module__.startswith("tvm."):
+                for name, ann in func.__annotations__.items():
+                    # There is only two kinds of type annotation in Compass DSL program:
+                    # 1. S.ptr which is a pointer.
+                    # 2. S.i32, S.i8x32, ... which has attribute "type_ann_func".
+                    if isinstance(ann, Pointer) or hasattr(ann, "type_ann_func"):
+                        msg = "The return value" if name == "return" else f'The parameter "{name}"'
+                        msg += f' of pure Python function "{func.__name__}" can\'t be annotated as'
+                        msg += ' any type in "S" space, forget to decorate it using "S.prim_func"?'
+                        self.parser.report_error(v, msg)
+
     def _eval_expr(self, v: Any) -> Any:
         """The doc AST expression node evaluating method.
 
@@ -455,14 +482,7 @@ class ExprEvaluator:
         res : Any
             The evaluation result.
         """
-        if tgt.AipuInfo.current() is not None:
-            if isinstance(v, doc.Call) and isinstance(v.func, doc.Name):
-                func_name = v.func.id
-                if func_name in ("print", "max", "min"):
-                    name_map = {"print": "printf"}
-                    err_msg = f'The built-in "{func_name}" isn\'t supported, please use "S.{{}}".'
-                    self.parser.report_error(v, err_msg.format(name_map.get(func_name, func_name)))
-
+        self._pre_eval_expr(v)
         ret = _eval_expr(v, self.value_table)
         _check_literal_type(ret, v, self.parser)
         return ret
@@ -522,8 +542,8 @@ def eval_assign(
     """
     try:
         return _eval_assign(target, source)
-    except Exception as e:  # pylint: disable=broad-except,invalid-name
-        parser.report_error(target, f"Failed to evaluate assignment: {str(e)}")
+    except Exception as err:  # pylint: disable=broad-except
+        parser.report_error(target, err)
         raise
 
 

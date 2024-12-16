@@ -401,17 +401,21 @@ LaunchThreadFrame LaunchThread(String thread_tag, PrimExpr extent);
 /*!
  * \brief Bind a var to thread env.
  * \param thread_tag The thread type tag.
+ * \param dtype The data type of the variable.
  * \return The result variable which gets bound to the thread env.
  */
-Var EnvThread(String thread_tag);
+Var EnvThread(String thread_tag, DataType dtype = DataType::Int(32));
 
 /*!
  * \brief Store data in a buffer.
  * \param buffer The buffer.
  * \param value The value to be stored.
  * \param indices The indices location to be stored.
+ * \param predicate A vector mask of boolean values indicating which lanes of a vector are to be
+ * stored. The number lanes of the mask must be equal to the number of lanes in value.
  */
-void BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices);
+void BufferStore(Buffer buffer, PrimExpr value, Array<PrimExpr> indices,
+                 Optional<PrimExpr> predicate);
 
 /*!
  * \brief The prefetch hint for a buffer

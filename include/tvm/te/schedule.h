@@ -144,10 +144,14 @@ class Stage : public ObjectRef {
    * \param factor The split factor of the loop.
    * \param p_outer The result outer domain
    * \param p_inner The result inner domain.
+   * \param disable_predication If enabled, don't create a predicate for guarding the
+   * loop. This can be useful when splitting with scalable factors that the schedule writer
+   * knows are divisible by the loop bound.
+   * Warning: enabling this feature may result in incorrect code generation if not used carefully.
    * \return reference to self.
    */
-  TVM_DLL Stage& split(IterVar parent, PrimExpr factor, IterVar* p_outer,
-                       IterVar* p_inner);  // NOLINT(*)
+  TVM_DLL Stage& split(IterVar parent, PrimExpr factor, IterVar* p_outer, IterVar* p_inner,
+                       bool disable_predication = false);  // NOLINT(*)
   /*!
    * \brief Split the iteration with given number of parts.
    *
@@ -155,10 +159,14 @@ class Stage : public ObjectRef {
    * \param nparts The number of parts in the outer domain.
    * \param p_outer The result outer domain.
    * \param p_inner The result inner domain.
+   * \param disable_predication If enabled, don't create a predicate for guarding the
+   * loop. This can be useful when splitting with scalable factors that the schedule writer
+   * knows are divisible by the loop bound.
+   * Warning: enabling this feature may result in incorrect code generation if not used carefully.
    * \return reference to self.
    */
   TVM_DLL Stage& split_by_nparts(IterVar parent, PrimExpr nparts, IterVar* p_outer,
-                                 IterVar* p_inner);  // NOLINT(*)
+                                 IterVar* p_inner, bool disable_predication = false);  // NOLINT(*)
   /*!
    * \brief Fuse the inner outer domain to the target
    * \param outer The outer domain to be fused.
@@ -784,6 +792,8 @@ class SplitNode : public IterVarRelationNode {
   PrimExpr factor;
   /*! \brief Number of parts, only factor or nparts can be given */
   PrimExpr nparts;
+  /*! \brief Whether to disable generation of predication. */
+  bool disable_predication;
 
   void VisitAttrs(AttrVisitor* v) {
     v->Visit("parent", &parent);
@@ -791,6 +801,7 @@ class SplitNode : public IterVarRelationNode {
     v->Visit("inner", &inner);
     v->Visit("factor", &factor);
     v->Visit("nparts", &nparts);
+    v->Visit("disable_predication", &disable_predication);
   }
 
   static constexpr const char* _type_key = "Split";
@@ -803,7 +814,8 @@ class SplitNode : public IterVarRelationNode {
  */
 class Split : public IterVarRelation {
  public:
-  TVM_DLL Split(IterVar parent, IterVar outer, IterVar inner, PrimExpr factor, PrimExpr nparts);
+  TVM_DLL Split(IterVar parent, IterVar outer, IterVar inner, PrimExpr factor, PrimExpr nparts,
+                bool disable_predication);
 
   TVM_DEFINE_OBJECT_REF_METHODS(Split, IterVarRelation, SplitNode);
 };

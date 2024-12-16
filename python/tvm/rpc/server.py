@@ -189,6 +189,11 @@ def _serving(sock, addr, opts, load_library):
         server_proc.terminate()
         server_proc.join()
         os.system("rmmod aipu && insmod /home/tvm/lib/aipu.ko")
+    elif server_proc.exitcode != 0:
+        raise RuntimeError(
+            f"Child process {server_proc.pid} exited unsuccessfully "
+            f"with error code {server_proc.exitcode}"
+        )
 
     logger.info(f"finish serving {addr}")
     os.chdir(old_cwd)
@@ -299,7 +304,7 @@ def _listen_loop(sock, port, rpc_key, tracker_addr, load_library, custom_addr):
         _serving(conn, addr, opts, load_library)
 
 
-def _connect_proxy_loop(addr, key, load_library):
+def _connect_proxy_loop(addr, key, load_library, server_ip=None):
     key = "server:" + key
     retry_count = 0
     # Retry for one day.
@@ -308,6 +313,8 @@ def _connect_proxy_loop(addr, key, load_library):
     while True:
         try:
             sock = socket.socket(base.get_addr_family(addr), socket.SOCK_STREAM)
+            if server_ip:
+                sock.bind((server_ip, 0))
             sock.connect(addr)
             sock.sendall(struct.pack("<i", base.RPC_MAGIC))
             sock.sendall(struct.pack("<i", len(key)))
@@ -351,6 +358,7 @@ class PopenRPCServerState(object):
         silent=False,
         reuse_addr=True,
         timeout=None,
+        server_ip=None,
     ):
 
         # start update
@@ -395,7 +403,16 @@ class PopenRPCServerState(object):
             self.thread.start()
         else:
             self.thread = threading.Thread(
-                target=_connect_proxy_loop, args=((host, port), key, load_library)
+                target=_connect_proxy_loop,
+                args=(
+                    (
+                        host,
+                        port,
+                    ),
+                    key,
+                    load_library,
+                    server_ip,
+                ),
             )
             self.thread.start()
 
@@ -414,6 +431,7 @@ def _popen_start_rpc_server(
     server_init_callback=None,
     reuse_addr=True,
     timeout=None,
+    server_ip=None,
 ):
     if no_fork:
         multiprocessing.set_start_method("spawn")
@@ -436,6 +454,7 @@ def _popen_start_rpc_server(
         silent,
         reuse_addr,
         timeout,
+        server_ip,
     )
     PopenRPCServerState.current = state
     # returns the port so that the main can get the port number.
@@ -495,6 +514,11 @@ class Server(object):
 
     Note
     ----
+    TVM RPC server assumes that the user is trusted and needs to be
+    used in a trusted network environment and encrypted channels.
+    It allows writings of arbitrary files into the server and provide
+    full remote code execution capabilities to anyone who can access this API.
+
     The RPC server only sees functions in the tvm namespace.
     To bring additional custom functions to the server env, you can use server_init_callback.
 
@@ -525,6 +549,7 @@ class Server(object):
         server_init_callback=None,
         reuse_addr=True,
         timeout=None,
+        server_ip=None,
     ):
         try:
             if _ffi_api.ServerLoop is None:
@@ -549,6 +574,7 @@ class Server(object):
                 server_init_callback,
                 reuse_addr,
                 timeout,
+                server_ip,
             ],
         )
         # receive the port

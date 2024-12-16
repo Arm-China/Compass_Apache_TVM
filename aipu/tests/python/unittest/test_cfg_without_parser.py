@@ -16,7 +16,7 @@ except AttributeError:
     tf_compat_v1 = tf  # pylint: disable=invalid-name
 
 
-ZHOUYI_MODEL_ZOO_HOME = os.environ.get("ZHOUYI_MODEL_ZOO_HOME")
+ZHOUYI_MODEL_ZOO_HOME = os.getenv("ZHOUYI_MODEL_ZOO_HOME")
 
 
 def test_cfg_without_parser():

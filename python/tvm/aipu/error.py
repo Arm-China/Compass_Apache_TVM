@@ -4,8 +4,8 @@
 
 
 class CompassCodeGenCError(RuntimeError):
-    """Error raised when a Compass OpenCL/C source code can't be generated successfully."""
+    """Error raised when a Compass OpenCL source code can't be generated successfully."""
 
 
 class CompassCompileCError(RuntimeError):
-    """Error raised when a Compass OpenCL/C source code can't be compiled successfully."""
+    """Error raised when a Compass OpenCL source code can't be compiled successfully."""

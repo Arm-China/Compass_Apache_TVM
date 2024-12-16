@@ -116,8 +116,6 @@ def test_tir_macro_decorator_signature():
     def func1():
         T.evaluate(0)
 
-    assert func1.hygienic
-
     @T.prim_func(private=True)
     def use1():
         func1()
@@ -128,8 +126,6 @@ def test_tir_macro_decorator_signature():
     @T.macro()
     def func2():
         T.evaluate(0)
-
-    assert func2.hygienic
 
     @T.prim_func(private=True)
     def use2():
@@ -210,6 +206,44 @@ def test_tir_macro_non_hygienic():
             B[()] = A[x_value]
 
     tvm.ir.assert_structural_equal(use_non_hygienic, expected_non_hygienic)
+
+
+def test_tir_macro_in_class():
+    class Object:
+        def __init__(self, x: T.Buffer):
+            self.local_x = T.alloc_buffer(x.shape, x.dtype)
+
+        @T.macro
+        def load(self, x: T.Buffer):
+            N, M = T.meta_var(self.local_x.shape)
+            for i, j in T.grid(N, M):
+                with T.block("update"):
+                    vi, vj = T.axis.remap("SS", [i, j])
+                    self.local_x[vi, vj] = x[vi, vj]
+
+    @T.prim_func(private=True)
+    def func_w_macro(a: T.handle):
+        A = T.match_buffer(a, [128, 128])
+        o1 = T.meta_var(Object(A))
+        o1.load(A)
+        o2 = T.meta_var(Object(A))
+        o2.load(o1.local_x)
+
+    @T.prim_func(private=True)
+    def func_no_macro(a: T.handle):
+        A = T.match_buffer(a, [128, 128])
+        local_a = T.alloc_buffer([128, 128])
+        for i, j in T.grid(128, 128):
+            with T.block("update"):
+                vi, vj = T.axis.remap("SS", [i, j])
+                local_a[vi, vj] = A[vi, vj]
+        local_b = T.alloc_buffer([128, 128])
+        for i, j in T.grid(128, 128):
+            with T.block("update"):
+                vi, vj = T.axis.remap("SS", [i, j])
+                local_b[vi, vj] = local_a[vi, vj]
+
+    tvm.ir.assert_structural_equal(func_no_macro, func_w_macro)
 
 
 def test_tir_starred_expression():
@@ -447,6 +481,67 @@ def test_inferred_sinfo_with_dynamic_buffer():
         purity=False,
     )
     tvm.ir.assert_structural_equal(func.struct_info, expected)
+
+
+def test_reinterpret_nop():
+    """Test builtin reinterpret op"""
+
+    @T.prim_func
+    def func(A: T.Buffer((32,), "float32"), B: T.Buffer((32,), "float32")) -> None:
+        T.func_attr({"global_symbol": "main"})
+        for i in T.serial(0, 32):
+            with T.block():
+                vi = T.axis.remap("S", [i])
+                B[vi] = T.reinterpret("float32", A[vi])
+
+    @T.prim_func
+    def expected(A: T.Buffer((32,), "float32"), B: T.Buffer((32,), "float32")) -> None:
+        T.func_attr({"global_symbol": "main"})
+        for i in T.serial(0, 32):
+            with T.block():
+                vi = T.axis.remap("S", [i])
+                B[vi] = A[vi]
+
+    tvm.ir.assert_structural_equal(func, expected)
+
+
+def test_launch_thread_i64():
+    """Test launching thread with int64"""
+
+    @T.prim_func
+    def func() -> None:
+        blockIdx_x = T.launch_thread("blockIdx.x", T.int64(1))
+        if blockIdx_x == T.int64(0):
+            T.evaluate(T.int64(0))
+        else:
+            T.evaluate(T.int64(1))
+
+    assert func.body.node.dom.min.dtype == "int64"
+    assert func.body.node.dom.extent.dtype == "int64"
+
+
+def test_deterministic_branch():
+    """Test deterministic branch"""
+
+    def create_func(predicate: bool):
+        @T.prim_func(private=True)
+        def func() -> None:
+            if predicate:
+                T.evaluate(0)
+            else:
+                T.evaluate(1)
+
+        return func
+
+    def create_expected(value):
+        @T.prim_func(private=True)
+        def expected() -> None:
+            T.evaluate(value)
+
+        return expected
+
+    tvm.ir.assert_structural_equal(create_func(True), create_expected(0))
+    tvm.ir.assert_structural_equal(create_func(False), create_expected(1))
 
 
 if __name__ == "__main__":

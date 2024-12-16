@@ -633,8 +633,8 @@ class BufferLoadNode : public PrimExprNode {
   Buffer buffer;
   /*! \brief The indices location to be loaded. */
   Array<PrimExpr> indices;
-  /*! \brief The predicate to mask which lanes would be loaded. */
-  PrimExpr predicate;
+  /*! \brief The predicate mask for loading values. */
+  Optional<PrimExpr> predicate;
 
   void VisitAttrs(AttrVisitor* v) {
     v->Visit("dtype", &(this->dtype));
@@ -682,9 +682,8 @@ class BufferLoadNode : public PrimExprNode {
  */
 class BufferLoad : public PrimExpr {
  public:
-  TVM_DLL explicit BufferLoad(Buffer buffer, Array<PrimExpr> indices, Span span = Span());
-  TVM_DLL explicit BufferLoad(Buffer buffer, Array<PrimExpr> indices, PrimExpr predicate,
-                              Span span = Span());
+  TVM_DLL explicit BufferLoad(Buffer buffer, Array<PrimExpr> indices,
+                              Optional<PrimExpr> predicate = NullOpt, Span span = Span());
   TVM_DEFINE_OBJECT_REF_METHODS(BufferLoad, PrimExpr, BufferLoadNode);
   TVM_DEFINE_OBJECT_REF_COW_METHOD(BufferLoadNode);
 };
@@ -1157,6 +1156,63 @@ inline std::unordered_map<K, V> as_unordered_map(const Map<K, V>& dmap) {
   return ret;
 }
 }  // namespace tir
+}  // namespace tvm
+
+namespace tvm {
+namespace runtime {
+
+// Automatic conversion into PrimExpr, when called through the FFI.
+// Automatic conversions into IntImm, Integer, and Bool are registered
+// in "tvm/ir/expr.h", as they are currently in use outside of TIR.
+
+template <>
+struct PackedFuncValueConverter<tvm::tir::StringImm> {
+  template <typename PODSubclass>
+  static Optional<tvm::tir::StringImm> TryFrom(const PODSubclass& val) {
+    auto type_code = val.type_code();
+    bool can_convert = type_code == kTVMDataType || type_code == kTVMBytes ||
+                       type_code == kTVMStr || val.template IsObjectRef<tvm::runtime::String>();
+    if (can_convert) {
+      return tvm::tir::StringImm(PackedFuncValueConverter<String>::From(val));
+    } else {
+      return NullOpt;
+    }
+  }
+
+  template <typename PODSubclass>
+  static tvm::tir::StringImm From(const PODSubclass& val) {
+    if (auto opt = TryFrom(val)) {
+      return opt.value();
+    } else {
+      return val.template AsObjectRef<tvm::tir::StringImm>();
+    }
+  }
+};
+
+template <>
+struct PackedFuncValueConverter<PrimExpr> {
+  // Common rule for RetValue and ArgValue.  Templated to ensure
+  // correct delegation to `operator std::string()` for either
+  // TVMArgValue or TVMRetValue.
+  template <typename PODSubclass>
+  static PrimExpr From(const PODSubclass& val) {
+    if (auto opt = val.TryAsBool()) {
+      // Check against val.TryAsBool directly, to avoid the
+      // bounds-checking in PackedFuncValueConverter<Bool>::TryFrom.
+      return tvm::Bool(opt.value());
+    } else if (auto opt = PackedFuncValueConverter<IntImm>::TryFrom(val)) {
+      return opt.value();
+    } else if (auto opt = PackedFuncValueConverter<FloatImm>::TryFrom(val)) {
+      return opt.value();
+    } else if (auto opt = PackedFuncValueConverter<tvm::tir::StringImm>::TryFrom(val)) {
+      return opt.value();
+    } else {
+      return PrimExpr::FromObject_(val.template AsObjectRef<ObjectRef>());
+    }
+  }
+};
+
+}  // namespace runtime
 }  // namespace tvm
 
 namespace std {

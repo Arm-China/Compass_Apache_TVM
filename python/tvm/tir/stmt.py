@@ -227,8 +227,10 @@ class BufferStore(Stmt):
     indices : List[PrimExpr]
         The indices location to be stored.
 
-    predicate : PrimExpr
-        The store predicate.
+    predicate : Optional[PrimExpr]
+        A vector mask of boolean values indicating which lanes of a vector are to be
+        stored. The number lanes of the mask must be equal to the number of lanes in
+        value.
 
     span : Optional[Span]
         The location of the stmt in the source code.
@@ -237,6 +239,7 @@ class BufferStore(Stmt):
     buffer: Buffer
     value: PrimExpr
     indices: List[PrimExpr]
+    predicate: Optional[PrimExpr]
     span: Optional[Span]
 
     def __init__(
@@ -244,7 +247,7 @@ class BufferStore(Stmt):
         buffer: Buffer,
         value: PrimExpr,
         indices: List[PrimExpr],
-        predicate=None,
+        predicate: Optional[PrimExpr] = None,
         span: Optional[Span] = None,
     ) -> None:
         self.__init_handle_by_constructor__(

@@ -38,8 +38,8 @@
 namespace tvm {
 namespace tir {
 
-using VarMap = std::unordered_map<Var, PrimExpr, ObjectPtrHash, ObjectPtrEqual>;
-using TypeMap = std::unordered_map<Var, DataType, ObjectPtrHash, ObjectPtrEqual>;
+using VarMap = std::unordered_map<Var, PrimExpr>;
+using TypeMap = std::unordered_map<Var, DataType>;
 
 /**************** Helper functions ****************/
 
@@ -455,7 +455,7 @@ void UpdateSpecializeVarMap(const PrimFunc& func, const Var& param, const PrimEx
 
 /**************** Implementation ****************/
 
-PrimFunc Specialize(PrimFunc func, const Map<Var, ObjectRef>& param_map) {
+PrimFunc Specialize(PrimFunc func, const Map<Var, Variant<Buffer, PrimExpr>>& param_map) {
   VarMap var_map;
   TypeMap type_map;
   for (const auto& kv : param_map) {

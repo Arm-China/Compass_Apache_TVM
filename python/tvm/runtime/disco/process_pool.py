@@ -41,6 +41,9 @@ class DiscoPopenWorker:
     num_workers : int
         The total number of workers.
 
+    num_groups : int
+        The total number of worker groups.
+
     stdout: Union[None, int, IO[Any]]
         The standard output streams handler specified for the popen process.
 
@@ -52,12 +55,14 @@ class DiscoPopenWorker:
         self,
         worker_id: int,
         num_workers: int,
+        num_groups: int,
         entrypoint: str = "tvm.exec.disco_worker",
         stdout=None,
         stderr=None,
     ):
         self.worker_id = worker_id
         self.num_workers = num_workers
+        self.num_groups = num_groups
         self.entrypoint = entrypoint
         self._proc = None
         self._stdout = stdout
@@ -121,6 +126,7 @@ class DiscoPopenWorker:
             self.entrypoint,
             str(self.worker_id),
             str(self.num_workers),
+            str(self.num_groups),
         ]
         if sys.platform == "win32":
             import msvcrt  # pylint: disable=import-error,import-outside-toplevel
@@ -175,9 +181,9 @@ def _kill_child_processes(pid):
 
 
 @register_func("runtime.disco.create_process_pool")
-def _create_process_pool(num_workers: int, entrypoint: str):
+def _create_process_pool(num_workers: int, num_groups: int, entrypoint: str):
     """Create a process pool where the workers' are [1, num_workers)."""
-    pool = [DiscoPopenWorker(i, num_workers, entrypoint) for i in range(1, num_workers)]
+    pool = [DiscoPopenWorker(i, num_workers, num_groups, entrypoint) for i in range(1, num_workers)]
 
     def result_func(worker_id: int):
         nonlocal pool

@@ -183,6 +183,13 @@ ALLOW_SPECIFIC_FILE = {
     "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/output.bin",
     "aipu/samples/tf_mobilenet_v1_bare_metal/bsp/lib/libbm_bsp.a",
     "aipu/docs/dsl/_templates/footer.html",
+    # Zhouyi NPU testing data related files.
+    "aipu/tests/data/aiff_2node_conv/gt.bin",
+    "aipu/tests/data/aiff_2node_conv/input0.bin",
+    "aipu/tests/data/aiff_2node_conv/weight.bin",
+    "aipu/tests/data/aiff_activation_elu/gt.bin",
+    "aipu/tests/data/aiff_activation_elu/input0.bin",
+    "aipu/tests/data/aiff_activation_elu/weight.bin",
 }
 
 

@@ -40,7 +40,6 @@ from tvm import relay
 from tvm.contrib import graph_executor, utils
 from tvm.relay.frontend.common import infer_type
 from tvm.relay.build_module import bind_params_by_name
-from tvm.relax.frontend.onnx import from_onnx
 from relay.utils.tag_span import _create_span, _set_span, _verify_structural_equal_with_span
 
 import onnx
@@ -120,7 +119,7 @@ def get_tvm_output_with_vm(
                 freeze_params=freeze_params,
                 convert_config=convert_config,
             )
-        assert tvm.ir.structural_equal(mod, mod_with_span)
+        tvm.ir.assert_structural_equal(mod, mod_with_span)
 
     result = relay.create_executor("vm", mod=mod, device=dev, target=target).evaluate()(
         *input_data, **params
@@ -1502,6 +1501,8 @@ def test_batch_matmul(target, dev):
     verify_batch_matmul((2, 4, 3), (3, 4), (2, 4, 4))
     verify_batch_matmul((2, 3, 4, 3), (3, 4), (2, 3, 4, 4))
     # Test implicit broadcasting.
+    verify_batch_matmul((5,), (5, 5, 4), (5, 4))
+    verify_batch_matmul((5, 4, 5), (5,), (5, 4))
     verify_batch_matmul((4, 3), (2, 3, 4), (2, 4, 4))
     verify_batch_matmul((2, 4, 3), (1, 3, 4), (2, 4, 4))
     verify_batch_matmul((1, 4, 3), (2, 3, 4), (2, 4, 4))
@@ -5451,67 +5452,6 @@ def test_softplus(target, dev):
     verify_softplus(input_data)
 
 
-def test_load_cumsum():
-    """test_load_cumsum"""
-
-    def create_cumsum_model():
-        input_shape = [2, 3]
-
-        graph = helper.make_graph(
-            [
-                helper.make_node("CumSum", inputs=["X", "axis"], outputs=["Y"]),
-            ],
-            "cumsum_graph",
-            inputs=[
-                helper.make_tensor_value_info("X", onnx.TensorProto.DOUBLE, input_shape),
-                helper.make_tensor_value_info("axis", onnx.TensorProto.INT32, [1], "axis"),
-            ],
-            outputs=[helper.make_tensor_value_info("Y", onnx.TensorProto.DOUBLE, input_shape)],
-        )
-        return helper.make_model(graph)
-
-    from_onnx(create_cumsum_model())
-
-
-def test_load_trilu():
-    """test_load_trilu"""
-
-    def create_trilu_model():
-        input_shape = [2, 3, 3]
-
-        graph = helper.make_graph(
-            [
-                helper.make_node("Trilu", inputs=["x", "k"], outputs=["y"]),
-            ],
-            "trilu_graph",
-            inputs=[
-                helper.make_tensor_value_info("x", onnx.TensorProto.DOUBLE, input_shape),
-                helper.make_tensor_value_info("k", onnx.TensorProto.INT32, [1], "k"),
-            ],
-            outputs=[helper.make_tensor_value_info("y", onnx.TensorProto.DOUBLE, input_shape)],
-        )
-        return helper.make_model(graph)
-
-    def create_trilu_model_const_k():
-        input_shape = [2, 3, 3]
-
-        graph = helper.make_graph(
-            [
-                make_constant_node("k", onnx.TensorProto.INT32, [1], [1]),
-                helper.make_node("Trilu", inputs=["x", "k"], outputs=["y"]),
-            ],
-            "trilu_graph",
-            inputs=[
-                helper.make_tensor_value_info("x", onnx.TensorProto.DOUBLE, input_shape),
-            ],
-            outputs=[helper.make_tensor_value_info("y", onnx.TensorProto.DOUBLE, input_shape)],
-        )
-        return helper.make_model(graph)
-
-    from_onnx(create_trilu_model())
-    from_onnx(create_trilu_model_const_k())
-
-
 @tvm.testing.parametrize_targets
 def test_cumsum(target, dev):
     """test_cumsum"""
@@ -8676,7 +8616,7 @@ class TestSetSpan:
             with_span = res_fptr()
         with tvm.testing.disable_span_filling():
             without_span = res_fptr()
-        assert tvm.ir.structural_equal(with_span, without_span)
+        tvm.ir.assert_structural_equal(with_span, without_span)
         _verify_structural_equal_with_span(with_span, golden_fptr())
 
     def test_conv2d_bias_add_span(self):

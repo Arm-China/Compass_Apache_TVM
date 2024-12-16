@@ -178,11 +178,10 @@ def run_ssd_mobilenet(model, runtime="sim", visualize=False, calc_mAP=False, img
         print(f"On MSCoCo 2017 validation dataset with IoU 0.5, the mAP is {mean_ap}")
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_mobilenet_v2_ssd(runtime):
-    if os.environ.get("AIPU_TVM_NIGHTLY_TEST", None) == "True":
+    if os.getenv("AIPU_TVM_NIGHTLY_TEST") == "True":
         run_ssd_mobilenet("mobilenet_v2_ssd", runtime, False, True, 10, map_thres=0.42)
     else:
         run_ssd_mobilenet("mobilenet_v2_ssd", runtime)

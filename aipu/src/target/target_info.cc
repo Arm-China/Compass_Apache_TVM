@@ -11,17 +11,21 @@ namespace tvm {
 
 TVM_REGISTER_NODE_TYPE(AipuInfoObj);
 
-// name generation tec_count lsram_size_per_piece lsram_piece_count gsram_size_per_piece
+// name core_count tec_count lsram_size_per_piece lsram_piece_count gsram_size_per_piece
 // gsram_piece_count
 const std::unordered_map<String, AipuInfo> AipuInfo::kValidConfigs = {
-    {"X2_1204", {"X2_1204", 4, 4, 32 * 1024, 1, 256 * 1024, 1}},
+    {"X1_1204", {"X1_1204", 1, 4, 32 * 1024, 2, 512 * 1024, 2}},
+    {"X2_1204", {"X2_1204", 1, 4, 32 * 1024, 1, 256 * 1024, 1}},
+    {"X2_1204MP3", {"X2_1204MP3", 3, 4, 32 * 1024, 1, 256 * 1024, 1}},
+    {"X3_1304", {"X3_1304", 1, 4, 32 * 1024, 1, 128 * 1024, 3}},
+    {"X3_1304MP2", {"X3_1304MP2", 2, 4, 32 * 1024, 1, 128 * 1024, 3}},
 };
 
-AipuInfo::AipuInfo(String name, int generation, int tec_count, int lsram_size_per_piece,
+AipuInfo::AipuInfo(String name, int core_count, int tec_count, int lsram_size_per_piece,
                    int lsram_piece_count, int gsram_size_per_piece, int gsram_piece_count) {
   auto obj = make_object<AipuInfoObj>();
   obj->name = name;
-  obj->generation = generation;
+  obj->core_count = core_count;
   obj->tec_count = tec_count;
   obj->lsram_size_per_piece = lsram_size_per_piece;
   obj->lsram_piece_count = lsram_piece_count;
@@ -30,8 +34,6 @@ AipuInfo::AipuInfo(String name, int generation, int tec_count, int lsram_size_pe
   data_ = std::move(obj);
   return;
 }
-
-int AipuInfo::TecCount() const { return (*this)->tec_count; }
 
 int AipuInfo::LsramSize(int piece_idx) const {
   ICHECK((piece_idx >= 0) && (piece_idx < (*this)->lsram_piece_count))
@@ -74,7 +76,6 @@ Array<String> AipuInfo::GetValidConfigNames() {
   return names;
 }
 
-TVM_REGISTER_GLOBAL("target.AipuInfo_TecCount").set_body_method(&AipuInfo::TecCount);
 TVM_REGISTER_GLOBAL("target.AipuInfo_VectorWidth").set_body_method(&AipuInfo::VectorWidth);
 TVM_REGISTER_GLOBAL("target.AipuInfo_LsramSize").set_body_method(&AipuInfo::LsramSize);
 TVM_REGISTER_GLOBAL("target.AipuInfo_GsramSize").set_body_method(&AipuInfo::GsramSize);

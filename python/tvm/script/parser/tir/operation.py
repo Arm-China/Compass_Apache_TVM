@@ -63,8 +63,7 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
             b = IntImm("bool", b)
         if DataType(a.dtype).lanes > 1 or DataType(b.dtype).lanes > 1:
             if tgt.AipuInfo.current() is not None:
-                err_msg = "Invalid and operator between vector, use & instead."
-                raise TypeError(err_msg)
+                raise TypeError("Invalid and operator between vector, use & instead.")
             return a & b
         else:
             return tir.And(a, b)
@@ -76,8 +75,7 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
             b = IntImm("bool", b)
         if DataType(a.dtype).lanes > 1 or DataType(b.dtype).lanes > 1:
             if tgt.AipuInfo.current() is not None:
-                err_msg = "Invalid or operator between vector, use | instead."
-                raise TypeError(err_msg)
+                raise TypeError("Invalid or operator between vector, use | instead.")
             return a | b
         else:
             return tir.Or(a, b)

@@ -54,7 +54,6 @@ def run_mobilenet(model, runtime="sim", is_topk=False, threshold_cos=0.97, thres
         )
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_mobilenet_v2(runtime):

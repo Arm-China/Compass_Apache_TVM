@@ -21,6 +21,9 @@
  * \file int_set.cc
  * \brief The integer set functions
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #include <tvm/arith/int_set.h>
 #include <tvm/arith/iter_affine_map.h>
 #include <tvm/runtime/registry.h>
@@ -491,7 +494,10 @@ class IntervalSetEvaluator : public ExprFunctor<IntervalSet(const PrimExpr&)> {
 
   IntervalSet VisitExpr_(const BroadcastNode* op) final {
     ICHECK(eval_vec_);
-    return VisitExpr(op->value);
+    IntervalSet val_set = VisitExpr(op->value);
+    PrimExpr min_v = tir::Broadcast(val_set->min_value, op->lanes);
+    PrimExpr max_v = tir::Broadcast(val_set->max_value, op->lanes);
+    return IntervalSet(min_v, max_v);
   }
 
   IntervalSet VisitExpr_(const SelectNode* op) final {
@@ -530,6 +536,12 @@ class IntervalSetEvaluator : public ExprFunctor<IntervalSet(const PrimExpr&)> {
       }
     }
     return IntervalSet::SinglePoint(GetRef<PrimExpr>(op));
+  }
+
+  IntervalSet VisitExpr_(const CallNode* op) final {
+    if (op->op.same_as(tir::builtin::vscale()))
+      return IntervalSet(GetRef<PrimExpr>(op), GetRef<PrimExpr>(op));
+    return IntervalSet::Everything();
   }
 
   IntervalSet VisitExprDefault_(const Object* op) final {

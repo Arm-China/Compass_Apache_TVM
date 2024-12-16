@@ -129,6 +129,9 @@ class DataType {
             code() == DataType::kE5M2Float) &&
            bits() == 8;
   }
+  bool is_e4m3_float8() const { return (code() == DataType::kE4M3Float && bits() == 8); }
+
+  bool is_e5m2_float8() const { return (code() == DataType::kE5M2Float && bits() == 8); }
   /*! \return whether type is a float16 type. */
   bool is_float16() const { return is_float() && bits() == 16; }
   /*! \return whether type is a bfloat16 type. */
@@ -148,6 +151,8 @@ class DataType {
   bool is_fixed_length_vector() const { return static_cast<int16_t>(data_.lanes) > 1; }
   /*! \return Whether the type is a scalable vector. */
   bool is_scalable_vector() const { return static_cast<int16_t>(data_.lanes) < -1; }
+  /*! \return whether type is a vector type. */
+  bool is_vector() const { return lanes() > 1; }
   /*! \return whether type is a bool vector type. */
   bool is_vector_bool() const { return is_scalable_or_fixed_length_vector() && bits() == 1; }
   /*! \return whether type is a Void type. */

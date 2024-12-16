@@ -16,7 +16,7 @@
 # under the License.
 """The TensorIR schedule class"""
 import inspect
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Literal, Optional, Tuple, Union
 
 from tvm._ffi import register_object as _register_object
 from tvm.error import TVMError, register_error
@@ -65,8 +65,11 @@ ExprRV = Union[PrimExpr]  # A random variable that evaluates to an integer
 
 RAND_VAR_TYPE = Union[ExprRV, BlockRV, LoopRV]  # pylint: disable=invalid-name
 
-# Update to `Literal["detail", "fast", "none"]` once upgraded to python3.8
-_ERROR_RENDER_LEVEL: Dict[str, int] = {"detail": 0, "fast": 1, "none": 2}
+_ERROR_RENDER_LEVEL: Dict[Literal["detail", "fast", "none"], int] = {
+    "detail": 0,
+    "fast": 1,
+    "none": 2,
+}
 
 
 def _parse_error_render_level(error_render_level: str) -> int:
@@ -736,6 +739,7 @@ class Schedule(Object):
         loop: LoopRV,
         factors: List[Union[int, ExprRV, None]],
         preserve_unit_iters: bool = True,
+        disable_predication: bool = False,
     ) -> List[LoopRV]:
         """Split a loop into a list of consecutive loops. It requires:
         1) The loop can't have annotation or thread binding.
@@ -758,6 +762,14 @@ class Schedule(Object):
 
         preserve_unit_iters : bool
             Whether or not to preserve unit iterators in block bindings
+
+        disable_predication : bool
+            If enabled, don't create a predicate for guarding the loop. This can
+            be useful when splitting with scalable factors that the schedule writer
+            knows are divisible by the loop bound.
+
+            Warning: enabling this feature may result in incorrect code generation
+            if not used carefully.
 
         Returns
         -------
@@ -809,7 +821,11 @@ class Schedule(Object):
         # that there is at most one None in `factors`
         return list(
             _ffi_api.ScheduleSplit(  # type: ignore # pylint: disable=no-member
-                self, loop, factors, preserve_unit_iters
+                self,
+                loop,
+                factors,
+                preserve_unit_iters,
+                disable_predication,
             )
         )
 
@@ -3477,7 +3493,6 @@ class Schedule(Object):
             self, block, index_map
         )
 
-    @type_checked
     def set_axis_separator(
         self,
         block: Union[BlockRV, str],

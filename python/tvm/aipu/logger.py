@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 
-class AIPULogger:
+class AipuLogger:
     """AIPU Logger. default level: INFO, default handler: stream."""
 
     def __init__(self):
@@ -30,8 +30,8 @@ class AIPULogger:
         absl.logging._warn_preinit_stderr = 0
         logger = logging.getLogger("AIPU")
 
-        # set default level and handler
-        default_level = logging.INFO
+        # Set the default level and handler.
+        default_level = os.getenv("AIPU_TVM_LOG_LEVEL", "INFO")
         logger.setLevel(default_level)
         self.formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(message)s", "%H:%M:%S")
         handler = logging.StreamHandler(sys.stdout)
@@ -64,7 +64,7 @@ class AIPULogger:
         self.logger.addHandler(handler)
 
 
-_LOGGER = AIPULogger()
+_LOGGER = AipuLogger()
 _ONCE_LOGS = []
 
 
@@ -111,9 +111,9 @@ def set_logger(log_file=None, log_level=None):
     """Set log file and log level"""
 
     if log_file is None:
-        log_file = os.environ.get("AIPU_TVM_LOG_FILE", None)
+        log_file = os.getenv("AIPU_TVM_LOG_FILE")
     if log_level is None:
-        log_level = os.environ.get("AIPU_TVM_LOG_LEVEL", None)
+        log_level = os.getenv("AIPU_TVM_LOG_LEVEL")
     if log_file:
         _LOGGER.set_log_file(log_file)
     if log_level:

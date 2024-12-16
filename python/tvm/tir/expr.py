@@ -45,6 +45,10 @@ from . import generic as _generic
 from .buffer import Buffer, DataProducer
 
 
+def convert(expr) -> PrimExpr:
+    return _ffi_api.convert(expr)
+
+
 def div_ambiguity_error() -> RuntimeError:
     return RuntimeError(
         "TVM supports multiple types of integer divisions, "
@@ -360,6 +364,19 @@ class PrimExprWithOp(ExprOp, PrimExpr, Scriptable):
     # https://docs.python.org/3.1/reference/datamodel.html#object.__hash__
     __hash__ = PrimExpr.__hash__
 
+    def __getitem__(self, idx):
+        from .op import vector_get_element  # pylint: disable=import-outside-toplevel
+
+        if not DataType(self.dtype).is_vector:
+            raise TypeError("Only support get element from a vector expression.")
+
+        return vector_get_element(self, idx)
+
+    def __iter__(self):
+        # The error type here must be "TypeError", because the function
+        # "BufferVar._normalize_index" will invoke this function with invalid primexpr arguments.
+        raise TypeError("PrimExpr is not iterable.")
+
 
 class ConstExpr(PrimExprWithOp):
     pass
@@ -401,24 +418,14 @@ class Var(PrimExprWithOp):
     def __init__(self, name: str, dtype: Union[str, ir.Type], span: Optional[Span] = None) -> None:
         self.__init_handle_by_constructor__(_ffi_api.Var, name, dtype, span)  # type: ignore
 
-    def __getitem__(self, idx):
-        from .op import vector_get_element  # pylint: disable=import-outside-toplevel
-
-        if not DataType(self.dtype).is_vector:
-            # The error type here must be "TypeError", because the function
-            # "BufferVar._normalize_index" will invoke this function with invalid arguments.
-            raise TypeError("Only support get element from a vector variable.")
-
-        return vector_get_element(self, idx)
-
     @property
     def addr(self):
         from .pointer import Pointer  # pylint: disable=import-outside-toplevel
-        from ..aipu.utils import VALID_ADDR_DTYPES  # pylint: disable=import-outside-toplevel
+        from ..aipu.utils import VALID_PTR_ELEMENT_DTYPES  # pylint: disable=import-outside-toplevel
 
-        err_msg = f"Only support get address of variable whose type is one of {VALID_ADDR_DTYPES}, "
-        err_msg += f'but got: "{self.dtype}".'
-        assert self.dtype in VALID_ADDR_DTYPES, err_msg
+        msg = "Only support get address of variable whose scalar form is one of "
+        msg += f'{VALID_PTR_ELEMENT_DTYPES[:-1]}, but got: "{self.dtype}".'
+        assert DataType(self.dtype).element_of in VALID_PTR_ELEMENT_DTYPES[:-1], msg
         return Pointer(self.dtype, "local", self)
 
 
@@ -1151,20 +1158,28 @@ class BufferLoad(PrimExprWithOp):
         The buffer to be loaded.
 
     indices : List[PrimExpr]
-        The buffer indices.
+        The buffer indices to load values from.
 
     predicate : PrimExpr
         The load predicate.
 
     span : Optional[Span]
         The location of this expression in the source code.
+
+    predicate : Optional[PrimExpr]
+        A vector mask of boolean values indicating which lanes of a vector are to be
+        loaded. The number lanes of the mask must be equal to the number of lanes being loaded.
     """
 
     buffer: Buffer
     indices: List[PrimExpr]
 
     def __init__(
-        self, buffer: Buffer, indices: List[PrimExpr], predicate=None, span: Optional[Span] = None
+        self,
+        buffer: Buffer,
+        indices: List[PrimExpr],
+        predicate: Optional[PrimExpr] = None,
+        span: Optional[Span] = None,
     ) -> None:
         self.__init_handle_by_constructor__(
             _ffi_api.BufferLoad, buffer, indices, predicate, span  # type: ignore

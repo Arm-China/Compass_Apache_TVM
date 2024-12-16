@@ -36,7 +36,6 @@ def run_deeplab_v3(model, runtime):
     aipu_testing.get_test_result(tf_model, image, outputs, runtime=runtime)
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_deeplab_v3(runtime):

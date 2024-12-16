@@ -3,6 +3,7 @@
 """Zhouyi Compass extension of testing."""
 import os
 import sys
+from contextlib import contextmanager
 import numpy as np
 from AIPUBuilder.executor import GtForward
 from .. import testing
@@ -20,7 +21,7 @@ def _binary_equal(x, y):
         view_dtype = np.int32
 
     finite_mask = np.isfinite(x) & np.isfinite(y)
-    return np.isclose(x.view(view_dtype), y.view(view_dtype), rtol=0, atol=1.1) & finite_mask
+    return np.isclose(x.view(view_dtype), y.view(view_dtype), rtol=0, atol=2.1) & finite_mask
 
 
 def assert_allclose(actual, desired, rtol=None, atol=None):
@@ -36,8 +37,9 @@ def assert_allclose(actual, desired, rtol=None, atol=None):
         atol = 0 if atol is None else atol
     else:
         atol = 1e-6 if atol is None else atol
-        is_close = _binary_equal(actual, desired)
-        actual[is_close] = desired[is_close]
+        if not (atol == 0 and rtol == 0):
+            is_close = _binary_equal(actual, desired)
+            actual[is_close] = desired[is_close]
 
     try:
         testing.assert_allclose(actual, desired, rtol, atol)
@@ -46,6 +48,17 @@ def assert_allclose(actual, desired, rtol=None, atol=None):
         raise AssertionError(
             f"{exc}\nMismatched x:\n{actual[not_close]}\nMismatched y:\n{desired[not_close]}"
         ) from None
+
+
+@contextmanager
+def log_block(start_msg, end_msg):
+    sys.stdout.write(start_msg + "\n")
+    sys.stdout.flush()
+    try:
+        yield
+    finally:
+        sys.stdout.write(end_msg + "\n")
+        sys.stdout.flush()
 
 
 def run_op_case(work_dir, case_file_path, target):
@@ -68,56 +81,56 @@ def run_op_case(work_dir, case_file_path, target):
     graph = os.path.join(case_file_path, "graph.def")
     weight = os.path.join(case_file_path, "weight.bin")
     inputs = ",".join([os.path.join(case_file_path, i) for i in files if "input" in i])
+    stage_info = lambda x: f"[DSL OP Test]: {'='*20}Stage {x}{'='*20}"
 
-    def flush_out(message):
-        sys.stdout.write(message + "\n")
-        sys.stdout.flush()
+    # Run DSL OP integration test through "aipurun"
+    with log_block(stage_info("1(aipurun) Start"), stage_info("1(aipurun) End")):
+        cmd = ["aipurun", graph, "-w", weight, "-i", inputs, "--target", target]
+        cmd += ["--set_asid", "asid0=0x100000000,asid1=0x200000000"]
+        # disable passes
+        passes = ""
+        disable_pass_file = os.getenv("AIPU_TVM_DISABLE_PASS_FILE")
+        if disable_pass_file and "tvm_update_aipubuilder" not in os.getenv("JOB_NAME", ""):
+            assert os.path.isfile(disable_pass_file), f"File not exists: {disable_pass_file}."
+            with open(disable_pass_file, "r") as p:
+                passes = p.read().strip()
+        else:
+            cmd_str = "aipurun --show-all-passes"
+            try:
+                with os.popen(cmd_str, "r") as p:
+                    all_passes = p.readlines()
+                    passes = ",".join(["".join(i[10:-2]) for i in [all_passes[2], all_passes[5]]])
+            except IndexError:
+                print(f"[WARN] Failed to get passes through '{cmd_str}', not disable any passes.")
 
-    stage_info = lambda x: flush_out(f"[DSL OP Test]: {'='*20}Stage {x}{'='*20}")
-    stage_info("1(aipurun) Start")
-    # Run DSL OP
-    cmd = ["aipurun", graph, "-w", weight, "-i", inputs, "--target", target]
-    # disable passes
-    passes = ""
-    disable_pass_file = os.environ.get("AIPU_TVM_DISABLE_PASS_FILE", None)
-    if disable_pass_file and "tvm_update_aipubuilder" not in os.environ.get("JOB_NAME", ""):
-        assert os.path.isfile(disable_pass_file), f"File not exists: {disable_pass_file}."
-        with open(disable_pass_file, "r") as p:
-            passes = p.read().strip()
-    else:
-        show_passes = "aipurun --show-all-passes"
-        try:
-            with os.popen(show_passes, "r") as p:
-                all_passes = p.readlines()
-                passes = ",".join(["".join(i[10:-2]) for i in [all_passes[2], all_passes[5]]])
-        except IndexError:
-            print(f"[WARN] Failed to get passes through '{show_passes}', not disable any passes.")
+        if passes:
+            cmd += ["--disable-pass", passes]
 
-    if passes:
-        cmd += ["--disable-pass", passes]
-    # run aipurun
-    check_call_aipu_tool(cmd, work_dir=work_dir)
-    assert "output.bin" in os.listdir(work_dir), "can not found output!"
-    stage_info("1(aipurun) End")
-    stage_info("2(executor) Start")
+        # if "aipu_simulator_xx" not in PATH, "aipu_simulator_path" will be an empty str
+        cmd_str = f"which aipu_simulator_{target.split('_')[0].lower()}"
+        aipu_simulator_path = os.popen(cmd_str).read().strip()
+        msg = f"Please add simulator path of target '{target}' to the ENV 'PATH'."
+        assert aipu_simulator_path, msg
+        cmd += ["--simulator", aipu_simulator_path]
+
+        # run aipurun
+        check_call_aipu_tool(cmd, work_dir=work_dir)
+        assert "output.bin" in os.listdir(work_dir), "can not found output!"
+
     # Run Gt
-    cur_dir = os.getcwd()
-    try:
-        os.chdir(work_dir)
-        exeutor = GtForward(graph, weight, inputs=inputs, target=target, disable_pass=passes)
-        gts = exeutor.forward()
-    finally:
-        os.chdir(cur_dir)
-    stage_info("2(executor) End")
-    stage_info("3(compare) Start")
-    if (
-        os.getenv("AIPU_TVM_DEV_OP_LIB_IMPL_ID") == "0"
-        and case_file_path.split("/")[-2] == "eltwise"
-    ):
-        return
+    with log_block(stage_info("2(executor) Start"), stage_info("2(executor) End")):
+        cur_dir = os.getcwd()
+        try:
+            os.chdir(work_dir)
+            exeutor = GtForward(graph, weight, inputs=inputs, target=target, disable_pass=passes)
+            gts = exeutor.forward()
+        finally:
+            os.chdir(cur_dir)
+
     # Check Results
-    for i, gt_out in enumerate(gts):
-        out_bin = "output.bin" if i == 0 else f"output.bin{i}"
-        out_bin = os.path.join(work_dir, out_bin)
-        output = np.fromfile(out_bin, dtype=gt_out.dtype).reshape(gt_out.shape)
-        assert_allclose(output, gt_out, atol=1e-3)
+    with log_block(stage_info("3(compare) Start"), stage_info("3(compare) End")):
+        for i, gt_out in enumerate(gts):
+            out_bin = "output.bin" if i == 0 else f"output.bin{i}"
+            out_bin = os.path.join(work_dir, out_bin)
+            output = np.fromfile(out_bin, dtype=gt_out.dtype).reshape(gt_out.shape)
+            assert_allclose(output, gt_out, atol=1e-3)

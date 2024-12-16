@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 import os
+import pytest
 import glob
 from tvm import contrib
 from tvm.aipu.utils import sync_compass_output_dir
@@ -53,6 +54,7 @@ def _run_rpc(executor_name, is_one_stage):
 
 
 # Pytest Specific Function
+@pytest.mark.REQUIRE_RPC
 @aipu_testing.clear_traceback
 def test_rpc_one_stage_vm():
     os.environ["AIPU_TVM_EXECUTOR"] = "vm"
@@ -63,6 +65,7 @@ def test_rpc_one_stage_vm():
 
 
 # Pytest Specific Function
+@pytest.mark.REQUIRE_RPC
 @aipu_testing.clear_traceback
 def test_rpc_one_stage_graph():
     os.environ["AIPU_TVM_EXECUTOR"] = "graph"
@@ -73,6 +76,7 @@ def test_rpc_one_stage_graph():
 
 
 # Pytest Specific Function
+@pytest.mark.REQUIRE_RPC
 @aipu_testing.clear_traceback
 def test_rpc_two_stage_vm():
     os.environ["AIPU_TVM_EXECUTOR"] = "vm"
@@ -83,6 +87,7 @@ def test_rpc_two_stage_vm():
 
 
 # Pytest Specific Function
+@pytest.mark.REQUIRE_RPC
 @aipu_testing.clear_traceback
 def test_profiler():
     os.environ["AIPU_TVM_EXECUTOR"] = "vm"

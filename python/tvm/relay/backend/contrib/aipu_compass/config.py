@@ -168,7 +168,7 @@ class AipuCompassFunctionConfig:
         cmd = ["aipugb", q_txt_path, "-w", q_bin_path]
         for k, v in AipuCompassConfig.get().gbuilder.items():
             cmd.append(f"--{k}")
-            if v:
+            if v != "":
                 cmd.append(v)
         return cmd
 
@@ -348,7 +348,7 @@ def config_aipu_compass(config):
     value_from_env = os.environ.get("AIPU_TVM_LOG_FILE", None)
     if value_from_env:
         value = value_from_env
-    common["log_file"] = value
+    common["log_file"] = value if value else ""
 
     value = common.get("bare_metal", None)
     value_from_env = os.environ.get("AIPU_TVM_BARE_METAL", None)
@@ -387,7 +387,7 @@ def config_aipu_compass(config):
     value_from_env = os.environ.get("AIPU_TVM_COMPUTE_THRESHOLD", None)
     if value_from_env:
         value = value_from_env
-    common["compute_threshold"] = float(value) if value else 2e5
+    common["compute_threshold"] = value if value else "2e5"
 
     value = common.get("dump_partitioning_graph", None)
     value_from_env = os.environ.get("AIPU_TVM_DUMP_PARTITIONING_GRAPH", None)
@@ -477,7 +477,7 @@ def config_aipu_compass(config):
         elif k == "debug":
             gbuilder.pop(k)
             if lower_v == "true":
-                gbuilder["DEBUG"] = None
+                gbuilder["DEBUG"] = ""
         elif k == "prof_unit":
             gbuilder.pop(k)
             if lower_v in ("aiff", "tpc", "dma"):
@@ -485,14 +485,13 @@ def config_aipu_compass(config):
         elif k in ("dump", "profile", "disable_mmu"):
             gbuilder.pop(k)
             if lower_v == "true":
-                gbuilder[k] = None
+                gbuilder[k] = ""
         elif lower_v == "true":
-            gbuilder[k] = None
+            gbuilder[k] = ""
         elif lower_v == "false":
             gbuilder.pop(k)
 
     # 7. Update and check "runtime" section.
-    runtime.setdefault("log_level", "0")
     runtime.setdefault("verbose", "false")
 
     value = runtime.get("dump", None)

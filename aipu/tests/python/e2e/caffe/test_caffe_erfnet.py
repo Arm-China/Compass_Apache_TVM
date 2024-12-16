@@ -63,7 +63,6 @@ def run_erfnet(runtime, img_num=10):
     assert mIoU > 0.38
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_erfnet(runtime):

@@ -367,7 +367,7 @@ class FusionPatternNode : public Object {
    * \brief The function to get attributes for fused function
    *
    * It should have signature
-   * Map<String, String>(const Map<String, Expr>& context)
+   * Map<String, ObjectRef>(const Map<String, Expr>& context)
    */
   Optional<PackedFunc> attrs_getter;
 
@@ -492,12 +492,15 @@ TVM_DLL Pass Gradient(String func_name, Optional<Array<Var>> require_grads = Nul
  * corresponding pattern name. For example, "dnnl" if the pattern name is "dnnl.conv2d_relu".
  * This must be True if the created composite functions are intended to be offloaded to
  * an external backend without using the MergeCompositeFunctions pass.
+ * \param entry_function_names The names of functions that should be considered as entry points. If
+ * not specified, all externally exposed functions will be considered as entry points.
  * \return The Pass.
  *
  * \note Only operates within dataflow blocks. ConvertToDataflow may need to be called first.
  */
 TVM_DLL Pass FuseOpsByPattern(const tvm::Array<FusionPattern>& patterns, bool bind_constants = true,
-                              bool annotate_codegen = false);
+                              bool annotate_codegen = false,
+                              const tvm::Array<String>& entry_function_names = {});
 
 /*!
  * \brief Group one or multiple composite functions created by FuseOpsByPattern into a new
@@ -556,11 +559,13 @@ TVM_DLL Pass DecomposeOpsForTraining(Optional<String> func_name);
  * \param op_buffer_transforms Map from kOperatorName attr to layout transformations on each of the
  * PrimFunc i/o buffers.
  * \param axis_separators Map from kOperatorName attr to axis_separators of each buffer_transforms
+ * \param input_axis_separators Map from kOperatorName attr to axis_separator for input buffer
  * \return The Pass.
  */
 TVM_DLL Pass AlterOpImpl(const Map<String, tir::PrimFunc>& op_impl_map,
                          const Map<String, Array<tir::IndexMap>>& op_buffer_transforms,
-                         const Map<String, Array<Array<IntImm>>>& axis_separators);
+                         const Map<String, Array<Array<IntImm>>>& axis_separators,
+                         const Map<String, Array<Array<IntImm>>>& input_axis_separators);
 
 /*!
  * \brief Layout conversion pass.

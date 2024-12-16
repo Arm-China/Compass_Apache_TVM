@@ -58,7 +58,7 @@ void AipuCompassBasicConfig::SetSingleton(ObjectPtr<T> obj) {
   return;
 }
 
-void ConfigAipuCompass(String output_dir = "", String log_level = "0", String verbose = "false");
+void ConfigAipuCompass(String output_dir = "", String verbose = "false");
 
 }  // namespace runtime
 }  // namespace tvm

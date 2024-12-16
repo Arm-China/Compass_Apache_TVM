@@ -3336,6 +3336,7 @@ class CodeGenAipuCompass(relay.ExprFunctor):
             layer_top=[{reshape_name}]
             layer_top_shape=[{[batch, max_output_size, 1]}]
             layer_top_type=[{anchor_boxes.checked_type.dtype}]
+            shape={[batch, max_output_size, 1]}
             """
         )
 

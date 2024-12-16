@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Abstraction for pointer."""
-from ..ir import PrimExpr, PointerType, PrimType
+from tvm import ir
+from ..ir import PrimExpr, PointerType, PrimType, GlobalVar
 from ..runtime import DataType, ObjectGeneric
-from .expr import Var, LT, LE, GT, GE, EqualOp, NotEqualOp
+from .expr import Var, Call, LT, LE, GT, GE, EqualOp, NotEqualOp
 from .buffer import decl_buffer
 from .op import pointer, isnullptr
 
@@ -40,7 +41,7 @@ class Pointer(ObjectGeneric):
         scope : str
             The memory space of the data that the pointer point to.
 
-        base : Optional[Union[Var, Pointer]]
+        base : Optional[Union[Var, Pointer, Call]]
             The base memory address, its data type can be different with the pointer.
 
         offset : Optional[Union[PrimExpr, int]
@@ -55,11 +56,27 @@ class Pointer(ObjectGeneric):
         self.base = Var(name, PointerType(PrimType(dtype), scope)) if base is None else base
         self.offset = offset
 
-        # The base memory address is a var or another pointer, the reason that it need to be another
-        # pointer is representing the temporary pointer like '(pa + 3).as_ptr("fp16x16")' where "pa"
-        # is a pointer of type "fp16", because the "3" in unit of "fp16" can't be converted to a
-        # valid offset in unit of "fp16x16".
-        assert isinstance(self.base, (Var, Pointer)), f"Invalid base type: {type(self.base)}."
+        # The "base" can be a PointerType var, a PrimType var, another pointer or a call that return
+        # a pointer.
+        # The reason that it need to be a PrimType var is representing the temporary pointer created
+        # by getting address of a variable.
+        # The reason that it need to be another pointer is representing the temporary pointer like
+        # (pa + 3).as_ptr("fp16x16") where "pa" is a pointer of type "fp16", because the "3" in unit
+        # of "fp16" can't be converted to a valid offset in unit of "fp16x16".
+        # The reason that it need to be a call is representing the temporary pointer returned by
+        # other functions, so the usage like "pa = func_return_ptr(x) + 2" can be supported.
+        if isinstance(self.base, Call):
+            if isinstance(self.base.op, GlobalVar):
+                msg = f'Invalid base, call, return type: "{self.base.dtype}",'
+                msg += f' op: "{self.base.op}".'
+                assert self.base.dtype == "handle", msg
+            else:
+                msg = "Only accept reinterpret or GlobalVar when base is call,"
+                msg += f' but got: "{self.base.op}".'
+                assert self.base.op == ir.Op.get("tir.reinterpret"), msg
+        else:
+            assert isinstance(self.base, (Var, Pointer)), f"Invalid base type: {type(self.base)}."
+
         self.buffer = None
         if isinstance(self.base, Var) and self.base.dtype == "handle" and not self.dtype.is_void:
             self.buffer = decl_buffer((-1,), dtype, f"{name}_buf", self.base)
@@ -87,24 +104,43 @@ class Pointer(ObjectGeneric):
         ret : Pointer
             The new temporary pointer instance.
         """
+        from ..aipu.utils import resolve_dtype_alias  # pylint: disable=import-outside-toplevel
+        from ..aipu.utils import VALID_PTR_ELEMENT_DTYPES  # pylint: disable=import-outside-toplevel
+
         assert dtype not in (None, ""), 'Please use "void" to indicate convert to void pointer.'
-        if DataType(dtype) == self.dtype:
+        dtype = resolve_dtype_alias(dtype)
+        msg = f'The scalar form of arg "dtype" expect one of {VALID_PTR_ELEMENT_DTYPES}, but '
+        msg += f'got: "{dtype.element_of}".'
+        assert dtype.element_of in VALID_PTR_ELEMENT_DTYPES, msg
+
+        if dtype == self.dtype:
             return self
         # Only here may generate a pointer whose base is another pointer.
-        return Pointer(dtype, self.scope, self.base if self.offset == 0 else self)
+        base = self.base if not isinstance(self.base, Call) and self.offset == 0 else self
+        return Pointer(dtype, self.scope, base)
 
     def accessible_check(self, indices):
         """Applied when accessing data, check and report errors."""
         _in_block_check()
         assert not self.dtype.is_void, "Can't access data through void pointer."
-        assert isinstance(self.base, Var) and self.base.dtype == "handle", (
+        assert not (isinstance(self.base, Var) and self.base.dtype != "handle"), (
+            "Can't access data through this temporary pointer, because it is created by getting "
+            "address of a variable in current scope, please access data through the variable "
+            "directly."
+        )
+        assert not isinstance(self.base, Call), (
+            "Can't access data through this temporary pointer, because it is returned by other "
+            "functions, please define it as a new named pointer first and access data through the "
+            "new named pointer."
+        )
+        assert not isinstance(self.base, Pointer), (
             "Can't access data through this temporary pointer, because it is converted from a "
             "different type and non-zero offset pointer, please define it as a new named pointer "
             "first and access data through the new named pointer."
         )
         assert not isinstance(indices, tuple), "Pointer only can be used to access 1D data."
-        err_msg = "For accessing data through pointer, the stop of the slice must be given."
-        assert not (isinstance(indices, slice) and indices.stop is None), err_msg
+        msg = "For accessing data through pointer, the stop of the slice must be given."
+        assert not (isinstance(indices, slice) and indices.stop is None), msg
 
     def __getitem__(self, indices):
         """Read data as a 1-dimension array.
@@ -130,11 +166,9 @@ class Pointer(ObjectGeneric):
 
     def _move_check(self, step):
         assert not self.dtype.is_void, "The void pointer can't be moved."
-        if isinstance(step, int):
-            return
-        if isinstance(step, PrimExpr) and DataType(step.dtype).is_integer_scalar:
-            return
-        raise RuntimeError("The step that the pointer will be moved must be a scalar integer.")
+        assert isinstance(step, int) or (
+            isinstance(step, PrimExpr) and DataType(step.dtype).is_integer_scalar
+        ), "The step that the pointer will be moved must be a scalar integer."
 
     def __add__(self, other):
         """Move the pointer to the higher address space.
@@ -251,8 +285,8 @@ class Pointer(ObjectGeneric):
         return GE(self, other)
 
     def same_as(self, other):
-        # Will be called by EqualOp or NotEqualOp, when the compare isn't
-        # happened inside TVM script program.
+        # Will be called by EqualOp or NotEqualOp, when the compare isn't happened inside TVM script
+        # program.
         return super().__eq__(other)
 
     def __eq__(self, other):

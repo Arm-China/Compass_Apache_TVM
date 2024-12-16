@@ -19,11 +19,13 @@
 import functools
 import inspect
 import types
+import warnings
 from typing import Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np  # type: ignore
 
 import tvm.ir
+from tvm.ir.container import Array
 from tvm.relax import Expr, Var, StructInfo
 from tvm.relax.dpl import DFPattern
 from tvm.runtime import NDArray, Object
@@ -389,8 +391,8 @@ def ConvertToDataflow(min_size: int = 2) -> tvm.ir.transform.Pass:
 
     Note: ConvertToDataflow may need to be called first.
 
-    Params
-    ------
+    Parameters
+    ----------
     min_size: int
         The minimum number of consecutive dataflow bindings
         the pass needs to extract a new block.
@@ -585,6 +587,16 @@ def ComputePrimValue() -> tvm.ir.transform.Pass:
     return _ffi_api.ComputePrimValue()  # type: ignore
 
 
+def LowerRuntimeBuiltin() -> tvm.ir.transform.Pass:
+    """Lowering generic intrinsic to VM intrinsics.
+
+    Returns
+    -------
+    ret: tvm.ir.transform.Pass
+    """
+    return _ffi_api.LowerRuntimeBuiltin()  # type: ignore
+
+
 def VMBuiltinLower() -> tvm.ir.transform.Pass:
     """Lowering generic intrinsic to VM intrinsics.
 
@@ -592,7 +604,11 @@ def VMBuiltinLower() -> tvm.ir.transform.Pass:
     -------
     ret: tvm.ir.transform.Pass
     """
-    return _ffi_api.VMBuiltinLower()  # type: ignore
+    warnings.warn(
+        "tvm.relax.transform.VMBuiltinLower has been renamed to 'LowerRuntimeBuiltin'.  "
+        "This wrapper is for backwards compatibility, and will be removed in a later update."
+    )
+    return _ffi_api.LowerRuntimeBuiltin()  # type: ignore
 
 
 def VMShapeLower(*, emit_err_ctx: bool = True) -> tvm.ir.transform.Pass:
@@ -631,13 +647,8 @@ def BindParams(
     func_name: str
         The function name to be bound
 
-    params : Dict[
-                Union[str,relax.Var],
-                Union[tvm.runtime.NDArray, np.ndarray],
-             ]
-
-        The map from parameter or parameter name to constant
-        tensors.
+    params: Dict[Union[str,relax.Var], Union[tvm.runtime.NDArray, np.ndarray]]
+        The map from parameter or parameter name to constant tensors.
 
     Returns
     -------
@@ -890,6 +901,7 @@ def FuseOpsByPattern(
     patterns: List[Union[FusionPattern, Tuple]],
     bind_constants: bool = True,
     annotate_codegen: bool = False,
+    entry_functions: Optional[List[str]] = None,
 ) -> tvm.ir.transform.Pass:
     """Apply pattern matching to each function in the given module, and group matched expressions
     into a new function.
@@ -919,6 +931,9 @@ def FuseOpsByPattern(
         This must be True if the created composite functions are intended to be offloaded to
         an external backend without using the MergeCompositeFunctions pass.
 
+    entry_functions : Optional[List[str]]
+        The set of entry functions to start from.
+
     Returns
     -------
     ret : tvm.transform.Pass
@@ -938,6 +953,7 @@ def FuseOpsByPattern(
         converted_patterns,
         bind_constants,
         annotate_codegen,
+        entry_functions or [],
     )  # type: ignore
 
 
@@ -973,16 +989,16 @@ def LiftTransformParams(shared_transform: Union[bool, List[str]] = False) -> tvm
         Indicates how the parameter transformation function will be produced
 
         - `False` (default): A separate parameter transformation function will be
-        produced for each function with the `"num_input"` attribute.
+          produced for each function with the `"num_input"` attribute.
 
         - `True`: A single parameter transformation function will be produced,
-        containing the preprocessing steps common across all functions with
-        the `"num_input"` attribute.
+          containing the preprocessing steps common across all functions with
+          the `"num_input"` attribute.
 
         - List[str]: A single parameter transformation function will be produced,
-        containing the preprocessing steps common across each function whose
-        name is in the list.  Passing a list of all functions with the `"num_input"`
-        attribute or an empty list is equivalent to passing `True`.
+          containing the preprocessing steps common across each function whose
+          name is in the list.  Passing a list of all functions with the `"num_input"`
+          attribute or an empty list is equivalent to passing `True`.
 
     Returns
     -------
@@ -1004,14 +1020,13 @@ def BundleModelParams(param_tuple_name: Optional[str] = None) -> tvm.ir.transfor
     ----------
     param_tuple_name: Optional[str]
 
-        The name of the tuple parameter.  If unspecified, defaults to
+        The name of the tuple parameter. If unspecified, defaults to
         "model_params".
 
     Returns
     -------
     ret : tvm.transform.Pass
-        The registered pass for lifting transformation of parameters.
-
+        The registered pass for bundling model parameters.
     """
     return _ffi_api.BundleModelParams(param_tuple_name)  # type: ignore
 
@@ -1198,7 +1213,7 @@ def MetaScheduleTuneIRMod(
        maximum number of trials per task
     op_names: Optional[List[str]]
        A list of operator names to specify which op to tune. When it is None, all operators
-        are tuned.
+       are tuned.
 
     Returns
     -------
@@ -1275,6 +1290,7 @@ def AlterOpImpl(
     op_impl_map: Dict[str, PrimFunc],
     op_buffer_transforms: Dict[str, List[Union[IndexMap, Callable]]],
     op_buffer_axis_separators: Dict[str, List[Union[IndexMap.AXIS_SEPARATOR, Callable]]],
+    op_buffer_input_axis_separators: Dict[str, List[Union[IndexMap.AXIS_SEPARATOR, Callable]]],
 ):
     """Replace all PrimFunc's which have matching 'operator_name' attribute, with replacement
     PrimFunc that could possibly have different layouts on i/o buffers. The layout
@@ -1290,6 +1306,8 @@ def AlterOpImpl(
         op_kind to layout transformation map for each of the buffers
     op_buffer_axis_separators: Dict[str, List[Union[IndexMap.AXIS_SEPARATOR, Callable]]]
         op_kind to axis_separator for each index_map
+    op_buffer_input_axis_separators: Dict[str, List[Union[IndexMap.AXIS_SEPARATOR, Callable]]]
+        op_kind to axis_separator for input index_map
 
     Returns
     -------
@@ -1298,13 +1316,19 @@ def AlterOpImpl(
     for operator_name, transform_list in op_buffer_transforms.items():
         l = []
         for transform in transform_list:
+            # Extract the index_map
             if isinstance(transform, Callable):
                 transform = IndexMap.from_func_with_separators(transform)[0]
+            elif isinstance(transform, (Array, tuple)) and isinstance(transform[0], IndexMap):
+                transform = transform[0]
             l.append(transform)
         op_buffer_transforms[operator_name] = l
 
     return _ffi_api.AlterOpImpl(
-        op_impl_map, op_buffer_transforms, op_buffer_axis_separators
+        op_impl_map,
+        op_buffer_transforms,
+        op_buffer_axis_separators,
+        op_buffer_input_axis_separators,
     )  # type: ignore
 
 

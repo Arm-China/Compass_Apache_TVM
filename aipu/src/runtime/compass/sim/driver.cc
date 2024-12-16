@@ -13,7 +13,7 @@ namespace runtime {
 static inline std::string GetSimulatorPath(const Map<String, String>& rt_cfg, std::string target) {
   auto itr = rt_cfg.find("simulator");
   if (itr != rt_cfg.end()) return (*itr).second;
-  if (StrStartsWith(target, "X2_")) return "";
+  if (!(StrStartsWith(target, "X1_") || StrStartsWith(target, "Z2_"))) return "";
   std::string exec_name = "aipu_simulator_" + StrLower(target.substr(0, 2));
   const char* path_env = std::getenv("PATH");
   if (path_env != nullptr) {
@@ -33,11 +33,11 @@ void AipuDriver::ConfigGlobal(bool is_profile) {
   const Map<String, String>& rt_cfg = AipuCompassBasicConfig::Global()->runtime;
   std::string sim_path = GetSimulatorPath(rt_cfg, target_);
   cfg.simulator = sim_path.c_str();
-  if (StrStartsWith(target_, "X2_") || StrStartsWith(target_, "X3_")) {
+  if (!(StrStartsWith(target_, "X1_") || StrStartsWith(target_, "Z2_"))) {
     cfg.npu_arch_desc = target_.c_str();
-    cfg.simulator = NULL;
+    cfg.simulator = nullptr;
   }
-  cfg.log_level = std::stoi(rt_cfg["log_level"]);
+  cfg.log_level = 0;  // Use simulator's environment variable "SIM_LOG_LEVEL" if needed.
   cfg.verbose = rt_cfg["verbose"] == "true";
   cfg.en_eval = is_profile;
 
@@ -49,7 +49,7 @@ void AipuDriver::ConfigGlobal(bool is_profile) {
 void AipuDriver::ConfigEnvItems() {
   // Only set the environment variable if it doesn't exist.
   if (umd_dtcm_sz_ != "") setenv("UMD_DTCM_SZ", umd_dtcm_sz_.c_str(), 0);
-  if (StrStartsWith(target_, "X2_")) ConfigGlobal(false);
+  if (!(StrStartsWith(target_, "X1_") || StrStartsWith(target_, "Z2_"))) ConfigGlobal(false);
   return;
 }
 

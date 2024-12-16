@@ -39,14 +39,12 @@ def run_vgg(model, runtime="sim"):
     aipu_testing.get_test_result(tf_model, image, outputs, runtime=runtime)
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_vgg_16(runtime):
     run_vgg("vgg_16", runtime)
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_vgg_19(runtime):

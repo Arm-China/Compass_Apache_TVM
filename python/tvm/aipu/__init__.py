@@ -4,9 +4,9 @@
 from . import utils
 from . import logger
 from . import error
+from . import tir
 
 try:
-    from . import tir
     from . import tune
 except ImportError:
     pass

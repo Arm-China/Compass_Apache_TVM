@@ -71,7 +71,7 @@ void StmtVisitor::VisitStmt_(const DeclBufferNode* op) { this->VisitStmt(op->bod
 
 void StmtVisitor::VisitStmt_(const BufferStoreNode* op) {
   this->VisitExpr(op->value);
-  this->VisitExpr(op->predicate);
+  if (op->predicate.defined()) this->VisitExpr(op->predicate.value());
   VisitArray(op->indices, [this](const PrimExpr& e) { this->VisitExpr(e); });
 }
 
@@ -371,11 +371,12 @@ Stmt StmtMutator::VisitStmt_(const IfThenElseNode* op) {
 
 Stmt StmtMutator::VisitStmt_(const BufferStoreNode* op) {
   PrimExpr value = this->VisitExpr(op->value);
-  PrimExpr predicate = this->VisitExpr(op->predicate);
+  PrimExpr predicate;
+  if (op->predicate.defined()) predicate = this->VisitExpr(op->predicate.value());
   Array<PrimExpr> indices = Internal::Mutate(this, op->indices);
 
   if (value.same_as(op->value) && indices.same_as(op->indices) &&
-      predicate.same_as(op->predicate)) {
+      (!predicate.defined() || predicate.same_as(op->predicate.value()))) {
     return GetRef<Stmt>(op);
   } else {
     auto n = CopyOnWrite(op);

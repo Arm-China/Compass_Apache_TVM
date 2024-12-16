@@ -1,10 +1,20 @@
 {
   "name": "tvmjs",
-  "displayName": "TVM Wasm JS runtime",
+  "description": "TVM WASM/WebGPU runtime for JS/TS",
   "license": "Apache-2.0",
-  "version": "0.16.0",
+  "homepage": "https://github.com/apache/tvm/tree/main/web",
+  "version": "0.18.0",
   "files": [
     "lib"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apache/tvm/tree/main/web"
+  },
+  "keywords": [
+    "llm",
+    "large language model",
+    "machine learning"
   ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -25,7 +35,7 @@
     "@types/node": "^20.4.5",
     "@typescript-eslint/eslint-plugin": "^5.59.6",
     "@typescript-eslint/parser": "^5.59.6",
-    "@webgpu/types": "^0.1.40",
+    "@webgpu/types": "^0.1.42",
     "eslint": "^8.41.0",
     "jest": "^26.0.1",
     "rollup": "^2.56.2",

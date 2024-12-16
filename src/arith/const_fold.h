@@ -455,12 +455,17 @@ struct SymbolicLimits {
 inline PrimExpr pos_inf() { return SymbolicLimits::pos_inf_; }
 
 /*!
- * \brief Check if value is positive infinity.
+ * \brief Check if value is positive infinity or broadcast of pos_inf.
  * \param value The value to be checked.
  *
  * \return The check result.
  */
-inline bool is_pos_inf(const PrimExpr& value) { return value.same_as(SymbolicLimits::pos_inf_); }
+inline bool is_pos_inf(const PrimExpr& value) {
+  if (const auto* op = value.as<tir::BroadcastNode>()) {
+    return is_pos_inf(op->value);
+  }
+  return value.same_as(SymbolicLimits::pos_inf_);
+}
 
 /*!
  * \brief Opaque expression representing negative infinity.
@@ -473,12 +478,17 @@ inline bool is_pos_inf(const PrimExpr& value) { return value.same_as(SymbolicLim
 inline PrimExpr neg_inf() { return SymbolicLimits::neg_inf_; }
 
 /*!
- * \brief Check if value is negative infinity.
+ * \brief Check if value is negative infinity or broadcast of neg_inf.
  * \param value The value to be checked.
  *
  * \return The check result.
  */
-inline bool is_neg_inf(const PrimExpr& value) { return value.same_as(SymbolicLimits::neg_inf_); }
+inline bool is_neg_inf(const PrimExpr& value) {
+  if (const auto* op = value.as<tir::BroadcastNode>()) {
+    return is_neg_inf(op->value);
+  }
+  return value.same_as(SymbolicLimits::neg_inf_);
+}
 
 }  // namespace arith
 }  // namespace tvm

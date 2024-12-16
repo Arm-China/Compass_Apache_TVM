@@ -150,6 +150,21 @@ PackedFunc AipuCompassModuleNode::GetFunction(const String& name,
 
       aipu_driver_.SetInputs(in_args);
     });
+  } else if (name == "compass_set_outputs") {
+    return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
+      // Check information of arguments match those of parameters.
+      const size_t& out_cnt = out_params_.size();
+      // Ensure the count of arguments match those of parameters.
+      ICHECK_EQ(out_cnt, args.size()) << "Output arguments count mismatched.";
+      std::vector<DLTensor*> out_args = Convert2DLTensor(args, 0, out_cnt);
+      // Ensure the type and size of arguments match those of parameters.
+      for (size_t i = 0; i < out_cnt; ++i) {
+        ICHECK_EQ(DataType(out_args[i]->dtype), out_params_[i].dtype);
+        ICHECK_EQ(GetDataSize(*out_args[i]), out_params_[i].size);
+      }
+
+      aipu_driver_.SetOutputs(out_args);
+    });
   } else if (name == "compass_execute") {
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) { aipu_driver_.Run(); });
   } else if (name == "compass_get_param_info") {
@@ -247,6 +262,55 @@ PackedFunc AipuCompassModuleNode::GetFunction(const String& name,
       aipu_driver_.SetInputs(in_args);
       aipu_driver_.Run();
       GetOutputs(out_args);
+    });
+  } else if (name == "unrestrict_run") {
+    return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
+      // unrestrict_run do not check anything.
+      // first two params is input num and output num
+      int in_cnt = args[0].operator int();
+      int out_cnt = args[1].operator int();
+      // Ensure the count of arguments match those of parameters.
+      ICHECK_EQ((in_cnt + out_cnt), args.size() - 2) << "Arguments count mismatched.";
+      // Split the input and output arguments away.
+      std::vector<DLTensor*> in_args = Convert2DLTensor(args, 2, in_cnt);
+      std::vector<DLTensor*> out_args = Convert2DLTensor(args, 2 + in_cnt, out_cnt);
+
+      aipu_driver_.SetInputs(in_args);
+      aipu_driver_.Run();
+      GetOutputs(out_args);
+    });
+  } else if (name == "compass_dynamic_run") {
+    return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
+      // Check information of arguments match those of parameters.
+      const size_t& in_cnt = in_params_.size();
+      ICHECK_EQ((in_cnt), args.size()) << "Arguments count mismatched.";
+      // Split the input and output arguments away.
+      std::vector<DLTensor*> in_args = Convert2DLTensor(args, 0, in_cnt);
+      // std::vector<DLTensor*> out_args = Convert2DLTensor(args, in_cnt, out_cnt);
+      // Only check datatype, not check size
+      for (size_t i = 0; i < in_cnt; ++i) {
+        ICHECK_EQ(DataType(in_args[i]->dtype), in_params_[i].dtype);
+      }
+      aipu_driver_.SetInputsWithDynamicShape(in_args);
+      aipu_driver_.Run();
+      // update params info as shape changed.
+      in_params_ = aipu_driver_.GetParamInfo(true);
+      out_params_ = aipu_driver_.GetParamInfo(false);
+      Array<NDArray> ret;
+      std::vector<DLTensor*> outs;
+      Device cpu = {kDLCPU, 0};
+      for (uint32_t idx = 0; idx < out_params_.size(); idx++) {
+        std::vector<int64_t> shape = aipu_driver_.GetOutputShape(idx);
+        NDArray out = NDArray::Empty(ShapeTuple(shape), out_params_[idx].dtype, cpu);
+        ret.push_back(out);
+        outs.push_back(const_cast<DLTensor*>(out.operator->()));
+      }
+      GetOutputs(outs);
+      if (ret.size() == 1) {
+        *rv = ret[0];
+      } else {
+        *rv = ret;
+      }
     });
   }
   return nullptr;

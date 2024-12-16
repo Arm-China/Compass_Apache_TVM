@@ -874,6 +874,11 @@ requires_x86 = Feature(
     "x86", "x86 Architecture", run_time_check=lambda: platform.machine() == "x86_64"
 )
 
+# Mark a test as requiring the aarch64 Architecture to run.
+requires_aarch64 = Feature(
+    "AArch64", "AArch64 Architecture", run_time_check=lambda: platform.machine() == "aarch64"
+)
+
 # Mark a test as requiring the CUDA runtime.
 requires_cuda = Feature(
     "cuda",
@@ -947,6 +952,9 @@ requires_matrixcore = Feature(
     parent_features="rocm",
 )
 
+# Mark a test as requiring the hipBLAS library.
+requires_hipblas = Feature("hipblas", "hipBLAS", cmake_flag="USE_HIPBLAS", parent_features="rocm")
+
 # Mark a test as requiring the metal runtime
 requires_metal = Feature(
     "metal",
@@ -975,6 +983,12 @@ requires_openclml = Feature(
     target_kind_enabled="opencl",
 )
 
+# Mark a test as requiring NNAPI support in build.
+requires_nnapi = Feature(
+    "NNAPI",
+    "NNAPI",
+    cmake_flag="USE_NNAPI_CODEGEN",
+)
 
 # Mark a test as requiring microTVM to run
 requires_micro = Feature("micro", "MicroTVM", cmake_flag="USE_MICRO")
@@ -1026,6 +1040,19 @@ requires_corstone300 = Feature(
     parent_features="cmsisnn",
 )
 
+
+def _aprofile_aem_fvp_compile_time_check():
+    if shutil.which("FVP_Base_RevC-2xAEMvA") is None:
+        return "AProfile AEM is not available"
+    return True
+
+
+requires_aprofile_aem_fvp = Feature(
+    "aprofile-aem-fvp",
+    "AProfile AEM FVP",
+    compile_time_check=_aprofile_aem_fvp_compile_time_check,
+)
+
 # Mark a test as requiring Vitis AI to run
 requires_vitis_ai = Feature("vitis_ai", "Vitis AI", cmake_flag="USE_VITIS_AI")
 
@@ -1047,10 +1074,24 @@ requires_arm_dot = Feature(
 )
 
 
+requires_arm_fp16 = Feature(
+    "arm_fp16",
+    "Arm(R) Neon(TM) instructions for FP16",
+    run_time_check=lambda: _has_cpu_feat("fullfp16"),
+)
+
+
 requires_aarch64_sve = Feature(
     "arm_sve",
     "AArch64 SVE",
     run_time_check=lambda: _has_cpu_feat("sve"),
+)
+
+
+requires_aarch64_sme = Feature(
+    "arm_sme",
+    "AArch64 SME",
+    run_time_check=lambda: _has_cpu_feat("sme"),
 )
 
 
@@ -1206,6 +1247,10 @@ def skip_if_32bit(reason):
         return _compose(args, [])
 
     return decorator
+
+
+def skip_if_no_reference_system(func):
+    return skip_if_32bit(reason="Reference system unavailable in i386 container")(func)
 
 
 def requires_package(*packages):
@@ -1450,7 +1495,7 @@ def parameter(*values, ids=None, by_dict=None):
 
     # Optional cls parameter in case a parameter is defined inside a
     # class scope.
-    @pytest.fixture(params=values, ids=ids)
+    @pytest.fixture(params=values, ids=ids, scope="session")
     def as_fixture(*_cls, request):
         return request.param
 
@@ -1878,6 +1923,21 @@ def xfail_parameterizations(*xfail_params, reason):
 
 def skip_parameterizations(*skip_params, reason):
     return _mark_parameterizations(*skip_params, marker_fn=pytest.skip, reason=reason)
+
+
+def strtobool(val):
+    """Convert a string representation of truth to true (1) or false (0).
+    True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
+    are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
+    'val' is anything else.
+    """
+    val = val.lower()
+    if val in ("y", "yes", "t", "true", "on", "1"):
+        return 1
+    elif val in ("n", "no", "f", "false", "off", "0"):
+        return 0
+    else:
+        raise ValueError(f"invalid truth value {val!r}")
 
 
 def main():

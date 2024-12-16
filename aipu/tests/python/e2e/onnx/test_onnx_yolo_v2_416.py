@@ -119,7 +119,6 @@ def run_yolo_v2_416(runtime, imgs_number=10):
     print(f"On VOC2007 test dataset with IoU 0.5, the mAP is {mean_ap}")
 
 
-@pytest.mark.X2_1204
 @pytest.mark.parametrize("runtime", ("rpc", "sim"))
 @aipu_testing.clear_traceback
 def test_yolo_v2_416(runtime):

@@ -172,6 +172,8 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
     elif isinstance(value, (Buffer, IterVar)) or (
         isinstance(value, Var) and not self.var_table.exist(value)
     ):
+        if isinstance(value, Buffer) and value.name != "":
+            self.report_error(node, "Unsupport reassign a buffer, maybe you can use pointer.")
         IRBuilder.name(var_name, value)
         return value
     elif isinstance(value, Let) and StringImm("define_size_var") == value.body:
@@ -195,15 +197,13 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         if var_name in defined_vars:
             ptr = defined_vars[var_name]
             if not isinstance(ptr, Pointer):
-                err_msg = f'Type mismatch assignment: "{ptr.dtype}" vs. "{value.dtype}*".'
-                self.report_error(node, err_msg)
+                msg = f'Type mismatch assignment: "{ptr.dtype}" vs. "{value.dtype}*".'
+                self.report_error(node, msg)
 
             if ptr.dtype != value.dtype:
-                self.report_error(
-                    node,
-                    f'Type mismatch assignment: "{ptr.dtype}*" vs. "{value.dtype}*", need to do '
-                    "the explicit type conversion for the right hand side(i.e., new value).",
-                )
+                msg = f'Type mismatch assignment: "{ptr.dtype}*" vs. "{value.dtype}*", need to do '
+                msg += "the explicit type conversion for the right hand side(i.e., new value)."
+                self.report_error(node, msg)
 
             T.evaluate(reassign(ptr.base, value))
             return ptr
@@ -214,8 +214,8 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         frame.__enter__()
         return ptr
     elif isinstance(value, str):
-        err_msg = "Can't define string inside primitive function, please define it outside."
-        self.report_error(node, err_msg)
+        msg = "Can't define string inside primitive function, please define it outside."
+        self.report_error(node, msg)
         return None
     else:
         value = tvm.runtime.convert(value)
@@ -228,13 +228,13 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         if var_name in defined_vars:
             var = defined_vars[var_name]
             if isinstance(var, Pointer):
-                err_msg = f'Type mismatch assignment: "{var.dtype}*" vs. "{value.dtype}".'
-                self.report_error(node, err_msg)
+                msg = f'Type mismatch assignment: "{var.dtype}*" vs. "{value.dtype}".'
+                self.report_error(node, msg)
 
             if value.dtype != var.dtype:
-                err_msg = f'Type mismatch assignment: "{var.dtype}" vs. "{value.dtype}", need to do'
-                err_msg += " the explicit type conversion for the right hand side(i.e., new value)."
-                self.report_error(node, err_msg)
+                msg = f'Type mismatch assignment: "{var.dtype}" vs. "{value.dtype}", need to do the'
+                msg += " explicit type conversion for the right hand side(i.e., new value)."
+                self.report_error(node, msg)
 
         frame = T.LetStmt(value, var=var)
         frame.add_callback(partial(frame.__exit__, None, None, None))
@@ -399,8 +399,8 @@ def visit_assign(self: Parser, node: doc.Assign) -> None:
             indices = self.eval_expr(lhs.slice)
 
         if not is_integer_indices(indices):
-            err_msg = "All indices should be integer type, please convert it explicitly."
-            self.report_error(node, err_msg)
+            msg = "All indices should be integer type, please convert it explicitly."
+            self.report_error(node, msg)
 
         target = self.eval_expr(lhs.value)
         if isinstance(target, Var):
@@ -534,12 +534,20 @@ def visit_function_def(self: Parser, node: doc.FunctionDef) -> None:
         with T.prim_func(is_private=privacy):
             T.func_name(node.name)
             if node.returns is not None:
-                ret_type = self.eval_expr(node.returns)
+                try:
+                    ret_type = self.eval_expr(node.returns)
+                except Exception:  # pylint: disable=broad-except
+                    ret_type = func_annotation.get("return", None)
+                    if ret_type is None:
+                        raise
                 if hasattr(ret_type, "type_ann_func"):
                     ret_type = PrimType(ret_type.type_ann_func().dtype)
+                elif isinstance(ret_type, Pointer):
+                    ret_type = PointerType(PrimType(ret_type.dtype), ret_type.scope)
                 elif callable(ret_type):
                     ret_type = PrimType(ret_type().dtype)
                 T.func_ret(ret_type)
+                self.ret_type = ret_type
             with self.with_dispatch_token("tir"):
                 # TODO: handle different types of arguments:
                 # - vararg: arg | None
@@ -564,9 +572,6 @@ def visit_function_def(self: Parser, node: doc.FunctionDef) -> None:
                     param = T.arg(arg.arg, ann)
                     self.var_table.add(arg.arg, param)
                 self.visit_body(node.body)
-            if node.returns is None and self.ret_value is not None:
-                raise RuntimeError(f'The function "{node.name}" lacks return type annotation.')
-            self.ret_value = None
     self.function_annotations = supplied_annotation
 
 
@@ -631,6 +636,8 @@ def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
     elif isinstance(res, str):
         # Ignore docstrings
         pass
+    elif isinstance(res, tvm.tir.stmt.BufferStore):
+        T.buffer_store(res.buffer, res.value, res.indices, res.predicate)
     else:
         self.report_error(node, f"Parsing resulted in unexpected type {type(res)}")
 
@@ -708,8 +715,20 @@ def visit_return(self: Parser, node: doc.Return) -> None:
         The doc AST return node.
     """
     if node.value is not None:
-        self.ret_value = self.eval_expr(node.value)
-        T.evaluate(T.ret(self.ret_value))
+        ret_value = self.eval_expr(node.value)
+
+        if self.ret_type is None:
+            self.report_error(node, "This function lacks return type annotation.")
+
+        if isinstance(ret_value, Pointer):
+            ret_type_scope = self.ret_type.storage_scope
+            if ret_value.scope != ret_type_scope:
+                param_scope = "private" if ret_type_scope == "local" else ret_type_scope
+                arg_scope = "private" if ret_value.scope == "local" else ret_value.scope
+                msg = f'The scope of return type expect "{param_scope}", but got: "{arg_scope}".'
+                self.report_error(node, msg)
+
+        T.evaluate(T.ret(ret_value))
         return
     T.evaluate(T.ret(None))
 

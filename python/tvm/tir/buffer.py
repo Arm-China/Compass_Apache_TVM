@@ -122,7 +122,7 @@ class Buffer(Object, Scriptable):
             self, access_mask, ptr_type, content_lanes, offset, extent  # type: ignore
         )
 
-    def vload(self, begin, dtype=None):
+    def vload(self, begin, dtype=None, predicate=None):
         """Generate an Expr that loads dtype from begin index.
 
         Parameters
@@ -134,6 +134,10 @@ class Buffer(Object, Scriptable):
             The data type to be loaded,
             can be vector type which have lanes that is multiple of Buffer.dtype
 
+        predicate : Optional[PrimExpr]
+            A vector mask of boolean values indicating which lanes of a vector are to be
+            loaded. The number lanes of the mask must be equal to the number of lanes being loaded.
+
         Returns
         -------
         load : Expr
@@ -141,9 +145,9 @@ class Buffer(Object, Scriptable):
         """
         begin = (begin,) if isinstance(begin, (int, PrimExpr)) else begin
         dtype = dtype if dtype else self.dtype
-        return _ffi_api.BufferVLoad(self, begin, dtype)  # type: ignore
+        return _ffi_api.BufferVLoad(self, begin, dtype, predicate)  # type: ignore
 
-    def vstore(self, begin, value):
+    def vstore(self, begin, value, predicate=None):
         """Generate a Stmt that store value into begin index.
 
         Parameters
@@ -154,13 +158,18 @@ class Buffer(Object, Scriptable):
         value : Expr
             The value to be stored.
 
+        predicate : Optional[PrimExpr]
+            A vector mask of boolean values indicating which lanes of a vector are to be
+            stored. The number lanes of the mask must be equal to the number of lanes in
+            value.
+
         Returns
         -------
         store : Stmt
             The corresponding store stmt.
         """
         begin = (begin,) if isinstance(begin, (int, PrimExpr)) else begin
-        return _ffi_api.BufferVStore(self, begin, value)  # type: ignore
+        return _ffi_api.BufferVStore(self, begin, value, predicate)  # type: ignore
 
     @property
     def scope(self):
@@ -301,7 +310,7 @@ def decl_buffer(
     name : str, optional
         The name of the buffer.
 
-    data : Var, optional
+    data : tir.Var, optional
         The data pointer in the buffer.
 
     strides: array of Expr

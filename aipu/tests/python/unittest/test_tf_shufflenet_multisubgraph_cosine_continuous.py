@@ -9,7 +9,7 @@ from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 
 def test_cosine_continuous():
-    ZHOUYI_MODEL_ZOO_HOME = os.environ.get("ZHOUYI_MODEL_ZOO_HOME")
+    ZHOUYI_MODEL_ZOO_HOME = os.getenv("ZHOUYI_MODEL_ZOO_HOME")
     cfg = f"""
     [Common]
     continuous_similarity = True

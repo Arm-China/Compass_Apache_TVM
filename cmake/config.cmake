@@ -57,6 +57,11 @@ set(USE_CUDA OFF)
 # - /path/to/nccl: use specific path to nccl
 set(USE_NCCL OFF)
 
+# Whether to enable MSCCL support:
+# - ON: enable MSCCL
+# - OFF: disable MSCCL
+set(USE_MSCCL OFF)
+
 # Whether to enable NVTX support (must have USE_CUDA enabled):
 # - ON: enable NCCL with cmake's auto search
 # - OFF: disable NCCL
@@ -248,6 +253,13 @@ set(USE_EDGETPU OFF)
 # - /path/to/cudnn: use specific path to cuDNN path
 set(USE_CUDNN OFF)
 
+# Whether use cuDNN frontend
+# Possible values:
+# - ON: enable cuDNN frontend
+# - /path/to/cudnn_frontend: use specific path to cuDNN frontend
+# - OFF: disable cuDNN frontend
+set(USE_CUDNN_FRONTEND OFF)
+
 # Whether use cuBLAS
 set(USE_CUBLAS OFF)
 
@@ -370,7 +382,7 @@ set(USE_HEXAGON_RPC OFF)
 # compiling _by_ TVM). This applies to components like the TVM runtime, but is
 # also used to select correct include/library paths from the Hexagon SDK when
 # building runtime for Android.
-# Valid values are v65, v66, v68, v69, v73.
+# Valid values are v65, v66, v68, v69, v73, v75.
 set(USE_HEXAGON_ARCH "v68")
 
 # Whether use MRVL codegen
@@ -447,6 +459,19 @@ set(USE_GTEST AUTO)
 # Need to have USE_CUDA=ON
 set(USE_CUTLASS OFF)
 
+# Whether to enable FlashInfer or not.
+set(USE_FLASHINFER OFF)
+# Options for FlashInfer kernel compilation.
+set(FLASHINFER_ENABLE_FP8 OFF)
+set(FLASHINFER_ENABLE_BF16 OFF)
+set(FLASHINFER_GEN_GROUP_SIZES 1 4 6 8)
+set(FLASHINFER_GEN_PAGE_SIZES 16)
+set(FLASHINFER_GEN_HEAD_DIMS 128)
+set(FLASHINFER_GEN_KV_LAYOUTS 0 1)
+set(FLASHINFER_GEN_POS_ENCODING_MODES 0 1)
+set(FLASHINFER_GEN_ALLOW_FP16_QK_REDUCTIONS "false")
+set(FLASHINFER_GEN_CASUALS "false" "true")
+
 # Enable to show a summary of TVM options
 set(SUMMARIZE OFF)
 
@@ -474,5 +499,3 @@ SET(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE "x64")
 set(USE_ALTERNATIVE_LINKER OFF)
 
 set(CMAKE_CUDA_ARCHITECTURES 86)
-
-set(USE_FLASHINFER OFF)

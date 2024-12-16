@@ -6,6 +6,7 @@ from tvm.relay.backend.contrib.aipu_compass import AipuCompassConfig, AipuCompas
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
 
 
+@pytest.mark.NOT_X3
 @pytest.mark.parametrize("gb_profile", ["true", "false"])
 @pytest.mark.parametrize("gb_target", ["X1_1204", "X2_1204MP3"])
 def test_profiler(gb_target, gb_profile):

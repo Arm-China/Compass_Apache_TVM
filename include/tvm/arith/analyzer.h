@@ -21,6 +21,10 @@
  * \file tvm/arith/analyzer.h
  * \brief Algebra expression simplifications.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
+
 #ifndef TVM_ARITH_ANALYZER_H_
 #define TVM_ARITH_ANALYZER_H_
 
@@ -363,6 +367,11 @@ class RewriteSimplifier {
      * may be enabled by default in future releases.
      */
     kComparisonOfProductAndSum = (1 << 3),
+
+    /* When simplifying a division with immediate value for floating,
+     * convert division to multiplication.
+     */
+    kConvertFloatDivWithImmToMul = (1 << 4),
   };
 
   /*! \brief Enable an optional extension or extensions

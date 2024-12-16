@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=redefined-outer-name, invalid-name
+#
+# This file has been modified by Arm China team.
+#
 """Start an RPC server"""
 import argparse
 import logging
@@ -37,7 +40,6 @@ def main(args):
             raise RuntimeError("Need key to present type of resource when tracker is available")
     else:
         tracker_addr = None
-
     server = rpc.Server(
         args.host,
         args.port,
@@ -49,6 +51,7 @@ def main(args):
         custom_addr=args.custom_addr,
         silent=args.silent,
         no_fork=not args.fork,
+        server_ip=args.server_ip,
     )
     server.proc.join()
 
@@ -57,6 +60,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--host", type=str, default="0.0.0.0", help="The host IP address the tracker binds to"
+    )
+    parser.add_argument(
+        "--server_ip", type=str, default="", help="The host IP address of server"
     )
     parser.add_argument("--port", type=int, default=9090, help="The port of the RPC")
     parser.add_argument(
