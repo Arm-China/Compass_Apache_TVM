@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zhouyi NPU Architecture &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Compass DSL" href="compass_dsl.html" />
+    <link rel="prev" title="About This Documentation" href="about_this_doc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Zhouyi NPU Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#key-concept">Key Concept</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cluster">Cluster</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#core">Core</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tec">TEC</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#compass-dsl-programming-model">Compass DSL Programming Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#addition-example">Addition example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#reference">Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Zhouyi NPU Architecture</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/explanation/zhouyi_npu_arch.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="zhouyi-npu-architecture">
+<h1>Zhouyi NPU Architecture<a class="headerlink" href="#zhouyi-npu-architecture" title="Permalink to this heading"></a></h1>
+<p>For a better understanding of Compass DSL programming, it is recommended to have a basic understanding of the Zhouyi NPU architecture. This article will give an overview of the Zhouyi NPU architecture. For more information, please refer to the Zhouyi NPU Technical Reference Manual.</p>
+<section id="key-concept">
+<h2>Key Concept<a class="headerlink" href="#key-concept" title="Permalink to this heading"></a></h2>
+<p>The Zhouyi NPU introduces an extensible <strong>multi-cluster</strong> and <strong>multi-core</strong> architecture.
+<img alt="" src="../_images/zhouyi_npu_arch.jpg" /></p>
+<section id="cluster">
+<h3>Cluster<a class="headerlink" href="#cluster" title="Permalink to this heading"></a></h3>
+<p>The Zhouyi NPU can be configured as multiple clusters. Each cluster may include multiple cores for
+different tasks execution in parallel.</p>
+<ul class="simple">
+<li><p><strong>Global Memory</strong> (GM) works as scratchpad memory for all NPU cores inside a cluster.</p></li>
+</ul>
+</section>
+<section id="core">
+<h3>Core<a class="headerlink" href="#core" title="Permalink to this heading"></a></h3>
+<p>Each cluster can be configured as a single core or multiple cores.</p>
+<ul class="simple">
+<li><p><strong>Shared memory</strong> works for all TECs inside a core. Shared memory has a fixed address entry for all TECs and asynchronized units to access.</p></li>
+<li><p><strong>AIFF</strong> works as a major fixed operation accelerated data processing unit. AIFF can accept different requests from TECs and return execution results and status to each TEC.</p></li>
+<li><p><strong>L1 D-Cache</strong> is the shared data cache for all TECs inside a core. It enables multiple TECs to fetch data at the same time, and it also supports AIFF/DMA instruction dispatch.</p></li>
+<li><p><strong>L1 I-Cache</strong> is the instruction cache unit. It fetches instructions for the fetch unit. It enables multiple TECs to fetch requests at the same time and returns instructions to the fetch unit. The instructions are from either I-Cache memory or external memory.</p></li>
+<li><p><strong>Direct Memory Access (DMA)</strong>: Each TEC has a dedicated DMA channel to send requests from the TEC to the DMA unit. The DMA unit is responsible for data movement across different memory space. DMA accepts different requests from TECs and returns execution results and status to each TEC.</p></li>
+</ul>
+</section>
+<section id="tec">
+<h3>TEC<a class="headerlink" href="#tec" title="Permalink to this heading"></a></h3>
+<p>A TEC acts as an independent programmable unit for data processing and flow control.</p>
+<ul class="simple">
+<li><p><strong>Local Memory (LM)</strong>: Each TEC has internal local memory which is only accessible by each TEC.</p></li>
+<li><p><strong>Scalar Processing Unit (SPU)</strong>: For scalar computing and control-flow.</p></li>
+<li><p><strong>Vector/Tensor Processing Engine (VPE)</strong>: For vector/tensor processing.</p></li>
+<li><p><strong>Floating-point Processing Unit (FPU)</strong>: For scalar and vector floating-point computing.</p></li>
+</ul>
+</section>
+</section>
+<section id="compass-dsl-programming-model">
+<h2>Compass DSL Programming Model<a class="headerlink" href="#compass-dsl-programming-model" title="Permalink to this heading"></a></h2>
+<p>The Compass DSL programming is inside the core level for multiple TECs. Tasks scheduling on multi-cluster and multi-core is not the scope of Compass DSL.</p>
+<p>Compass DSL follows the OpenCL <strong>data parallel programing model</strong>. The operator primfunc defined by Compass DSL will generate an OpenCL kernel function.</p>
+<section id="addition-example">
+<h3>Addition example<a class="headerlink" href="#addition-example" title="Permalink to this heading"></a></h3>
+<p>Suppose we want to compute <code class="docutils literal notranslate"><span class="pre">c[2048]</span> <span class="pre">=</span> <span class="pre">a[2048]</span> <span class="pre">+</span> <span class="pre">b[2048]</span></code>.</p>
+<p>The 2048 elements will be split into 4 parts for 4 TECs. TEC_0 processes the first 512 elements and TEC_1, TEC_2, and TEC_3 process its own data segments with 512 elements. Note that the 4 TECs execute the same kernel code instructions.</p>
+<p><img alt="" src="../_images/vec_add.jpg" /></p>
+</section>
+</section>
+<section id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Arm China Zhouyi NPU Technical Reference Manual</p></li>
+<li><p>Arm China Zhouyi Compass OpenCL Programming Guide</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="about_this_doc.html" class="btn btn-neutral float-left" title="About This Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="compass_dsl.html" class="btn btn-neutral float-right" title="Compass DSL" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

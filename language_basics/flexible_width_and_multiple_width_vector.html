@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flexible/Multiple Width Vector &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Write a Basic Kernel" href="../how_to_guides/how_to_write_a_basic_kernel.html" />
+    <link rel="prev" title="Statement" href="statement.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="statement.html">Statement</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Flexible/Multiple Width Vector</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#background">Background</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flexible-width-vector">Flexible width vector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multiple-width-vector">Multiple width vector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-use-a-flexible-multiple-width-vector">How to use a flexible/multiple width vector</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creation">Creation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#usage">Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#restrictions">Restrictions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Flexible/Multiple Width Vector</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/language_basics/flexible_width_and_multiple_width_vector.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="flexible-multiple-width-vector">
+<h1>Flexible/Multiple Width Vector<a class="headerlink" href="#flexible-multiple-width-vector" title="Permalink to this heading"></a></h1>
+<section id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this heading"></a></h2>
+<p>When using vector operations, fixed width vectors may generate duplicate code. For example, in order to reduce the loss of precision, the data type will be cast up before calculation. If a vector is limited by the fixed length of the register, you need to divide the original vector into multiple sub-vectors, then write the same calculation code for each sub-vector.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">va</span><span class="p">:</span> <span class="n">float16x16</span>
+<span class="n">out</span><span class="p">:</span> <span class="p">(</span><span class="n">va</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">y</span> <span class="o">-</span> <span class="n">z</span>
+
+<span class="n">va_low</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;low&quot;</span><span class="p">)</span>
+<span class="n">va_high</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;high&quot;</span><span class="p">)</span>
+<span class="n">va_low_add</span> <span class="o">=</span> <span class="n">va_low</span> <span class="o">+</span> <span class="n">x</span>
+<span class="n">va_low_add_mul</span> <span class="o">=</span> <span class="n">va_low_add</span> <span class="o">*</span> <span class="n">y</span>
+<span class="n">va_low_out</span> <span class="o">=</span> <span class="n">va_low_add_mul</span> <span class="o">-</span> <span class="n">z</span>
+<span class="n">va_high_add</span> <span class="o">=</span> <span class="n">va_high</span> <span class="o">+</span> <span class="n">x</span>
+<span class="n">va_high_add_mul</span> <span class="o">=</span> <span class="n">va_high_add</span> <span class="o">*</span> <span class="n">y</span>
+<span class="n">va_high_out</span> <span class="o">=</span> <span class="n">va_high_add_mul</span> <span class="o">-</span> <span class="n">z</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">cast</span><span class="p">([</span><span class="n">va_low_out</span><span class="p">,</span> <span class="n">va_high_out</span><span class="p">],</span> <span class="s2">&quot;float16&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To reduce the above duplication code, we define a virtual vector type that allows you to use vectors with flexible width or multiple width.</p>
+</section>
+<section id="flexible-width-vector">
+<h2>Flexible width vector<a class="headerlink" href="#flexible-width-vector" title="Permalink to this heading"></a></h2>
+<p>The flexible width vector is a virtual vector with any fixed-positive-integer lanes (greater than 1). For example, in a 256-bit register, the fixed width vector type can be int32x8, float16x16, while the flexible width vector type can be int32x100, int32x11, float16x7, float16x33.</p>
+</section>
+<section id="multiple-width-vector">
+<h2>Multiple width vector<a class="headerlink" href="#multiple-width-vector" title="Permalink to this heading"></a></h2>
+<p>The multiple width vector feature is similar to the flexible width vector feature. The main differences between them include:</p>
+<ul class="simple">
+<li><p>The multiple width vector only supports integral multiple lanes of fixed width, such as int32x16, float16x48.</p></li>
+<li><p>The multiple width vector supports more APIs than the flexible width vector, such as vaddh.</p></li>
+</ul>
+</section>
+<section id="how-to-use-a-flexible-multiple-width-vector">
+<h2>How to use a flexible/multiple width vector<a class="headerlink" href="#how-to-use-a-flexible-multiple-width-vector" title="Permalink to this heading"></a></h2>
+<section id="creation">
+<h3>Creation<a class="headerlink" href="#creation" title="Permalink to this heading"></a></h3>
+<p>There are some methods to create a flexible/multiple width vector as follows:</p>
+<ol class="arabic">
+<li><p>Using any fixed region in a scalar array.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="mi">60</span><span class="p">,),</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="mi">70</span><span class="p">,),</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+<span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span>   <span class="c1">#i32x60</span>
+<span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">70</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="c1">#i32x35</span>
+</pre></div>
+</div>
+</li>
+<li><p>Using a fixed number of lanes in S.vload or S.vload_gather.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span> <span class="c1">#i32x60</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">33</span><span class="p">)</span> <span class="c1">#i32x33</span>
+
+<span class="n">indices</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">idx_arr</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload_gather</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Using S.vconcat.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="c1">#i32x8</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c1">#i32x8</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="c1">#i32x16</span>
+</pre></div>
+</div>
+</li>
+<li><p>Using S.cast.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">va</span><span class="p">:</span> <span class="n">int8x32</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+<span class="n">vb</span><span class="p">:</span> <span class="n">int32x32</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="usage">
+<h3>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h3>
+<p>After creation, this flexible/multiple width vector can be used directly in the supported API later as a normal vector.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="mi">60</span><span class="p">,),</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="mi">60</span><span class="p">,),</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+<span class="n">c</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="mi">60</span><span class="p">,),</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+<span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">b</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">60</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">30</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">15</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">15</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">15</span><span class="p">]</span>
+<span class="n">c</span><span class="p">[</span><span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">]</span> <span class="o">-</span> <span class="n">b</span><span class="p">[</span><span class="mi">15</span><span class="p">:</span><span class="mi">30</span><span class="p">]</span>
+<span class="n">c</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">45</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">45</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="mi">30</span><span class="p">:</span><span class="mi">45</span><span class="p">]</span>
+<span class="n">c</span><span class="p">[</span><span class="mi">45</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">45</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span> <span class="o">/</span> <span class="n">b</span><span class="p">[</span><span class="mi">45</span><span class="p">:</span><span class="mi">60</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">va</span> <span class="o">*</span> <span class="n">scale</span> <span class="o">+</span> <span class="n">vb</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+<span class="n">indices</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">idx_arr</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload_gather</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload_gather</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore_scatter</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">indices</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>APIs that support flexible/multiple width will be noted in the DSL built-in API documentation.</p>
+<p>There is a special usage in multiple width vectors. You can restore to multiple real vectors and merge them after performing unsupported interface operations.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># a: int8</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">64</span><span class="p">)</span>   <span class="c1"># int8x64</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">va</span> <span class="o">*</span> <span class="n">scale</span> <span class="o">+</span> <span class="mi">3</span>
+<span class="n">va0</span><span class="p">,</span> <span class="n">va1</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsplit</span><span class="p">(</span><span class="n">va</span><span class="p">)</span>
+<span class="n">va0</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vreplic</span><span class="p">(</span><span class="n">va0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="c1"># int8x32</span>
+<span class="n">va1</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vreplic</span><span class="p">(</span><span class="n">va1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="c1"># int8x32</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">va0</span><span class="p">,</span> <span class="n">va1</span><span class="p">)</span>    <span class="c1"># int8x64</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">va</span> <span class="o">/</span> <span class="n">scale</span> <span class="o">-</span> <span class="mi">4</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="restrictions">
+<h3>Restrictions<a class="headerlink" href="#restrictions" title="Permalink to this heading"></a></h3>
+<p>There are also some restrictions for this feature as follows:</p>
+<ul>
+<li><p>Can only be used within a function. Cross functions are unsupported now.</p></li>
+<li><p>Cannot define an array of virtual width vector type, such as</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># invalid code</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;int8x100&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Cannot be used in half-number operation mode of some instructions, such as</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># invalid code</span>
+<span class="n">va</span><span class="p">:</span> <span class="n">int8x100</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;even&quot;</span><span class="p">)</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;odd&quot;</span><span class="p">)</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;low&quot;</span><span class="p">)</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;high&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+    <span class="k">def</span> <span class="nf">compute</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">fp16x16</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">fp32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">S</span><span class="o">.</span><span class="n">fp16x16</span><span class="p">:</span>
+        <span class="c1"># celu(x)</span>
+        <span class="c1">#   = x, if x &gt;= 0</span>
+        <span class="c1">#   = alpha * (exp(x/alpha) - 1)), if x &lt; 0</span>
+        <span class="n">x_fp32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;fp32&quot;</span><span class="p">)</span>
+        <span class="n">x_exp</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x_fp32</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">x_out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vmul</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">x_exp</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="p">(</span><span class="n">x_fp32</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">),</span> <span class="n">r</span><span class="o">=</span><span class="n">x_fp32</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">x_out</span><span class="p">,</span> <span class="s2">&quot;fp16&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>It will generate OpenCL code automatically as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">half16</span> <span class="n">celu_fp16_compute</span><span class="p">(</span><span class="n">half16</span> <span class="n">x</span><span class="p">,</span> <span class="nb">float</span> <span class="n">alpha</span><span class="p">)</span> <span class="p">{</span>
+  <span class="n">float8</span> <span class="n">x_fp32_0</span> <span class="o">=</span> <span class="n">__vzipl</span><span class="p">(</span><span class="n">__vcvtue_tfp32</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">__vcvtuo_tfp32</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>
+  <span class="n">float8</span> <span class="n">x_fp32_1</span> <span class="o">=</span> <span class="n">__vziph</span><span class="p">(</span><span class="n">__vcvtue_tfp32</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">__vcvtuo_tfp32</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>
+  <span class="n">float8</span> <span class="n">x_exp_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">__vdiv</span><span class="p">((</span><span class="n">float8</span><span class="p">)</span><span class="mf">0.0</span><span class="n">f</span><span class="p">,</span> <span class="n">x_fp32_0</span><span class="p">,</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ALL_TRUE_w</span><span class="p">))</span> <span class="o">-</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="mf">1.0</span><span class="n">f</span><span class="p">);</span>
+  <span class="n">float8</span> <span class="n">x_exp_1</span> <span class="o">=</span> <span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">__vdiv</span><span class="p">((</span><span class="n">float8</span><span class="p">)</span><span class="mf">0.0</span><span class="n">f</span><span class="p">,</span> <span class="n">x_fp32_1</span><span class="p">,</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="n">alpha</span><span class="p">,</span> <span class="n">ALL_TRUE_w</span><span class="p">))</span> <span class="o">-</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="mf">1.0</span><span class="n">f</span><span class="p">);</span>
+  <span class="n">float8</span> <span class="n">x_out_0</span> <span class="o">=</span> <span class="n">__vmul</span><span class="p">(</span><span class="n">x_fp32_0</span><span class="p">,</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="n">alpha</span><span class="p">,</span> <span class="n">x_exp_0</span><span class="p">,</span> <span class="n">__vqlt</span><span class="p">(</span><span class="n">x_fp32_0</span><span class="p">,</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="mf">0.0</span><span class="n">f</span><span class="p">,</span> <span class="n">ALL_TRUE_w</span><span class="p">));</span>
+  <span class="n">float8</span> <span class="n">x_out_1</span> <span class="o">=</span> <span class="n">__vmul</span><span class="p">(</span><span class="n">x_fp32_1</span><span class="p">,</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="n">alpha</span><span class="p">,</span> <span class="n">x_exp_1</span><span class="p">,</span> <span class="n">__vqlt</span><span class="p">(</span><span class="n">x_fp32_1</span><span class="p">,</span> <span class="p">(</span><span class="n">float8</span><span class="p">)</span><span class="mf">0.0</span><span class="n">f</span><span class="p">,</span> <span class="n">ALL_TRUE_w</span><span class="p">));</span>
+  <span class="k">return</span> <span class="n">__vcvtd</span><span class="p">(</span><span class="n">x_out_0</span><span class="p">,</span> <span class="n">x_out_1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="statement.html" class="btn btn-neutral float-left" title="Statement" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../how_to_guides/how_to_write_a_basic_kernel.html" class="btn btn-neutral float-right" title="How to Write a Basic Kernel" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

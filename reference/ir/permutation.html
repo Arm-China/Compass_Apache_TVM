@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Permuation &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Synchronization" href="synchronization.html" />
+    <link rel="prev" title="Miscellaneous" href="miscellaneous.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Builtin API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html">Arithmetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html">Bitwise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html">Compare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html">Conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html">Math</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html">Memory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html">Miscellaneous</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Permuation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vconcat"><code class="docutils literal notranslate"><span class="pre">vconcat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vsplit"><code class="docutils literal notranslate"><span class="pre">vsplit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vzip"><code class="docutils literal notranslate"><span class="pre">vzip()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vcompt"><code class="docutils literal notranslate"><span class="pre">vcompt()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vcompc"><code class="docutils literal notranslate"><span class="pre">vcompc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vrevs"><code class="docutils literal notranslate"><span class="pre">vrevs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vsel"><code class="docutils literal notranslate"><span class="pre">vsel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vshfl"><code class="docutils literal notranslate"><span class="pre">vshfl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vbcast"><code class="docutils literal notranslate"><span class="pre">vbcast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vsldl"><code class="docutils literal notranslate"><span class="pre">vsldl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vtbl"><code class="docutils literal notranslate"><span class="pre">vtbl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.permutation.vreplic"><code class="docutils literal notranslate"><span class="pre">vreplic()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html">Synchronization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Builtin API</a> &raquo;</li>
+      <li>Permuation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/reference/ir/permutation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tvm.aipu.script.ir.permutation">
+<span id="permuation"></span><h1>Permuation<a class="headerlink" href="#module-tvm.aipu.script.ir.permutation" title="Permalink to this heading"></a></h1>
+<p>The permutation part of IR APIs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vconcat">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vconcat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vconcat" title="Permalink to this definition"></a></dt>
+<dd><p>Concats <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code> with elements according to the value of parameter <code class="docutils literal notranslate"><span class="pre">part</span></code>.</p>
+<ul class="simple">
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="n">x</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+   <span class="n">y</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>  <span class="n">y4</span>  <span class="n">y5</span>  <span class="n">y6</span>  <span class="n">y7</span>
+
+
+<span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">out</span><span class="p">(</span><span class="n">i32x16</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>  <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>  <span class="n">y4</span>  <span class="n">y5</span>  <span class="n">y6</span>  <span class="n">y7</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>  <span class="n">y4</span>  <span class="n">y5</span>  <span class="n">y6</span>  <span class="n">y7</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;even&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">x2</span>  <span class="n">x4</span>  <span class="n">x6</span>  <span class="n">y0</span>  <span class="n">y2</span>  <span class="n">y4</span>  <span class="n">y6</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;odd&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x1</span>  <span class="n">x3</span>  <span class="n">x5</span>  <span class="n">x7</span>  <span class="n">y1</span>  <span class="n">y3</span>  <span class="n">y5</span>  <span class="n">y7</span>
+</pre></div>
+</div>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x, y<span class="classifier">Union[PrimExpr, int, float]</span></dt><dd><p>The operands.</p>
+</dd>
+<dt>part<span class="classifier">str</span></dt><dd><p>Used to specify which part elements to be selected.</p>
+<ul class="simple">
+<li><p><strong>all:</strong> Represent all data.</p></li>
+<li><p><strong>low, high, even, odd:</strong> Represent the corresponding half data.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="supported-dtype">
+<h2>Supported DType<a class="headerlink" href="#supported-dtype" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vconcat</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vextl, __vexth, __vexte, __vexto.</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vsplit">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vsplit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vsplit" title="Permalink to this definition"></a></dt>
+<dd><p>Splits <code class="docutils literal notranslate"><span class="pre">x</span></code> to multiple parts evenly according to the hardware native vector types.</p>
+<ul class="simple">
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">x</span><span class="p">(</span><span class="n">i32x16</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">x1</span>   <span class="n">x2</span>   <span class="n">x3</span>   <span class="n">x4</span>   <span class="n">x5</span>   <span class="n">x6</span>   <span class="n">x7</span>  <span class="n">x8</span>  <span class="n">x9</span>  <span class="n">x10</span>  <span class="n">x11</span>  <span class="n">x12</span>  <span class="n">x13</span>  <span class="n">x14</span>  <span class="n">x15</span>
+
+<span class="n">out0</span><span class="p">,</span> <span class="n">out1</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsplit</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">out0</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">x1</span>   <span class="n">x2</span>   <span class="n">x3</span>   <span class="n">x4</span>   <span class="n">x5</span>   <span class="n">x6</span>   <span class="n">x7</span>
+<span class="n">out1</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x8</span>  <span class="n">x9</span>  <span class="n">x10</span>  <span class="n">x11</span>  <span class="n">x12</span>  <span class="n">x13</span>  <span class="n">x14</span>  <span class="n">x15</span>
+</pre></div>
+</div>
+<section id="id1">
+<h2>Parameters<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operand.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Returns<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Tuple[PrimExpr]</span></dt><dd><p>The result expressions.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h2>Supported DType<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id4">
+<h2>Examples<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc0</span><span class="p">,</span> <span class="n">vc1</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsplit</span><span class="p">(</span><span class="n">vx_fp32x16</span><span class="p">)</span>
+<span class="n">vc0</span><span class="p">,</span> <span class="n">vc1</span><span class="p">,</span> <span class="n">vc2</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsplit</span><span class="p">(</span><span class="n">vx_i32x24</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id5">
+<h2>See Also<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html"><span class="doc">Flexible/Multiple Width Vector</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vzip">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vzip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vzip" title="Permalink to this definition"></a></dt>
+<dd><p>Selects some elements from <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code>, rearranges in an interleave alternate sequence,
+and then returns. The selected elements are according to the value of parameter <code class="docutils literal notranslate"><span class="pre">part</span></code>.</p>
+<ul class="simple">
+<li><p>The mask situation where both <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> are mask is also supported.</p></li>
+<li><p>The feature Flexible Width Vector is supported only when <code class="docutils literal notranslate"><span class="pre">part</span></code> is <code class="docutils literal notranslate"><span class="pre">all</span></code>.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="n">x</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+   <span class="n">y</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>  <span class="n">y4</span>  <span class="n">y5</span>  <span class="n">y6</span>  <span class="n">y7</span>
+
+<span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">out</span><span class="p">(</span><span class="n">i32x16</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">y0</span>  <span class="n">x1</span>  <span class="n">y1</span>  <span class="n">x2</span>  <span class="n">y2</span>  <span class="n">x3</span>  <span class="n">y3</span>  <span class="n">x4</span>  <span class="n">y4</span>  <span class="n">x5</span>  <span class="n">y5</span>  <span class="n">x6</span>  <span class="n">y6</span>  <span class="n">x7</span>  <span class="n">y7</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">y0</span>  <span class="n">x1</span>  <span class="n">y1</span>  <span class="n">x2</span>  <span class="n">y2</span>  <span class="n">x3</span>  <span class="n">y3</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x4</span>  <span class="n">y4</span>  <span class="n">x5</span>  <span class="n">y5</span>  <span class="n">x6</span>  <span class="n">y6</span>  <span class="n">x7</span>  <span class="n">y7</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;even&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x0</span>  <span class="n">y0</span>  <span class="n">x2</span>  <span class="n">y2</span>  <span class="n">x4</span>  <span class="n">y4</span>  <span class="n">x6</span>  <span class="n">y6</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s2">&quot;odd&quot;</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="n">x1</span>  <span class="n">y1</span>  <span class="n">x3</span>  <span class="n">y3</span>  <span class="n">x5</span>  <span class="n">y5</span>  <span class="n">x7</span>  <span class="n">y7</span>
+</pre></div>
+</div>
+<section id="id6">
+<h2>Parameters<a class="headerlink" href="#id6" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x, y<span class="classifier">Union[PrimExpr, int, float, bool]</span></dt><dd><p>The operands.</p>
+</dd>
+<dt>part<span class="classifier">Optional[str]</span></dt><dd><p>Used to specify which part elements to be selected.</p>
+<ul class="simple">
+<li><p><strong>all:</strong> Represent all data.</p></li>
+<li><p><strong>low, high, even, odd:</strong> Represent the corresponding half data.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="id7">
+<h2>Returns<a class="headerlink" href="#id7" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h2>Supported DType<a class="headerlink" href="#id8" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”, “bool8/16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id9">
+<h2>Examples<a class="headerlink" href="#id9" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vzip</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;even&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id10">
+<h2>See Also<a class="headerlink" href="#id10" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vzipl, __vziph, __vzipe, __vzipo</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vcompt">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vcompt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vcompt" title="Permalink to this definition"></a></dt>
+<dd><p>Reads active elements from <code class="docutils literal notranslate"><span class="pre">x</span></code>, packs them into the lowest-numbered elements of result
+vector.</p>
+<ul class="simple">
+<li><p>The remaining upper elements of result vector are set to zero.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="n">x</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+<span class="n">mask</span><span class="p">:</span>  <span class="n">T</span>   <span class="n">T</span>   <span class="n">F</span>   <span class="n">F</span>   <span class="n">T</span>   <span class="n">T</span>   <span class="n">T</span>   <span class="n">F</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompt</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>   <span class="mi">0</span>   <span class="mi">0</span>   <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id11">
+<h2>Parameters<a class="headerlink" href="#id11" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operands.</p>
+</dd>
+<dt>mask<span class="classifier">Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+</dl>
+</section>
+<section id="id12">
+<h2>Returns<a class="headerlink" href="#id12" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id13">
+<h2>Supported DType<a class="headerlink" href="#id13" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id14">
+<h2>Examples<a class="headerlink" href="#id14" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompt</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;3T5F&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompt</span><span class="p">(</span><span class="n">vx</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id15">
+<h2>See Also<a class="headerlink" href="#id15" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vcompt</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vcompc">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vcompc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vcompc" title="Permalink to this definition"></a></dt>
+<dd><p>Reads active elements from <code class="docutils literal notranslate"><span class="pre">x</span></code>, packs them into the lowest-numbered elements of result
+vector.</p>
+<ul class="simple">
+<li><p>The remaining upper elements of result vector are set to the lowest-numbered elements of
+<code class="docutils literal notranslate"><span class="pre">y</span></code>.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="n">x</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+   <span class="n">y</span><span class="p">:</span> <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>  <span class="n">y4</span>  <span class="n">y5</span>  <span class="n">y6</span>  <span class="n">y7</span>
+<span class="n">mask</span><span class="p">:</span>  <span class="n">T</span>   <span class="n">T</span>   <span class="n">F</span>   <span class="n">T</span>   <span class="n">F</span>   <span class="n">T</span>   <span class="n">F</span>   <span class="n">F</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompc</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x3</span>  <span class="n">x5</span>  <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>
+</pre></div>
+</div>
+<section id="id16">
+<h2>Parameters<a class="headerlink" href="#id16" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x, y<span class="classifier">Union[PrimExpr, int, float]</span></dt><dd><p>The inputs to be packed.</p>
+</dd>
+<dt>mask<span class="classifier">Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+</dl>
+</section>
+<section id="id17">
+<h2>Returns<a class="headerlink" href="#id17" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id18">
+<h2>Supported DType<a class="headerlink" href="#id18" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id19">
+<h2>Examples<a class="headerlink" href="#id19" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompc</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;3T5F&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompc</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id20">
+<h2>See Also<a class="headerlink" href="#id20" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vcompc</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vrevs">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vrevs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vrevs" title="Permalink to this definition"></a></dt>
+<dd><p>Reverses the order of all elements in <code class="docutils literal notranslate"><span class="pre">x</span></code>.</p>
+<ul class="simple">
+<li><p>The mask situation where <code class="docutils literal notranslate"><span class="pre">x</span></code> is a mask is also supported.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>  <span class="n">x</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+
+<span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vrevs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">out</span><span class="p">:</span> <span class="n">x7</span>  <span class="n">x6</span>  <span class="n">x5</span>  <span class="n">x4</span>  <span class="n">x3</span>  <span class="n">x2</span>  <span class="n">x1</span>  <span class="n">x0</span>
+</pre></div>
+</div>
+<section id="id21">
+<h2>Parameters<a class="headerlink" href="#id21" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operands.</p>
+</dd>
+</dl>
+</section>
+<section id="id22">
+<h2>Returns<a class="headerlink" href="#id22" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id23">
+<h2>Supported DType<a class="headerlink" href="#id23" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”, “bool8/16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id24">
+<h2>Examples<a class="headerlink" href="#id24" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vrevs</span><span class="p">(</span><span class="n">vx</span><span class="p">)</span>
+<span class="n">mask_revs</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vrevs</span><span class="p">(</span><span class="n">vx</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id25">
+<h2>See Also<a class="headerlink" href="#id25" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vrevs, __vprevs</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vsel">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vsel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vsel" title="Permalink to this definition"></a></dt>
+<dd><p>Select active elements from <code class="docutils literal notranslate"><span class="pre">x</span></code> and inactive elements from <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p>
+<ul class="simple">
+<li><p>The mask situation where both <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> are mask is also supported.</p></li>
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="n">x</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+   <span class="n">y</span><span class="p">:</span> <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>  <span class="n">y4</span>  <span class="n">y5</span>  <span class="n">y6</span>  <span class="n">y7</span>
+<span class="n">mask</span><span class="p">:</span>  <span class="n">T</span>   <span class="n">T</span>   <span class="n">F</span>   <span class="n">F</span>   <span class="n">T</span>   <span class="n">T</span>   <span class="n">T</span>   <span class="n">F</span>
+
+ <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
+ <span class="n">out</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">y2</span>  <span class="n">y3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">y7</span>
+</pre></div>
+</div>
+<section id="id26">
+<h2>Parameters<a class="headerlink" href="#id26" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x, y<span class="classifier">Union[PrimExpr, int, float]</span></dt><dd><p>The operands. If either one is a scalar, it will be automatically broadcast.</p>
+</dd>
+<dt>mask<span class="classifier">Optional[Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+</dl>
+</section>
+<section id="id27">
+<h2>Returns<a class="headerlink" href="#id27" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id28">
+<h2>Supported DType<a class="headerlink" href="#id28" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”, “bool8/16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id29">
+<h2>Examples<a class="headerlink" href="#id29" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsel</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsel</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsel</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">vb</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsel</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;3T5F&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsel</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id30">
+<h2>See Also<a class="headerlink" href="#id30" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vsel</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vshfl">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vshfl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vshfl" title="Permalink to this definition"></a></dt>
+<dd><p>Performs a rotate shift by element from high to low direction in vector <code class="docutils literal notranslate"><span class="pre">x</span></code>, with the
+shift number of the value of <code class="docutils literal notranslate"><span class="pre">shift</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># shift direction:   &lt;----</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+<span class="n">shift</span><span class="p">:</span> <span class="mi">2</span>
+
+  <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vshfl</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+  <span class="n">out</span><span class="p">:</span> <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>  <span class="n">x0</span>  <span class="n">x1</span>
+</pre></div>
+</div>
+<section id="id31">
+<h2>Parameters<a class="headerlink" href="#id31" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operand, should be a vector.</p>
+</dd>
+<dt>shift<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The shift value, should be a scalar.</p>
+</dd>
+</dl>
+</section>
+<section id="id32">
+<h2>Returns<a class="headerlink" href="#id32" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id33">
+<h2>Supported DType<a class="headerlink" href="#id33" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id34">
+<h2>Examples<a class="headerlink" href="#id34" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vshfl</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">scalar_var</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vshfl</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id35">
+<h2>See Also<a class="headerlink" href="#id35" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vshfl</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vbcast">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vbcast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lanes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vbcast" title="Permalink to this definition"></a></dt>
+<dd><p>Performs a broadcast operation on a scalar with dtype to generate a vector.</p>
+<ul class="simple">
+<li><p>The inactive elements of result vector are undefined.</p></li>
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    x(i32): 3
+      mask: T  T  T  T  F  F  F  F
+
+out = S.vbcast(S.i32(3))
+out(i32x8): 3  3  3  3  ?  ?  ?  ?
+</pre></div>
+</div>
+<section id="id36">
+<h2>Parameters<a class="headerlink" href="#id36" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operand.</p>
+</dd>
+<dt>mask<span class="classifier">Optional[Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+<dt>lanes<span class="classifier">Optional[int]</span></dt><dd><p>The lanes of result vector dtype. If omitted, will be automatically determined based on
+the type of input value.</p>
+</dd>
+</dl>
+</section>
+<section id="id37">
+<h2>Returns<a class="headerlink" href="#id37" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id38">
+<h2>Supported DType<a class="headerlink" href="#id38" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id39">
+<h2>Examples<a class="headerlink" href="#id39" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vbcast</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vbcast</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">fp16</span><span class="p">(</span><span class="mf">1.23</span><span class="p">))</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vbcast</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">fp32</span><span class="p">(</span><span class="mf">3.14159</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;3T5F&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vbcast</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">u32</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;T7F&quot;</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vbcast</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">u8</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vbcast</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vbcast</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id40">
+<h2>See Also<a class="headerlink" href="#id40" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vbcast</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vsldl">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vsldl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shift</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vsldl" title="Permalink to this definition"></a></dt>
+<dd><p>Shift left a unsigned immediate value shift for <code class="docutils literal notranslate"><span class="pre">x</span></code>, and pads the shift remained space
+with <code class="docutils literal notranslate"><span class="pre">y</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="c1"># shift direction:   &lt;----</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>  <span class="n">y3</span>  <span class="n">y4</span>  <span class="n">y5</span>  <span class="n">y6</span>  <span class="n">y7</span>
+<span class="n">shift</span><span class="p">:</span> <span class="mi">3</span>
+
+  <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsldl</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">shift</span><span class="p">)</span>
+  <span class="n">out</span><span class="p">:</span> <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>  <span class="n">y0</span>  <span class="n">y1</span>  <span class="n">y2</span>
+</pre></div>
+</div>
+<section id="id41">
+<h2>Parameters<a class="headerlink" href="#id41" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x, y<span class="classifier">Union[PrimExpr, int, float]</span></dt><dd><p>The operands. If either one is a scalar, it will be automatically broadcast. The <code class="docutils literal notranslate"><span class="pre">x</span></code> and
+<code class="docutils literal notranslate"><span class="pre">y</span></code> should be of the same type.</p>
+</dd>
+<dt>shift<span class="classifier">int</span></dt><dd><p>The unsigned immediate value for the shift left operation.</p>
+</dd>
+</dl>
+</section>
+<section id="id42">
+<h2>Returns<a class="headerlink" href="#id42" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id43">
+<h2>Supported DType<a class="headerlink" href="#id43" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id44">
+<h2>Examples<a class="headerlink" href="#id44" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsldl</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsldl</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id45">
+<h2>See Also<a class="headerlink" href="#id45" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vsldl</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vtbl">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vtbl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vtbl" title="Permalink to this definition"></a></dt>
+<dd><p>Constructs <code class="docutils literal notranslate"><span class="pre">table</span></code> with 2 ~ 4 vector (a, b), (a, b, c) or (a, b, c, d), reads each element
+of vector <code class="docutils literal notranslate"><span class="pre">indices</span></code> as an index to select the element from <code class="docutils literal notranslate"><span class="pre">table</span></code>, and places the indexed
+element in the corresponding element of result vector. If an index value is &gt;= the element
+count of the <code class="docutils literal notranslate"><span class="pre">table</span></code>, then places 0 in the corresponding element of result vector.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>      <span class="n">a</span><span class="p">:</span> <span class="n">t0</span>  <span class="n">t1</span>  <span class="n">t2</span>  <span class="n">t3</span>  <span class="n">t4</span>  <span class="n">t5</span>  <span class="n">t6</span>  <span class="n">t7</span>
+      <span class="n">b</span><span class="p">:</span> <span class="n">t8</span>  <span class="n">t9</span>  <span class="n">t10</span> <span class="n">t11</span> <span class="n">t12</span> <span class="n">t13</span> <span class="n">t14</span> <span class="n">t15</span>
+      <span class="n">c</span><span class="p">:</span> <span class="n">t16</span> <span class="n">t17</span> <span class="n">t18</span> <span class="n">t19</span> <span class="n">t20</span> <span class="n">t21</span> <span class="n">t22</span> <span class="n">t23</span>
+      <span class="n">d</span><span class="p">:</span> <span class="n">t24</span> <span class="n">t25</span> <span class="n">t26</span> <span class="n">t27</span> <span class="n">t28</span> <span class="n">t29</span> <span class="n">t30</span> <span class="n">t31</span>
+<span class="n">indices</span><span class="p">:</span> <span class="mi">1</span>   <span class="mi">1</span>   <span class="mi">5</span>   <span class="mi">7</span>   <span class="mi">3</span>   <span class="mi">10</span>  <span class="mi">99</span>  <span class="mi">100</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vtbl</span><span class="p">((</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">),</span> <span class="n">indices</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">t1</span>  <span class="n">t1</span>  <span class="n">t5</span>  <span class="n">t7</span>  <span class="n">t3</span>  <span class="n">t10</span> <span class="mi">0</span>   <span class="mi">0</span>
+</pre></div>
+</div>
+<section id="id46">
+<h2>Parameters<a class="headerlink" href="#id46" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>table<span class="classifier">Union[List[PrimExpr], Tuple[PrimExpr]]</span></dt><dd><p>A list of vector to indicate a table.</p>
+</dd>
+<dt>indices<span class="classifier">PrimExpr</span></dt><dd><p>The indices of table.</p>
+</dd>
+</dl>
+</section>
+<section id="id47">
+<h2>Returns<a class="headerlink" href="#id47" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id48">
+<h2>Supported DType<a class="headerlink" href="#id48" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id49">
+<h2>Examples<a class="headerlink" href="#id49" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vout</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vtbl</span><span class="p">((</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">vc</span><span class="p">,</span> <span class="n">vd</span><span class="p">),</span> <span class="n">index_vector</span><span class="p">)</span>
+<span class="n">vout</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vtbl</span><span class="p">((</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">vc</span><span class="p">),</span> <span class="n">index_vector</span><span class="p">)</span>
+<span class="n">vout</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vtbl</span><span class="p">((</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">),</span> <span class="n">index_vector</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id50">
+<h2>See Also<a class="headerlink" href="#id50" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vtbl, __vperm</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.permutation.vreplic">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.permutation.</span></span><span class="sig-name descname"><span class="pre">vreplic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.permutation.vreplic" title="Permalink to this definition"></a></dt>
+<dd><p>Uses the scalar <code class="docutils literal notranslate"><span class="pre">index</span></code> to choose one element from <code class="docutils literal notranslate"><span class="pre">x</span></code>, then replicates all elements of
+result vector by this element.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">x</span><span class="p">:</span> <span class="n">x0</span>  <span class="n">x1</span>  <span class="n">x2</span>  <span class="n">x3</span>  <span class="n">x4</span>  <span class="n">x5</span>  <span class="n">x6</span>  <span class="n">x7</span>
+<span class="n">index</span><span class="p">:</span> <span class="mi">3</span>
+
+  <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vreplic</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+  <span class="n">out</span><span class="p">:</span> <span class="n">x3</span>  <span class="n">x3</span>  <span class="n">x3</span>  <span class="n">x3</span>  <span class="n">x3</span>  <span class="n">x3</span>  <span class="n">x3</span>  <span class="n">x3</span>
+</pre></div>
+</div>
+<section id="id51">
+<h2>Parameters<a class="headerlink" href="#id51" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operand.</p>
+</dd>
+<dt>index<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The index should be a scalar.</p>
+</dd>
+</dl>
+</section>
+<section id="id52">
+<h2>Returns<a class="headerlink" href="#id52" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id53">
+<h2>Supported DType<a class="headerlink" href="#id53" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id54">
+<h2>Examples<a class="headerlink" href="#id54" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vreplic</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">scalar_var</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vreplic</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vreplic</span><span class="p">(</span><span class="n">va</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id55">
+<h2>See Also<a class="headerlink" href="#id55" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vreplic</p></li>
+</ul>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="miscellaneous.html" class="btn btn-neutral float-left" title="Miscellaneous" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="synchronization.html" class="btn btn-neutral float-right" title="Synchronization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

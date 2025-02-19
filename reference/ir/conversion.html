@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conversion &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Math" href="math.html" />
+    <link rel="prev" title="Compare" href="compare.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Builtin API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html">Arithmetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html">Bitwise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html">Compare</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Conversion</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.i16x32"><code class="docutils literal notranslate"><span class="pre">i16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.u16x32"><code class="docutils literal notranslate"><span class="pre">u16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.i32x16"><code class="docutils literal notranslate"><span class="pre">i32x16()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.i32x32"><code class="docutils literal notranslate"><span class="pre">i32x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.u32x16"><code class="docutils literal notranslate"><span class="pre">u32x16()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.u32x32"><code class="docutils literal notranslate"><span class="pre">u32x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.fp16x32"><code class="docutils literal notranslate"><span class="pre">fp16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.int16x32"><code class="docutils literal notranslate"><span class="pre">int16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.uint16x32"><code class="docutils literal notranslate"><span class="pre">uint16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.int32x16"><code class="docutils literal notranslate"><span class="pre">int32x16()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.int32x32"><code class="docutils literal notranslate"><span class="pre">int32x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.uint32x16"><code class="docutils literal notranslate"><span class="pre">uint32x16()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.uint32x32"><code class="docutils literal notranslate"><span class="pre">uint32x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.float16x32"><code class="docutils literal notranslate"><span class="pre">float16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.size_i16x32"><code class="docutils literal notranslate"><span class="pre">size_i16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.size_i32x16"><code class="docutils literal notranslate"><span class="pre">size_i32x16()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.size_i32x32"><code class="docutils literal notranslate"><span class="pre">size_i32x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.size_int16x32"><code class="docutils literal notranslate"><span class="pre">size_int16x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.size_int32x16"><code class="docutils literal notranslate"><span class="pre">size_int32x16()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.size_int32x32"><code class="docutils literal notranslate"><span class="pre">size_int32x32()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.cast"><code class="docutils literal notranslate"><span class="pre">cast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.i"><code class="docutils literal notranslate"><span class="pre">i()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.u"><code class="docutils literal notranslate"><span class="pre">u()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.reinterpret"><code class="docutils literal notranslate"><span class="pre">reinterpret()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.vxtl"><code class="docutils literal notranslate"><span class="pre">vxtl()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.conversion.vxth"><code class="docutils literal notranslate"><span class="pre">vxth()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="math.html">Math</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html">Memory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html">Miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html">Permuation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html">Synchronization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Builtin API</a> &raquo;</li>
+      <li>Conversion</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/reference/ir/conversion.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tvm.aipu.script.ir.conversion">
+<span id="conversion"></span><h1>Conversion<a class="headerlink" href="#module-tvm.aipu.script.ir.conversion" title="Permalink to this heading"></a></h1>
+<p>The conversion part of IR APIs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.i16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">i16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.i16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.u16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">u16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.u16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id1">
+<h2>Parameters<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Returns<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.i32x16">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">i32x16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.i32x16" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id3">
+<h2>Parameters<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id4">
+<h2>Returns<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.i32x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">i32x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.i32x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id5">
+<h2>Parameters<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id6">
+<h2>Returns<a class="headerlink" href="#id6" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.u32x16">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">u32x16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.u32x16" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id7">
+<h2>Parameters<a class="headerlink" href="#id7" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id8">
+<h2>Returns<a class="headerlink" href="#id8" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.u32x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">u32x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.u32x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id9">
+<h2>Parameters<a class="headerlink" href="#id9" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id10">
+<h2>Returns<a class="headerlink" href="#id10" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.fp16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">fp16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.fp16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id11">
+<h2>Parameters<a class="headerlink" href="#id11" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id12">
+<h2>Returns<a class="headerlink" href="#id12" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.int16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">int16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.int16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id13">
+<h2>Parameters<a class="headerlink" href="#id13" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id14">
+<h2>Returns<a class="headerlink" href="#id14" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.uint16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">uint16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.uint16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id15">
+<h2>Parameters<a class="headerlink" href="#id15" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id16">
+<h2>Returns<a class="headerlink" href="#id16" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.int32x16">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">int32x16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.int32x16" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id17">
+<h2>Parameters<a class="headerlink" href="#id17" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id18">
+<h2>Returns<a class="headerlink" href="#id18" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.int32x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">int32x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.int32x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id19">
+<h2>Parameters<a class="headerlink" href="#id19" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id20">
+<h2>Returns<a class="headerlink" href="#id20" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.uint32x16">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">uint32x16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.uint32x16" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id21">
+<h2>Parameters<a class="headerlink" href="#id21" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id22">
+<h2>Returns<a class="headerlink" href="#id22" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.uint32x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">uint32x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.uint32x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id23">
+<h2>Parameters<a class="headerlink" href="#id23" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id24">
+<h2>Returns<a class="headerlink" href="#id24" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.float16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">float16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.float16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable with the specified type and initial value.</p>
+<section id="id25">
+<h2>Parameters<a class="headerlink" href="#id25" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id26">
+<h2>Returns<a class="headerlink" href="#id26" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The new created variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.size_i16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">size_i16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.size_i16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable that represent a vector index size whose value
+is always greater or equal to zero.</p>
+<section id="id27">
+<h2>Parameters<a class="headerlink" href="#id27" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, int, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id28">
+<h2>Returns<a class="headerlink" href="#id28" title="Permalink to this heading"></a></h2>
+<p>ret : tir.SizeVar
+The new created size variable.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.size_i32x16">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">size_i32x16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.size_i32x16" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable that represent a vector index size whose value
+is always greater or equal to zero.</p>
+<section id="id29">
+<h2>Parameters<a class="headerlink" href="#id29" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, int, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id30">
+<h2>Returns<a class="headerlink" href="#id30" title="Permalink to this heading"></a></h2>
+<p>ret : tir.SizeVar
+The new created size variable.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.size_i32x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">size_i32x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.size_i32x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable that represent a vector index size whose value
+is always greater or equal to zero.</p>
+<section id="id31">
+<h2>Parameters<a class="headerlink" href="#id31" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, int, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id32">
+<h2>Returns<a class="headerlink" href="#id32" title="Permalink to this heading"></a></h2>
+<p>ret : tir.SizeVar
+The new created size variable.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.size_int16x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">size_int16x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.size_int16x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable that represent a vector index size whose value
+is always greater or equal to zero.</p>
+<section id="id33">
+<h2>Parameters<a class="headerlink" href="#id33" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, int, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id34">
+<h2>Returns<a class="headerlink" href="#id34" title="Permalink to this heading"></a></h2>
+<p>ret : tir.SizeVar
+The new created size variable.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.size_int32x16">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">size_int32x16</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.size_int32x16" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable that represent a vector index size whose value
+is always greater or equal to zero.</p>
+<section id="id35">
+<h2>Parameters<a class="headerlink" href="#id35" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, int, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id36">
+<h2>Returns<a class="headerlink" href="#id36" title="Permalink to this heading"></a></h2>
+<p>ret : tir.SizeVar
+The new created size variable.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.size_int32x32">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">size_int32x32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.size_int32x32" title="Permalink to this definition"></a></dt>
+<dd><p>Create a new variable that represent a vector index size whose value
+is always greater or equal to zero.</p>
+<section id="id37">
+<h2>Parameters<a class="headerlink" href="#id37" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>init_value<span class="classifier">Union[tir.PrimExpr, int, list, tuple]</span></dt><dd><p>The initial value of the new variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id38">
+<h2>Returns<a class="headerlink" href="#id38" title="Permalink to this heading"></a></h2>
+<p>ret : tir.SizeVar
+The new created size variable.</p>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.cast">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">cast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saturate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.cast" title="Permalink to this definition"></a></dt>
+<dd><p>Converts the given expression or value to the specified type.</p>
+<ul class="simple">
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id39">
+<h2>Parameters<a class="headerlink" href="#id39" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">Union[tir.PrimExpr, Literal[“inf”, “-inf”, “nan”], int, float, list, tuple]</span></dt><dd><p>The expression or value that needs to be cast.</p>
+</dd>
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The target data type. If it is set to a scalar one when the given expression or value is a
+vector, it will be changed to a vector one with the lanes of the given expression or value
+automatically.</p>
+</dd>
+<dt>part<span class="classifier">Optional[str]</span></dt><dd><p>Only used for the vector conversion, used to specify which part data of the given expression
+or value needs to be converted.</p>
+<ul class="simple">
+<li><p><strong>all:</strong> Represent all data.</p></li>
+<li><p><strong>low, high, even, odd:</strong> Represent the corresponding half data.</p></li>
+<li><p><strong>ll, lh, hl, hh:</strong> Represent the corresponding quarter data.</p></li>
+</ul>
+</dd>
+<dt>saturate<span class="classifier">Optional[bool]</span></dt><dd><p>Whether the result needs to be saturated or not. Only used when the target data type is
+integer, and its range does not complete contain that of the source data type, e.g.,
+<code class="docutils literal notranslate"><span class="pre">i8</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">u16</span></code>, <code class="docutils literal notranslate"><span class="pre">(i32x8,</span> <span class="pre">i32x8)</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">i16x16</span></code>. <code class="docutils literal notranslate"><span class="pre">None</span></code> means auto set according to
+best performance, i.e., when casting floating to integer, <code class="docutils literal notranslate"><span class="pre">True</span></code> for
+<code class="docutils literal notranslate"><span class="pre">float16</span></code>/<code class="docutils literal notranslate"><span class="pre">float32</span></code> to <code class="docutils literal notranslate"><span class="pre">int32</span></code> stage, <code class="docutils literal notranslate"><span class="pre">False</span></code> for <code class="docutils literal notranslate"><span class="pre">int32</span></code> to the target data type
+stage, <code class="docutils literal notranslate"><span class="pre">False</span></code> when casting in other situations.</p>
+</dd>
+</dl>
+</section>
+<section id="id40">
+<h2>Returns<a class="headerlink" href="#id40" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The result expression with the needed type.</p>
+</dd>
+</dl>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">scalar_b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">scalar_var</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+<span class="n">fp32_100</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+<span class="n">vindex0_u</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">vindex0</span><span class="p">,</span> <span class="s2">&quot;uint16x16&quot;</span><span class="p">)</span>
+<span class="n">inp1_fp32_l</span><span class="p">,</span> <span class="n">inp1_fp32_h</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">inp1</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">),</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">inp1</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">)</span>
+<span class="n">va_fp32_e</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;fp32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;even&quot;</span><span class="p">)</span>
+<span class="n">va_fp32_o</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="s2">&quot;fp32&quot;</span><span class="p">,</span> <span class="n">part</span><span class="o">=</span><span class="s2">&quot;odd&quot;</span><span class="p">)</span>
+<span class="n">va_fp16x16</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">((</span><span class="n">va_fp32x8</span><span class="p">,</span> <span class="n">va_fp32x8</span><span class="p">),</span> <span class="s2">&quot;fp16&quot;</span><span class="p">)</span>
+<span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">saturate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../language_basics/types.html"><span class="doc">Types</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.i">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">i</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.i" title="Permalink to this definition"></a></dt>
+<dd><p>Converts the given expression to the signed type with the same bits and lanes.</p>
+<ul class="simple">
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id41">
+<h2>Parameters<a class="headerlink" href="#id41" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">tir.PrimExpr</span></dt><dd><p>The expression that needs to be cast to signed type.</p>
+</dd>
+</dl>
+</section>
+<section id="id42">
+<h2>Returns<a class="headerlink" href="#id42" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The result expression with the signed type.</p>
+</dd>
+</dl>
+</section>
+<section id="supported-dtype">
+<h2>Supported DType<a class="headerlink" href="#supported-dtype" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id43">
+<h2>Examples<a class="headerlink" href="#id43" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a0_i32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">i</span><span class="p">(</span><span class="n">a_ptr_u32</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">a0_i16</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">i</span><span class="p">(</span><span class="n">a_ptr_u16</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">vector_b</span><span class="p">)</span>
+<span class="n">a0_i8</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">i</span><span class="p">(</span><span class="n">a_ptr_u8</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id44">
+<h2>See Also<a class="headerlink" href="#id44" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../language_basics/types.html"><span class="doc">Types</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.u">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">u</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.u" title="Permalink to this definition"></a></dt>
+<dd><p>Converts the given expression to the unsigned type with the same bits and lanes.</p>
+<ul class="simple">
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id45">
+<h2>Parameters<a class="headerlink" href="#id45" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">tir.PrimExpr</span></dt><dd><p>The expression that needs to be cast to unsigned type.</p>
+</dd>
+</dl>
+</section>
+<section id="id46">
+<h2>Returns<a class="headerlink" href="#id46" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">tir.PrimExpr</span></dt><dd><p>The result expression with the unsigned type.</p>
+</dd>
+</dl>
+</section>
+<section id="id47">
+<h2>Supported DType<a class="headerlink" href="#id47" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id48">
+<h2>Examples<a class="headerlink" href="#id48" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a0_u32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">u</span><span class="p">(</span><span class="n">a_ptr_i32</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">a0_u16</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">u</span><span class="p">(</span><span class="n">a_ptr_i16</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">vector_b</span><span class="p">)</span>
+<span class="n">a0_u8</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">u</span><span class="p">(</span><span class="n">a_ptr_i8</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id49">
+<h2>See Also<a class="headerlink" href="#id49" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../language_basics/types.html"><span class="doc">Types</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.reinterpret">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">reinterpret</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.reinterpret" title="Permalink to this definition"></a></dt>
+<dd><p>Reinterprets the given expression to the specific data type.</p>
+<ul class="simple">
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id50">
+<h2>Parameters<a class="headerlink" href="#id50" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">Union[Pointer, PrimExpr, int, float]</span></dt><dd><p>The expression or value that need to be reinterpreted.</p>
+</dd>
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The target data type.</p>
+</dd>
+</dl>
+</section>
+<section id="id51">
+<h2>Returns<a class="headerlink" href="#id51" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id52">
+<h2>Examples<a class="headerlink" href="#id52" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a0_u32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">reinterpret</span><span class="p">(</span><span class="n">a_ptr_i32</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;u32&quot;</span><span class="p">)</span>
+<span class="n">a0_i16</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">reinterpret</span><span class="p">(</span><span class="n">a_ptr_u16</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">vector_b</span><span class="p">,</span> <span class="s2">&quot;i16&quot;</span><span class="p">)</span>
+<span class="n">a0_u8</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">reinterpret</span><span class="p">(</span><span class="n">a_ptr_i8</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;u8&quot;</span><span class="p">)</span>
+<span class="n">a0_u32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">reinterpret</span><span class="p">(</span><span class="mf">1.2345</span><span class="p">,</span> <span class="s2">&quot;u32&quot;</span><span class="p">)</span>
+<span class="n">a0_fp16</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">reinterpret</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">(</span><span class="mf">1.2345</span><span class="p">),</span> <span class="s2">&quot;fp16&quot;</span><span class="p">)</span>
+<span class="n">a0_fp32x8</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">reinterpret</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">u32x8</span><span class="p">(</span><span class="mi">123</span><span class="p">),</span> <span class="s2">&quot;fp32x8&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id53">
+<h2>See Also<a class="headerlink" href="#id53" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../language_basics/types.html"><span class="doc">Types</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.vxtl">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">vxtl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.vxtl" title="Permalink to this definition"></a></dt>
+<dd><p>Extends the low half elements of <code class="docutils literal notranslate"><span class="pre">x</span></code> to double size. Sign-extends if signed dtype else
+zero-extends.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">x</span><span class="p">(</span><span class="n">i16x16</span><span class="p">):</span> <span class="mi">1</span>  <span class="mi">2</span>  <span class="mi">3</span>  <span class="mi">4</span>  <span class="mi">5</span>  <span class="mi">6</span>  <span class="mi">7</span>  <span class="mi">8</span>  <span class="mi">9</span>  <span class="mi">10</span> <span class="mi">11</span> <span class="mi">12</span> <span class="mi">13</span> <span class="mi">14</span> <span class="mi">15</span> <span class="mi">16</span>
+
+<span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="mi">1</span>     <span class="mi">2</span>     <span class="mi">3</span>     <span class="mi">4</span>     <span class="mi">5</span>     <span class="mi">6</span>     <span class="mi">7</span>     <span class="mi">8</span>
+</pre></div>
+</div>
+<section id="id54">
+<h2>Parameters<a class="headerlink" href="#id54" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operands.</p>
+</dd>
+</dl>
+</section>
+<section id="id55">
+<h2>Returns<a class="headerlink" href="#id55" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id56">
+<h2>Supported DType<a class="headerlink" href="#id56" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16”, “uint8/16”.</p>
+</div></blockquote>
+</section>
+<section id="id57">
+<h2>Examples<a class="headerlink" href="#id57" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">vx</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id58">
+<h2>See Also<a class="headerlink" href="#id58" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vsxtl, __vuxtl</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.conversion.vxth">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.conversion.</span></span><span class="sig-name descname"><span class="pre">vxth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.conversion.vxth" title="Permalink to this definition"></a></dt>
+<dd><p>Extends the high half elements of <code class="docutils literal notranslate"><span class="pre">x</span></code> to double size. Sign-extends if signed dtype else
+zero-extends.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> <span class="n">x</span><span class="p">(</span><span class="n">i16x16</span><span class="p">):</span> <span class="mi">1</span>  <span class="mi">2</span>  <span class="mi">3</span>  <span class="mi">4</span>  <span class="mi">5</span>  <span class="mi">6</span>  <span class="mi">7</span>  <span class="mi">8</span>  <span class="mi">9</span>  <span class="mi">10</span> <span class="mi">11</span> <span class="mi">12</span> <span class="mi">13</span> <span class="mi">14</span> <span class="mi">15</span> <span class="mi">16</span>
+
+<span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxth</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">out</span><span class="p">(</span><span class="n">i32x8</span><span class="p">):</span> <span class="mi">9</span>     <span class="mi">10</span>    <span class="mi">11</span>    <span class="mi">12</span>    <span class="mi">13</span>    <span class="mi">14</span>    <span class="mi">15</span>    <span class="mi">16</span>
+</pre></div>
+</div>
+<section id="id59">
+<h2>Parameters<a class="headerlink" href="#id59" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>x<span class="classifier">PrimExpr</span></dt><dd><p>The operands.</p>
+</dd>
+</dl>
+</section>
+<section id="id60">
+<h2>Returns<a class="headerlink" href="#id60" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id61">
+<h2>Supported DType<a class="headerlink" href="#id61" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16”, “uint8/16”.</p>
+</div></blockquote>
+</section>
+<section id="id62">
+<h2>Examples<a class="headerlink" href="#id62" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxth</span><span class="p">(</span><span class="n">vx</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id63">
+<h2>See Also<a class="headerlink" href="#id63" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vsxth, __vuxth</p></li>
+</ul>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="compare.html" class="btn btn-neutral float-left" title="Compare" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="math.html" class="btn btn-neutral float-right" title="Math" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

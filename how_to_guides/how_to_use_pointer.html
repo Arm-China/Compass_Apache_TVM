@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use a Pointer &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Use DMA" href="how_to_use_dma.html" />
+    <link rel="prev" title="How to Use Subfunctions" href="how_to_use_subfunctions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Use a Pointer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#define-a-pointer">Define a Pointer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-pointer-in-function-argument">Use Pointer in Function Argument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#match-pointer-with-specific-shape">Match Pointer with Specific Shape</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#convert-scalar-pointer-to-vector-pointer">Convert Scalar Pointer to Vector Pointer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-pointer-with-offset">Use Pointer with Offset</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#use-pointer-and-buffer-in-vload-dma-copy">Use Pointer and Buffer in vload, dma_copy</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Use a Pointer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_use_pointer.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-use-a-pointer">
+<h1>How to Use a Pointer<a class="headerlink" href="#how-to-use-a-pointer" title="Permalink to this heading"></a></h1>
+<p>This section describes how to use a pointer in Compass DSL.</p>
+<p>Here is the outline:</p>
+<ul class="simple">
+<li><p>Define a pointer</p></li>
+<li><p>Use S.ptr(dtype) as the function argument</p></li>
+<li><p>Match ptr with the specific shape</p></li>
+<li><p>Convert Scalar Ptr to Vector ptr</p></li>
+<li><p>Use ptr with offset</p></li>
+<li><p>Use ptr and buffer in vload, dma_copy</p></li>
+</ul>
+<section id="define-a-pointer">
+<h2>Define a Pointer<a class="headerlink" href="#define-a-pointer" title="Permalink to this heading"></a></h2>
+<p>In Compass DSL, we define a pointer with dtype and scope.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;global&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul>
+<li><p>dtype:</p>
+<ul class="simple">
+<li><p>Scalar dtype:<code class="docutils literal notranslate"><span class="pre">&quot;int8&quot;,&quot;uint8&quot;,&quot;int16&quot;,&quot;uint6&quot;,&quot;int32&quot;,&quot;uint32&quot;,&quot;float16&quot;,&quot;float32&quot;,&quot;void&quot;</span></code></p></li>
+<li><p>Vector dtype:<code class="docutils literal notranslate"><span class="pre">&quot;int8x32&quot;,&quot;uint8x32&quot;,&quot;int16x16&quot;,&quot;uint16x16&quot;,&quot;int32x8&quot;,&quot;uint32x8&quot;,&quot;float16x16&quot;,&quot;float32x8&quot;</span></code></p></li>
+</ul>
+<p>You can also see dtype information in <a class="reference internal" href="../language_basics/types.html"><span class="doc std std-doc">Data Type</span></a>.</p>
+<p><strong>Note</strong>: If you want to use the void pointer, set <code class="docutils literal notranslate"><span class="pre">dtype=&quot;void&quot;</span></code>.</p>
+</li>
+<li><p>scope:</p>
+<ul class="simple">
+<li><p><strong>global:</strong> Represents the global DDR space of Address Space Extension region ID (ASID) 0.</p></li>
+<li><p><strong>global.1:</strong> Represents the global DDR space of ASID 1.</p></li>
+<li><p><strong>global.2:</strong> Represents the global DDR space of ASID 2.</p></li>
+<li><p><strong>global.3:</strong> Represents the global DDR space of ASID 3.</p></li>
+<li><p><strong>private:</strong> Represents the stack space of each TEC.</p></li>
+<li><p><strong>lsram:</strong> Represents the local SRAM space of each TEC.</p></li>
+<li><p><strong>shared:</strong> Represents the shared SRAM space between all TECs in the same core.</p></li>
+<li><p><strong>constant:</strong> Represents the global constant DDR space.</p></li>
+</ul>
+<p>For more information about memory hierarchy, see <a class="reference internal" href="../explanation/zhouyi_npu_arch.html"><span class="doc std std-doc">Zhouyi NPU Architecture</span></a>.</p>
+</li>
+</ul>
+</section>
+<section id="use-pointer-in-function-argument">
+<h2>Use Pointer in Function Argument<a class="headerlink" href="#use-pointer-in-function-argument" title="Permalink to this heading"></a></h2>
+<p>You can use <code class="docutils literal notranslate"><span class="pre">S.ptr(dtype)</span></code>, with specific dtype, but without specific shape at the function argument. For 1-Dimension data, you can directly access the data element with index:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The generated code:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="match-pointer-with-specific-shape">
+<h2>Match Pointer with Specific Shape<a class="headerlink" href="#match-pointer-with-specific-shape" title="Permalink to this heading"></a></h2>
+<p>For multi-dimension data, you can use <code class="docutils literal notranslate"><span class="pre">S.match_buffer</span></code> to match the ptr with the specific shape.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">B</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">h</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">match_buffer</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">match_buffer</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="n">w</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>In the above example, <code class="docutils literal notranslate"><span class="pre">A</span></code> is a <code class="docutils literal notranslate"><span class="pre">tir.Pointer</span></code>, and <code class="docutils literal notranslate"><span class="pre">a</span></code> is a <code class="docutils literal notranslate"><span class="pre">tir.Buffer</span></code>, which supports multi-dimension index access <code class="docutils literal notranslate"><span class="pre">a[i,</span> <span class="pre">j]</span></code>.</p>
+<p>The generated code:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">h</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">w</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="n">b</span><span class="p">[((</span><span class="n">j</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">h</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[((</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">w</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">j</span><span class="p">)];</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="convert-scalar-pointer-to-vector-pointer">
+<h2>Convert Scalar Pointer to Vector Pointer<a class="headerlink" href="#convert-scalar-pointer-to-vector-pointer" title="Permalink to this heading"></a></h2>
+<p>Here is the first example with scalar dtype</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The generated code:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Here is the example with vector dtype. Note that the tail case is with scalar dtype.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">):</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">as_ptr</span><span class="p">(</span><span class="s2">&quot;int8x32&quot;</span><span class="p">)</span>
+    <span class="n">vb</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">as_ptr</span><span class="p">(</span><span class="s2">&quot;int8x32&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">//</span> <span class="mi">32</span><span class="p">):</span>
+        <span class="n">vb</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">va</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="n">tail_offset</span> <span class="o">=</span> <span class="n">n</span> <span class="o">//</span> <span class="mi">32</span> <span class="o">*</span> <span class="mi">32</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">%</span> <span class="mi">32</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="n">tail_offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">tail_offset</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+<p><strong>Note</strong>: If you want to use the vector dtype, you should deal with the non-divisible cases manually.</p>
+</section>
+<section id="use-pointer-with-offset">
+<h2>Use Pointer with Offset<a class="headerlink" href="#use-pointer-with-offset" title="Permalink to this heading"></a></h2>
+<p>A simple example shows how to create a ptr with offset.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">8</span>       <span class="c1"># create a new ptr with offset</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The generated code:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a1</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is the sample implementation of <code class="docutils literal notranslate"><span class="pre">b[0:8]</span> <span class="pre">=</span> <span class="pre">a[8:16]</span></code>.</p>
+</section>
+<section id="use-pointer-and-buffer-in-vload-dma-copy">
+<h2>Use Pointer and Buffer in vload, dma_copy<a class="headerlink" href="#use-pointer-and-buffer-in-vload-dma-copy" title="Permalink to this heading"></a></h2>
+<p>For <code class="docutils literal notranslate"><span class="pre">S.vload,</span> <span class="pre">S.vstore,</span> <span class="pre">S.dma_copy</span></code>, they support both types <code class="docutils literal notranslate"><span class="pre">tir.Pointer/tir.Buffer</span></code> for addr arguments.</p>
+<ul>
+<li><p>If offset=0, directly use it:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+  <span class="n">lsram</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_buffer</span><span class="p">([</span><span class="mi">512</span><span class="p">],</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+  <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="c1"># a: ptr</span>
+  <span class="n">vx</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">lsram</span><span class="p">)</span> <span class="c1"># lsram: buffer</span>
+
+  <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>If offset is not zero, use <code class="docutils literal notranslate"><span class="pre">buffer.addr_of(offset)</span></code> or <code class="docutils literal notranslate"><span class="pre">ptr</span> <span class="pre">+</span> <span class="pre">offset</span></code>:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="c1"># buffer</span>
+    <span class="n">lsram</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_buffer</span><span class="p">([</span><span class="mi">32</span><span class="p">],</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+    <span class="c1"># ptr</span>
+    <span class="n">lsram_ptr</span> <span class="o">=</span> <span class="n">lsram</span><span class="o">.</span><span class="n">addr_of</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">offset</span> <span class="o">=</span> <span class="mi">8</span>
+
+    <span class="c1"># lsram.addr_of(offset)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram</span><span class="o">.</span><span class="n">addr_of</span><span class="p">(</span><span class="n">offset</span><span class="p">),</span> <span class="n">b</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">lsram</span><span class="o">.</span><span class="n">addr_of</span><span class="p">(</span><span class="n">offset</span><span class="p">))</span>
+    <span class="c1"># lsram_ptr + offset</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram_ptr</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="n">b</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">lsram_ptr</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_use_subfunctions.html" class="btn btn-neutral float-left" title="How to Use Subfunctions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_use_dma.html" class="btn btn-neutral float-right" title="How to Use DMA" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

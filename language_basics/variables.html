@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Variables &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Types" href="types.html" />
+    <link rel="prev" title="Functions" href="functions.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="functions.html">Functions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#literal">Literal</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#scalar-literal">Scalar Literal</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#default-type">Default Type</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#explicit-type">Explicit Type</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#vector-literal">Vector Literal</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#variable">Variable</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#variable-declaration">Variable Declaration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#variable-reassignment-update-value">Variable Reassignment (Update Value)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#variable-access-lookup-scope">Variable Access/Lookup (Scope)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#example-1">Example 1</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#example-2">Example 2</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generic-principle-for-local-scoping-of-variables">Generic Principle for Local Scoping of Variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Variables</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/language_basics/variables.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="variables">
+<h1>Variables<a class="headerlink" href="#variables" title="Permalink to this heading"></a></h1>
+<section id="literal">
+<h2>Literal<a class="headerlink" href="#literal" title="Permalink to this heading"></a></h2>
+<section id="scalar-literal">
+<h3>Scalar Literal<a class="headerlink" href="#scalar-literal" title="Permalink to this heading"></a></h3>
+<section id="default-type">
+<h4>Default Type<a class="headerlink" href="#default-type" title="Permalink to this heading"></a></h4>
+<p>If you directly write the integer and float scalar literal, the default data type will be <code class="docutils literal notranslate"><span class="pre">S.int32</span></code> and <code class="docutils literal notranslate"><span class="pre">S.float32</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>     <span class="c1"># S.int32</span>
+<span class="n">y</span> <span class="o">=</span> <span class="mf">3.14</span>  <span class="c1"># S.float32</span>
+</pre></div>
+</div>
+</section>
+<section id="explicit-type">
+<h4>Explicit Type<a class="headerlink" href="#explicit-type" title="Permalink to this heading"></a></h4>
+<p>You can also explicitly indicate the datatype:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int8</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">float16</span><span class="p">(</span><span class="mf">1.2</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="vector-literal">
+<h3>Vector Literal<a class="headerlink" href="#vector-literal" title="Permalink to this heading"></a></h3>
+<p>Vector literals can be used to create a vector from a list of scalars.</p>
+<ol class="arabic">
+<li><p>Initialize with a single scalar</p>
+<p>In this case, the scalar value is replicated across all lanes of the vector.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int32x8</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Initialize with a list of scalars</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int32x8</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>The total number of literals should be the same lane of the datatype. If not, here is an example:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int32x8</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="c1">#error: too few elements in vector initialization (expected 8 elements, have 4)</span>
+</pre></div>
+</div>
+<p><strong>Note</strong>: The <code class="docutils literal notranslate"><span class="pre">expr</span></code> in S.dtype(expr) should be literal, if not, please move the data construction outside the primfunc:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">))</span>
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">():</span>
+    <span class="n">xxx</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int8x32</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="variable">
+<h2>Variable<a class="headerlink" href="#variable" title="Permalink to this heading"></a></h2>
+<section id="variable-declaration">
+<h3>Variable Declaration<a class="headerlink" href="#variable-declaration" title="Permalink to this heading"></a></h3>
+<ol class="arabic">
+<li><p>Variable declaration with init_value</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>        <span class="c1"># int32</span>
+<span class="n">y</span> <span class="o">=</span> <span class="mf">3.14</span>     <span class="c1"># float32</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int8</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">uint8</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">float16</span><span class="p">(</span><span class="mf">1.2</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>You can declare multiple variables in one line:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="variable-reassignment-update-value">
+<h3>Variable Reassignment (Update Value)<a class="headerlink" href="#variable-reassignment-update-value" title="Permalink to this heading"></a></h3>
+<ol class="arabic">
+<li><p>Duplicating assignments for one variable is not allowed.</p>
+<p>The left handside of assignment cannot have duplicated variables.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">a</span><span class="p">,</span><span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span><span class="mi">2</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">error:</span> <span class="pre">Duplicate</span> <span class="pre">vars</span> <span class="pre">assigned.</span></code></p>
+</li>
+<li><p>If you reassign a variable, the new value dtype should be the same as the origin dtype</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">x</span> <span class="o">=</span> <span class="mi">2</span>   <span class="c1"># ok, same dtype</span>
+</pre></div>
+</div>
+<p>It will throw an error if you reassign with different dtype:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">x</span> <span class="o">=</span> <span class="mf">3.14</span>
+<span class="c1">#error: Type mismatch assignment: &quot;int32&quot; vs. &quot;float32&quot;, need to do the explicit type conversion for the right hand side(i.e., new value).</span>
+</pre></div>
+</div>
+<p>You should perform explicit type conversion.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mf">3.14</span><span class="p">)</span>   <span class="c1">#ok, explicit type cast</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="variable-access-lookup-scope">
+<h3>Variable Access/Lookup (Scope)<a class="headerlink" href="#variable-access-lookup-scope" title="Permalink to this heading"></a></h3>
+<p><strong>What is the scope of a variable?</strong></p>
+<p>The scope of a variable is its lifetime in the program. This means that the scope of a variable is the block of code in the entire program where the variable is declared, used, and can be modified.</p>
+<p><code class="docutils literal notranslate"><span class="pre">The</span> <span class="pre">Variable</span> <span class="pre">scope</span> <span class="pre">in</span> <span class="pre">Compass</span> <span class="pre">DSL</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">same</span> <span class="pre">as</span> <span class="pre">that</span> <span class="pre">in</span> <span class="pre">C</span></code>.</p>
+<p>In this section, you will learn how local variables work in C/Compass DSL.</p>
+<section id="example-1">
+<h4>Example 1<a class="headerlink" href="#example-1" title="Permalink to this heading"></a></h4>
+<p>Here is the first example:</p>
+<div class="highlight-C notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>In C, you delimit a block of code by {}. The inner block is able to access the value of x that is declared in the outter block, and modify it by adding 1 to it.</p>
+<p>In Compass DSL, the if statement will create an inner block.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>The inner block can access the <code class="docutils literal notranslate"><span class="pre">x</span></code> and modify it. The final x will be 11.</p>
+</section>
+<section id="example-2">
+<h4>Example 2<a class="headerlink" href="#example-2" title="Permalink to this heading"></a></h4>
+<p>Here is another related example.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">7</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="n">print</span><span class="p">(</span><span class="s">&quot;x is %d&quot;</span><span class="p">,</span><span class="n">x</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>In this program, <code class="docutils literal notranslate"><span class="pre">x</span></code> is initialized in the inner block, and we are trying to access and print the value of the inner block’s <code class="docutils literal notranslate"><span class="pre">x</span></code> on the outter block. When you compile this code, you’ll get the error <code class="docutils literal notranslate"><span class="pre">error:</span> <span class="pre">'x'</span> <span class="pre">undeclared</span></code>. This is because the variable <code class="docutils literal notranslate"><span class="pre">x</span></code> is declared in the inner block and its scope is limited to the inner block. In other words, it is <code class="docutils literal notranslate"><span class="pre">local</span></code> to the inner block and cannot be accessed from the outter block.</p>
+<p>In Compass DSL, the similar example is:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="p">(</span><span class="n">cond</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>   <span class="c1"># error: name &#39;x&#39; is not defined</span>
+</pre></div>
+</div>
+<p>You’ll get the error for the last line:  <code class="docutils literal notranslate"><span class="pre">error:</span> <span class="pre">name</span> <span class="pre">'x'</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">defined</span></code>.</p>
+<p>Instead, you can declare x and initialize it at the beginning:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>       <span class="c1">#init x in the outter block</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">cond</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">a</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>   <span class="c1"># OK</span>
+</pre></div>
+</div>
+</section>
+<section id="generic-principle-for-local-scoping-of-variables">
+<h4>Generic Principle for Local Scoping of Variables<a class="headerlink" href="#generic-principle-for-local-scoping-of-variables" title="Permalink to this heading"></a></h4>
+<p>Based on the above examples, the generic principle for local scoping of variables is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="o">/*</span><span class="n">OUTER</span> <span class="n">BLOCK</span><span class="o">*/</span>
+    <span class="p">{</span>
+        <span class="o">//</span><span class="n">contents</span> <span class="n">of</span> <span class="n">the</span> <span class="n">outer</span> <span class="n">block</span> <span class="n">just</span> <span class="n">before</span> <span class="n">the</span> <span class="n">start</span> <span class="n">of</span> <span class="n">this</span> <span class="n">block</span>
+        <span class="o">//</span><span class="n">CAN</span> <span class="n">be</span> <span class="n">accessed</span> <span class="n">here</span>
+
+        <span class="o">/*</span><span class="n">INNER</span> <span class="n">BLOCK</span><span class="o">*/</span>
+    <span class="p">}</span>
+    <span class="o">//</span><span class="n">contents</span> <span class="n">of</span> <span class="n">the</span> <span class="n">inner</span> <span class="n">block</span> <span class="n">are</span> <span class="n">NOT</span> <span class="n">accessible</span> <span class="n">here</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="functions.html" class="btn btn-neutral float-left" title="Functions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="types.html" class="btn btn-neutral float-right" title="Types" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

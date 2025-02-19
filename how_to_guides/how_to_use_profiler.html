@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use Profiler &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Debug with Python" href="how_to_debug_with_python.html" />
+    <link rel="prev" title="How to Use RPC" href="how_to_use_rpc.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Use Profiler</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#insert-stubs-into-dsl-programs">1. Insert Stubs into DSL Programs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#setup-rpc-environment">2. Setup RPC Environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-profile-interface">3. Run Profile Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#view-performance-reports">4. View Performance Reports</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Use Profiler</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_use_profiler.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-use-profiler">
+<h1>How to Use Profiler<a class="headerlink" href="#how-to-use-profiler" title="Permalink to this heading"></a></h1>
+<p>In Compass DSL, program performance is a very important indicator. In the process of program writing, we need to constantly optimize the performance of the program. When optimizing, in addition to knowing the performance of the entire program, when analyzing performance bottlenecks, you also need to know the number of cycles of a certain piece of code.</p>
+<p>Therefore, we provide the profile interface to obtain the performance data of the program. This interface can not only monitor the performance of the entire program, but also obtain performance data of specified code fragments by instrumenting the program.</p>
+<p>This interface uses the RPC function (for the RPC part, please refer to <a class="reference internal" href="how_to_use_rpc.html"><span class="doc std std-doc">How to use RPC</span></a>) to run the program on a real device, and automatically generates a performance data report at the end.</p>
+<p><strong>Table of Contents</strong>:</p>
+<ol class="arabic simple">
+<li><p>Insert Stubs into DSL Programs</p></li>
+<li><p>Setup RPC Environment</p></li>
+<li><p>Run Profile Interface</p></li>
+<li><p>View Performance Reports</p></li>
+</ol>
+<p>This article will use the Script sample program in <a class="reference internal" href="../getting_started/tutorials/0_quick_start.html"><span class="doc std std-doc">tutorial_0_quick_start.py</span></a> to illustrate how to use the profile interface to obtain performance data of the entire program and some of its fragments.</p>
+<section id="insert-stubs-into-dsl-programs">
+<h2>1. Insert Stubs into DSL Programs<a class="headerlink" href="#insert-stubs-into-dsl-programs" title="Permalink to this heading"></a></h2>
+<p>Here is the Script sample code:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">vector_add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">c</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="n">tec_cnt</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_size</span><span class="p">()</span>
+    <span class="n">tid</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_id</span><span class="p">()</span>
+
+    <span class="n">elems_per_tec</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">ceildiv</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">tec_cnt</span><span class="p">)</span>
+    <span class="n">cur_tec_offset</span> <span class="o">=</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">elems_per_tec</span>
+    <span class="n">cur_tec_elems</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">cur_tec_offset</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="n">elems_per_tec</span><span class="p">)</span>
+
+    <span class="n">cur_idx</span> <span class="o">=</span> <span class="n">cur_tec_offset</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">perf_tick_begin</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cur_tec_elems</span> <span class="o">//</span> <span class="mi">8</span><span class="p">):</span>
+        <span class="n">c</span><span class="p">[</span><span class="n">cur_idx</span> <span class="p">:</span> <span class="n">cur_idx</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">cur_idx</span> <span class="p">:</span> <span class="n">cur_idx</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">cur_idx</span> <span class="p">:</span> <span class="n">cur_idx</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]</span>
+        <span class="n">cur_idx</span> <span class="o">+=</span> <span class="mi">8</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">perf_tick_end</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">remain_elems</span> <span class="o">=</span> <span class="n">cur_tec_elems</span> <span class="o">%</span> <span class="mi">8</span>
+    <span class="k">if</span> <span class="n">remain_elems</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">remain_elems</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">cur_idx</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">b</span> <span class="o">+</span> <span class="n">cur_idx</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">vc</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">vc</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">cur_idx</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We added <code class="docutils literal notranslate"><span class="pre">S.perf_tick_begin(0)</span></code> and <code class="docutils literal notranslate"><span class="pre">S.perf_tick_end(0)</span></code> before and after the for loop in the above code, which represent the start and end of tick counting respectively. In other words, we want to monitor the performence of this for loop code. The argument <code class="docutils literal notranslate"><span class="pre">0</span></code> here represents the custom ID, which can be understood as a unique identifier of this for loop code. When there are multiple instrumentations in a program, the custom ID of the code fragment corresponding to each instrumentation must be different, so that in the performance data report generated after the program is run, the data can be matched to different code snippets based on different custom IDs.</p>
+</section>
+<section id="setup-rpc-environment">
+<h2>2. Setup RPC Environment<a class="headerlink" href="#setup-rpc-environment" title="Permalink to this heading"></a></h2>
+<p>For the construction of the RPC system, please refer to <a class="reference internal" href="how_to_use_rpc.html"><span class="doc std std-doc">How to use RPC</span></a>, and then set the following environment variables.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_RPC_TRACKER_IP</span><span class="o">=</span><span class="s2">&quot;192.168.1.0&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_RPC_TRACKER_PORT</span><span class="o">=</span><span class="s2">&quot;9190&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_RPC_KEY</span><span class="o">=</span><span class="s2">&quot;your_key&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_DEVICE_COMPILER</span><span class="o">=</span><span class="s2">&quot;/xxx/aarch64-linux-gnu-g++&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="run-profile-interface">
+<h2>3. Run Profile Interface<a class="headerlink" href="#run-profile-interface" title="Permalink to this heading"></a></h2>
+<p>Build the DSL program and call the Executor’s profile interface.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;1. Build...&quot;</span><span class="p">)</span>
+<span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">()</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">vector_add</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===============   PASS !  ===============</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Switch to execute on hardware device through RPC</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Change parameter &quot;rpc_key&quot; to use your expected hardware device,</span>
+<span class="c1"># &quot;None&quot; means get it from the environment variable &quot;AIPU_TVM_RPC_KEY&quot;.</span>
+<span class="n">ex</span><span class="o">.</span><span class="n">rpc_sess</span> <span class="o">=</span> <span class="n">get_rpc_session</span><span class="p">(</span><span class="n">session_timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">rpc_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;6. Performence test through AIPU profiler...&quot;</span><span class="p">)</span>
+<span class="n">ex</span><span class="o">.</span><span class="n">profile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;===============   PASS !  ===============</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After the profile interface finishes running, the following information will be output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="m">6</span>.<span class="w"> </span>Performence<span class="w"> </span><span class="nb">test</span><span class="w"> </span>through<span class="w"> </span>AIPU<span class="w"> </span>profiler...
+<span class="o">[</span><span class="m">14</span>:44:31<span class="o">][</span>INFO<span class="o">]</span><span class="w"> </span>Downloaded<span class="w"> </span><span class="s2">&quot;runtime/profile_data.bin&quot;</span><span class="w"> </span>into<span class="w"> </span><span class="s2">&quot;compass_dsl_vector_add_02c6cd30b6c64260a321a756fc35ab4c&quot;</span>.
+Total<span class="w"> </span>cycles<span class="w"> </span>from<span class="w"> </span>profiler:<span class="w"> </span><span class="m">3807</span>
+For<span class="w"> </span>more<span class="w"> </span>details<span class="w"> </span>about<span class="w"> </span>the<span class="w"> </span>profiler<span class="w"> </span>report,<span class="w"> </span>please<span class="w"> </span>see<span class="w"> </span><span class="s2">&quot;compass_dsl_vector_add_02c6cd30b6c64260a321a756fc35ab4c/runtime/profile_output.html&quot;</span>
+<span class="o">===============</span><span class="w">   </span>PASS<span class="w"> </span>!<span class="w">  </span><span class="o">===============</span>
+</pre></div>
+</div>
+<p>You can see that “Total cycles” is 3807, which means that the number of cycles of the entire program is 3807. The performance of the code snippets that we instrumented and monitored can be obtained by viewing “profile_output.html”.</p>
+</section>
+<section id="view-performance-reports">
+<h2>4. View Performance Reports<a class="headerlink" href="#view-performance-reports" title="Permalink to this heading"></a></h2>
+<p>The profile_output.html is located in the runtime directory under the output folder whose name is prefixed with <code class="docutils literal notranslate"><span class="pre">compass_dsl</span></code>, in this case, the file path of profile_output.html is <code class="docutils literal notranslate"><span class="pre">compass_dsl_vector_add_02c6cd30b6c64260a321a756fc35ab4c/runtime/profile_output.html</span></code>.</p>
+<p>Then you can use Compass_IDE to get the performance infomation. For more information, please refer to the Zhouyi CompassStudio relevant documents.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_use_rpc.html" class="btn btn-neutral float-left" title="How to Use RPC" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_debug_with_python.html" class="btn btn-neutral float-right" title="How to Debug with Python" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

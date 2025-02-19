@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Debug with Python &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Write the Operator Plugin" href="how_to_write_the_operator_plugin.html" />
+    <link rel="prev" title="How to Use Profiler" href="how_to_use_profiler.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Debug with Python</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-kernel-function">Prepare Kernel Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-test-case">Prepare Test Case</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#debug-with-python">Debug with Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Debug with Python</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_debug_with_python.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-debug-with-python">
+<h1>How to Debug with Python<a class="headerlink" href="#how-to-debug-with-python" title="Permalink to this heading"></a></h1>
+<p>Compass DSL provides two implementations for each interface both in TVM and Python.
+The reason of providing the Python interface is that it is easy to debug kernel implementation through Python.</p>
+<p>There are many advantages using Python for debugging.
+On one hand, the traditional OpenCL debugging process has some more complicated steps and the code generated by TVM is relatively poor in readability.
+On the other hand, Python debugging makes it easier to interact with users and can be easily integrated with IDEs.</p>
+<p>This section will explain in detail how to debug with Python through a practical example.</p>
+<section id="prepare-kernel-function">
+<h2>Prepare Kernel Function<a class="headerlink" href="#prepare-kernel-function" title="Permalink to this heading"></a></h2>
+<p>First, we prepare a kernel function like:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">cast_from_i8_to_i32</span><span class="p">(</span><span class="n">inp</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">size</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="n">tec_num</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_size</span><span class="p">()</span>
+    <span class="n">tid</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_id</span><span class="p">()</span>
+
+    <span class="n">per_tec_size</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">ceildiv</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">tec_num</span><span class="p">)</span>
+    <span class="n">ofs</span> <span class="o">=</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">per_tec_size</span>
+    <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">each_tec_size</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="n">per_tec_size</span><span class="p">)</span>
+    <span class="n">loop</span> <span class="o">=</span> <span class="n">each_tec_size</span> <span class="o">/</span> <span class="mi">32</span>
+
+    <span class="n">inp_offset</span> <span class="o">=</span> <span class="n">ofs</span>
+    <span class="n">out_offset</span> <span class="o">=</span> <span class="n">ofs</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">loop</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">inp</span> <span class="o">+</span> <span class="n">inp_offset</span><span class="p">)</span>
+        <span class="n">inp_offset</span> <span class="o">+=</span> <span class="mi">32</span>
+
+        <span class="n">out_ll</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out_ll</span><span class="p">,</span> <span class="n">out</span> <span class="o">+</span> <span class="n">out_offset</span><span class="p">)</span>
+        <span class="n">out_offset</span> <span class="o">+=</span> <span class="mi">8</span>
+
+        <span class="n">out_lh</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxth</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out_lh</span><span class="p">,</span> <span class="n">out</span> <span class="o">+</span> <span class="n">out_offset</span><span class="p">)</span>
+        <span class="n">out_offset</span> <span class="o">+=</span> <span class="mi">8</span>
+
+        <span class="n">out_hl</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxth</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out_hl</span><span class="p">,</span> <span class="n">out</span> <span class="o">+</span> <span class="n">out_offset</span><span class="p">)</span>
+        <span class="n">out_offset</span> <span class="o">+=</span> <span class="mi">8</span>
+
+        <span class="n">out_hh</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxth</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxth</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out_hh</span><span class="p">,</span> <span class="n">out</span> <span class="o">+</span> <span class="n">out_offset</span><span class="p">)</span>
+        <span class="n">out_offset</span> <span class="o">+=</span> <span class="mi">8</span>
+</pre></div>
+</div>
+<p>This kernel function casts the int8 input to int32 output.
+It is a bit long and does not allow you to quickly go through the code to find problems.</p>
+</section>
+<section id="prepare-test-case">
+<h2>Prepare Test Case<a class="headerlink" href="#prepare-test-case" title="Permalink to this heading"></a></h2>
+<p>We can write a test case like:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int8&quot;</span><span class="p">)</span>
+    <span class="n">gt_out</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+
+    <span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">()</span>
+    <span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">cast_from_i8_to_i32</span><span class="p">)</span>
+
+    <span class="c1"># run on pysim</span>
+    <span class="n">py_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+    <span class="n">cast_from_i8_to_i32</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">py_out</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="n">testing</span><span class="o">.</span><span class="n">assert_allclose</span><span class="p">(</span><span class="n">py_out</span><span class="p">,</span> <span class="n">gt_out</span><span class="p">)</span>
+
+    <span class="c1"># run on simulator</span>
+    <span class="n">aipu_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+    <span class="n">ex</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="n">testing</span><span class="o">.</span><span class="n">assert_allclose</span><span class="p">(</span><span class="n">aipu_out</span><span class="p">,</span> <span class="n">gt_out</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are two ways to run this function, one is on pysim and the other is on AIPU simulator or hardware.
+If you want to run it on pysim, just call the kernel function with a name like:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">cast_from_i8_to_i32</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">py_out</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This call will run entirely on Python, which means that we can use all the debugging methods available on Python.</p>
+</section>
+<section id="debug-with-python">
+<h2>Debug with Python<a class="headerlink" href="#debug-with-python" title="Permalink to this heading"></a></h2>
+<p>When we run this test case, everything works fine.
+However if we change the size to 132, things change.
+This means that there must be something in our program that was not considered well, but it is unlikely that we can see it directly from the code.</p>
+<p>It would be troublesome to debug with OpenCL at this time, but fortunately we can debug directly on Python.
+By default, pysim runs in multi-threaded mode. It can also be manually set to single-threaded running. Follow the instructions in the document <a class="reference internal" href="../explanation/pysim.html#single-thread-loop-to-simulate-simple-circumstances-neednt-sync"><span class="std std-doc">PySim</span></a>.</p>
+<p>We are able to add breakpoints in a variety of ways, including:</p>
+<ul class="simple">
+<li><p>IDE UI, e.g., VS Code, PyCharm.</p></li>
+<li><p>Python debugger command, e.g., pdb, pudb.</p></li>
+<li><p>Insert code “breakpoint()”, “import pdb; pdb.set_trace()”.</p></li>
+</ul>
+<p>For this case we add a breakpoint in the kernel function:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">loop</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>After adding this breakpoint, the test case we just debugged will stop at the breakpoint.
+After the program stops, we can view the values of each variable.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">tec_num</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">per_tec_size</span> <span class="o">=</span> <span class="mi">33</span>
+<span class="n">loop</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>It is clear that every loop deals with 32 data, and there are 33 data here but only one loop.
+Therefore what we should do is to consider casting 8 elements each iteration of the loop, and adding a mask for load and store of tail elements.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">cast_from_i8_to_i32</span><span class="p">(</span><span class="n">inp</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">size</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="n">tec_num</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_size</span><span class="p">()</span>
+    <span class="n">tid</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_id</span><span class="p">()</span>
+
+    <span class="n">per_tec_size</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">ceildiv</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">tec_num</span><span class="p">)</span>
+    <span class="n">ofs</span> <span class="o">=</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">per_tec_size</span>
+    <span class="k">if</span> <span class="n">ofs</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">each_tec_size</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">size</span> <span class="o">-</span> <span class="n">ofs</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="n">per_tec_size</span><span class="p">)</span>
+    <span class="n">loop</span> <span class="o">=</span> <span class="n">each_tec_size</span> <span class="o">//</span> <span class="mi">8</span>
+    <span class="n">tail</span> <span class="o">=</span> <span class="n">each_tec_size</span> <span class="o">%</span> <span class="mi">8</span>
+
+    <span class="n">inp_offset</span> <span class="o">=</span> <span class="n">ofs</span>
+    <span class="n">out_offset</span> <span class="o">=</span> <span class="n">ofs</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">loop</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">inp</span> <span class="o">+</span> <span class="n">inp_offset</span><span class="p">)</span>
+        <span class="n">inp_offset</span> <span class="o">+=</span> <span class="mi">8</span>
+
+        <span class="n">out_ll</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out_ll</span><span class="p">,</span> <span class="n">out</span> <span class="o">+</span> <span class="n">out_offset</span><span class="p">)</span>
+        <span class="n">out_offset</span> <span class="o">+=</span> <span class="mi">8</span>
+
+    <span class="k">if</span> <span class="n">tail</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">tail_mask</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">tail</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">cur_buf</span> <span class="o">+</span> <span class="n">inp_offset</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">tail_mask</span><span class="p">)</span>
+        <span class="n">out_ll</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out_ll</span><span class="p">,</span> <span class="n">out</span> <span class="o">+</span> <span class="n">out_offset</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">tail_mask</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this heading"></a></h2>
+<p>We implemented pysim with the same behavior as OpenCL to facilitate debugging.
+We can use pysim to easily debug logical errors in the program.</p>
+<p>This document shows how to debug through pysim through a practical use case.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_use_profiler.html" class="btn btn-neutral float-left" title="How to Use Profiler" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_write_the_operator_plugin.html" class="btn btn-neutral float-right" title="How to Write the Operator Plugin" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

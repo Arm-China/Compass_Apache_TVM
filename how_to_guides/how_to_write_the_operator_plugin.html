@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Write the Operator Plugin &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Use Macros" href="how_to_use_macros.html" />
+    <link rel="prev" title="How to Debug with Python" href="how_to_debug_with_python.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Write the Operator Plugin</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#python-plugin-rule">1. Python Plugin Rule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#demo-about-python-plugin">2. Demo about Python Plugin</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#get-graph-pattern">get_graph_pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#get-score">get_score</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#check-params">check_params</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#setup">setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-code-name">generate_code_name</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-params">generate_params</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-kernel">generate_kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#test-plugin">3. Test Plugin</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Write the Operator Plugin</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_write_the_operator_plugin.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-write-the-operator-plugin">
+<h1>How to Write the Operator Plugin<a class="headerlink" href="#how-to-write-the-operator-plugin" title="Permalink to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The plugin described in this article comes from the Compass buildtool. Here shows a simple demo based on
+the pure Compass GBuilder mechanism. The DSL and TVM have no modification for the plugin. For
+complete information, see section 7.4 of <code class="docutils literal notranslate"><span class="pre">&lt;Arm</span> <span class="pre">China</span> <span class="pre">Zhouyi</span> <span class="pre">Compass</span> <span class="pre">NN</span> <span class="pre">Compiler</span> <span class="pre">User</span> <span class="pre">Guide&gt;</span></code>.</p>
+</div>
+<p>The operator plugin is used to integrate operator implementation into the Compass buildtool. The Compass
+buildtool matches the plugin through OpType, so one operator’s plugin can be implemented as multiple
+small plugins, all these plugins are registered for the same OpType, and each plugin is responsible for a
+specific situation. Certainly one operator’s plugin can be implemented as a single plugin as well.</p>
+<p>This article will tell you:</p>
+<ul class="simple">
+<li><p>Python plugin rule</p></li>
+<li><p>How to implement a Python plugin</p></li>
+<li><p>How to test a plugin</p></li>
+</ul>
+<section id="python-plugin-rule">
+<h2>1. Python Plugin Rule<a class="headerlink" href="#python-plugin-rule" title="Permalink to this heading"></a></h2>
+<p>The plugins should obey rules below:</p>
+<ul class="simple">
+<li><p><strong>Naming</strong>: Use fixed <strong>prefix</strong> <code class="docutils literal notranslate"><span class="pre">aipubt_</span></code>, such as <code class="docutils literal notranslate"><span class="pre">aipubt_layernorm.py</span></code>.</p></li>
+</ul>
+</section>
+<section id="demo-about-python-plugin">
+<h2>2. Demo about Python Plugin<a class="headerlink" href="#demo-about-python-plugin" title="Permalink to this heading"></a></h2>
+<p>Create a file named <code class="docutils literal notranslate"><span class="pre">aipubt_layernorm.py</span></code>, first import required 3rd libraries and register OpType for LayerNorm:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">AIPUBuilder.core</span> <span class="kn">import</span> <span class="n">BuilderOpPlugin</span><span class="p">,</span> <span class="n">register_optype</span><span class="p">,</span> <span class="n">BuilderParams</span><span class="p">,</span> <span class="n">DataLayout</span>
+<span class="kn">from</span> <span class="nn">AIPUBuilder.plugin_loader</span> <span class="kn">import</span> <span class="n">register_plugin</span><span class="p">,</span> <span class="n">PluginType</span>
+<span class="kn">from</span> <span class="nn">AIPUBuilder.logger</span> <span class="kn">import</span> <span class="n">DEBUG</span>
+
+
+<span class="n">op_type</span> <span class="o">=</span> <span class="n">register_optype</span><span class="p">(</span><span class="s2">&quot;LayerNorm&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The main body of plugin code has 7 key functions.</p>
+<section id="get-graph-pattern">
+<h3>get_graph_pattern<a class="headerlink" href="#get-graph-pattern" title="Permalink to this heading"></a></h3>
+<p>Create a graph pattern based on nodes used by this plugin pattern.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_plugin</span><span class="p">(</span><span class="n">PluginType</span><span class="o">.</span><span class="n">Builder</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">LayerNormPlugin</span><span class="p">(</span><span class="n">BuilderOpPlugin</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_graph_pattern</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">([(</span><span class="s2">&quot;n1&quot;</span><span class="p">,</span> <span class="n">op_type</span><span class="p">)],</span> <span class="p">[])</span>
+</pre></div>
+</div>
+</section>
+<section id="get-score">
+<h3>get_score<a class="headerlink" href="#get-score" title="Permalink to this heading"></a></h3>
+<p>If several plugins have the same pattern, the Compass buildtool will choose the highest-score plugin.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">get_score</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="mi">25</span>
+</pre></div>
+</div>
+</section>
+<section id="check-params">
+<h3>check_params<a class="headerlink" href="#check-params" title="Permalink to this heading"></a></h3>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">check_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;X2_1204&quot;</span><span class="p">,</span> <span class="s2">&quot;X2_1204MP3&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">node</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># check input output</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;float16&quot;</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;float16&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</section>
+<section id="setup">
+<h3>setup<a class="headerlink" href="#setup" title="Permalink to this heading"></a></h3>
+<p>Mainly used to define the input/output layouts of your operator.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sgnode</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="n">sgnode</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;keeping_layout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">valid_in</span> <span class="o">=</span> <span class="p">[[</span><span class="n">DataLayout</span><span class="o">.</span><span class="n">NHWC</span><span class="p">],</span> <span class="p">[</span><span class="n">DataLayout</span><span class="o">.</span><span class="n">NDHWC</span><span class="p">],</span> <span class="p">[</span><span class="n">DataLayout</span><span class="o">.</span><span class="n">Flat</span><span class="p">]]</span>
+        <span class="n">sgnode</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;valid_input_layouts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">valid_in</span>
+        <span class="n">sgnode</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;valid_output_layouts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">valid_in</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</section>
+<section id="generate-code-name">
+<h3>generate_code_name<a class="headerlink" href="#generate-code-name" title="Permalink to this heading"></a></h3>
+<p>Return your operator’s binary object file name.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">generate_code_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sgnode</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="n">DEBUG</span><span class="p">(</span><span class="s2">&quot;DSL Plugin Picked (Python)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;dsl_tpc_layernorm_fp16_x2.o&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="generate-params">
+<h3>generate_params<a class="headerlink" href="#generate-params" title="Permalink to this heading"></a></h3>
+<p>Return an RO list. It corresponds to your parameters of the kernel entry function.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">generate_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sgnode</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="n">ro</span> <span class="o">=</span> <span class="n">BuilderParams</span><span class="p">()</span>
+        <span class="n">in_tensor</span> <span class="o">=</span> <span class="n">sgnode</span><span class="o">.</span><span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">out_tensor</span> <span class="o">=</span> <span class="n">sgnode</span><span class="o">.</span><span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">axis_v</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s2">&quot;axis&quot;</span><span class="p">]</span>
+        <span class="n">len_v</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis_v</span><span class="p">)</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">in_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="n">shape0</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">shape1</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dims</span> <span class="o">-</span> <span class="n">len_v</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">shape0</span> <span class="o">*=</span> <span class="n">in_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dims</span> <span class="o">-</span> <span class="n">len_v</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">shape1</span> <span class="o">*=</span> <span class="n">in_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">shape0</span><span class="p">)</span>
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">shape1</span><span class="p">)</span>
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">in_tensor</span><span class="p">)</span>
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">out_tensor</span><span class="p">)</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">sgnode</span><span class="o">.</span><span class="n">constants</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">/weights&quot;</span><span class="p">]</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">sgnode</span><span class="o">.</span><span class="n">constants</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">/biases&quot;</span><span class="p">]</span>
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gamma</span><span class="p">)</span>
+        <span class="n">ro</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ro</span>
+</pre></div>
+</div>
+</section>
+<section id="generate-kernel">
+<h3>generate_kernel<a class="headerlink" href="#generate-kernel" title="Permalink to this heading"></a></h3>
+<p>Attain the kernel entry function name and return.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">generate_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sgnode</span><span class="p">,</span> <span class="n">nodes</span><span class="p">):</span>
+        <span class="n">obj_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generate_code_name</span><span class="p">(</span><span class="n">sgnode</span><span class="p">,</span> <span class="n">nodes</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">obj_name</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span>  <span class="c1"># The name ends with &#39;.o&#39;</span>
+        <span class="n">kernel_name</span> <span class="o">=</span> <span class="n">obj_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">DEBUG</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;kernel_name:</span><span class="si">{</span><span class="n">kernel_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">kernel_name</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="test-plugin">
+<h2>3. Test Plugin<a class="headerlink" href="#test-plugin" title="Permalink to this heading"></a></h2>
+<p>Here shows a demo using the <code class="docutils literal notranslate"><span class="pre">aipurun</span></code> (see section 4.2 of
+<code class="docutils literal notranslate"><span class="pre">&lt;Arm</span> <span class="pre">China</span> <span class="pre">Zhouyi</span> <span class="pre">Compass</span> <span class="pre">NN</span> <span class="pre">Compiler</span> <span class="pre">User</span> <span class="pre">Guide&gt;</span></code> for details) command. Assume that you have completed the following:</p>
+<ul class="simple">
+<li><p>Set enviroment variable <code class="docutils literal notranslate"><span class="pre">AIPUPLUGIN_PATH</span></code> including plugin files you added.</p></li>
+<li><p>Operator object file: You need to build <code class="docutils literal notranslate"><span class="pre">layernorm</span></code> operator implementation to the object file in
+advance. Assume that you have prepared them in the <code class="docutils literal notranslate"><span class="pre">build</span></code> directory.</p></li>
+<li><p>IR files</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">graph.def</span></code>: The graph structure part of the Compass IR.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">weight.bin</span></code>: The weight data part of the Compass IR.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">input0.bin</span></code>, <code class="docutils literal notranslate"><span class="pre">input1.bin</span></code>: The input binary files.</p></li>
+</ul>
+</li>
+</ul>
+<p>Run the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">AIPUPLUGIN_PATH</span><span class="o">=</span><span class="si">${</span><span class="nv">AIPUPLUGIN_PATH</span><span class="si">}</span>:&lt;directory-of-your-plugin-file&gt;
+
+aipurun<span class="w"> </span>graph.def<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-i<span class="w"> </span>input0.bin,input1.bin<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-w<span class="w"> </span>weight.bin<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-L<span class="w"> </span>./build/<span class="w">  </span><span class="c1"># -L points to directory including operator object file</span>
+
+<span class="c1"># Compare output.bin with gt.bin which you prepared first</span>
+diff<span class="w"> </span>gt.bin<span class="w"> </span>./output.bin
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_debug_with_python.html" class="btn btn-neutral float-left" title="How to Debug with Python" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_use_macros.html" class="btn btn-neutral float-right" title="How to Use Macros" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

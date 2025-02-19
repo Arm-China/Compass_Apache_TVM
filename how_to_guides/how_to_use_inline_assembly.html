@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use Inline Assembly &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to use AIFF" href="how_to_use_aiff.html" />
+    <link rel="prev" title="How to Use Macros" href="how_to_use_macros.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Use Inline Assembly</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-syntax">Basic Syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameters">Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#assembly-template">Assembly template</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#outputs">Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inputs">Inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#clobbers">Clobbers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qualifiers">Qualifiers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Use Inline Assembly</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_use_inline_assembly.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-use-inline-assembly">
+<h1>How to Use Inline Assembly<a class="headerlink" href="#how-to-use-inline-assembly" title="Permalink to this heading"></a></h1>
+<p>An inline assembly is a feature of the DSL in the Zhouyi NPU, which allows you to insert assembly instructions in the DSL source code. The compiler can distinguish these inline assembly snippet codes and treat them as low-level codes.</p>
+<p>The inline assembly can be used in three situations:</p>
+<ul class="simple">
+<li><p><strong>Optimization</strong>: You can use inline assembly code to implement the most performance-sensitive parts of the algorithms of your program. Machine code may be more efficient than what the compiler generates.</p></li>
+<li><p><strong>Zhouyi NPU specific instructions</strong>: Some specific instructions in the Zhouyi NPU are not supported in the DSL. All these instructions can be accessed with inline assembly by DSL programmers.</p></li>
+<li><p><strong>Special functions</strong>: Such as special calling conventions, hardware interrupts, and special directives for the linker and assembler.</p></li>
+</ul>
+<p>You should be familiar with the assembly language of the Zhouyi NPU. For more information about the Zhouyi assembly language, see the <em>Arm China Zhouyi Compass AIPUv3 Assembly Programming Guide</em>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong><a class="reference internal" href="../explanation/pysim.html"><span class="doc std std-doc">PySim</span></a> does not support inline assembly.</strong> If your DSL program has used inline assembly, you cannot debug it directly in Python, only can run and debug it through the AIPU simulator or hardware.</p>
+</div>
+<section id="basic-syntax">
+<h2>Basic Syntax<a class="headerlink" href="#basic-syntax" title="Permalink to this heading"></a></h2>
+<p>The function of the inline assembly is <code class="docutils literal notranslate"><span class="pre">S.asm</span></code>.</p>
+<p>The standard inline assembly should be used to identify instruction operands with variables. It allows you to set the input operands list, output operands list and clobbers list after the assembler template.</p>
+<p>The function signature is as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">asm</span><span class="p">(</span>
+    <span class="n">template</span><span class="p">,</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">clobbers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">qualifiers</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>There are five parts of parameters to construct the main function of inline assembly code.</p>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<section id="assembly-template">
+<h3>Assembly template<a class="headerlink" href="#assembly-template" title="Permalink to this heading"></a></h3>
+<p>This is a literal string that is the template for the assembler code. It is a combination of fixed text and tokens that refer to the input and output parameters. The string can contain any instructions recognized by the assembler, including directives.</p>
+<p>The compiler does not parse the assembler instructions itself and does not know what they mean or even whether they are valid assembler inputs.</p>
+<p>Operands with the specific register or immediate are identified in the same way as in assembly language (without any inline assembler prefix symbol).</p>
+<p>With the assembly template, you can use:</p>
+<ul class="simple">
+<li><p>Semicolons (;) that are used in assembly code to separate multiple assembler instructions in a single inline assembly string.</p></li>
+<li><p>A newline character (\n) to break a line.</p></li>
+<li><p>A tab character (\t) to move to the instruction field for the pretty assembly code format.</p></li>
+</ul>
+<p>You can also write bundled instructions because they comply with the normal syntax of assembly code. The single instruction is also supported.</p>
+<p>For more information about the assembly instruction syntax, see the <em>Arm China Zhouyi Compass AIPUv3 Assembly Programming Guide</em>.</p>
+<p>The following are some special format strings that are supported:</p>
+<ul class="simple">
+<li><p><strong>%%</strong>: Outputs a single % into the assembler code.</p></li>
+<li><p><strong>%=</strong>: Outputs a number that is unique to each instance of inline assembly code in the entire compilation. This option is useful when creating local labels and referring to them multiple times in a single template that generates multiple assembler instructions.</p></li>
+</ul>
+</section>
+</section>
+<section id="outputs">
+<h2>Outputs<a class="headerlink" href="#outputs" title="Permalink to this heading"></a></h2>
+<p>The outputs parameter is a dictionary which follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>        {`asmSymbolicName`: [`constraint`, `VariableName`]}
+</pre></div>
+</div>
+<p>The key <code class="docutils literal notranslate"><span class="pre">asmSymbolicName</span></code> is used to specify a symbolic name for the operand that is modified by the instructions in the assembler template.</p>
+<p>The value is a list that contains two elements:</p>
+<ul class="simple">
+<li><p>The first element <code class="docutils literal notranslate"><span class="pre">constraint</span></code> is a string constant that specifies constraints of the operand. See the following constraints for details.</p></li>
+<li><p>The second element <code class="docutils literal notranslate"><span class="pre">VariableName</span></code> specifies a DSL variable that is mapping to <code class="docutils literal notranslate"><span class="pre">asmSymbolicName</span></code>. It must be writable.</p></li>
+</ul>
+<p>An empty output dictionary is permitted.</p>
+<p>A constraint is a string full of letters. The following are the basic letters that are allowed:</p>
+<ul class="simple">
+<li><p><strong>r</strong>: This register operand is allowed if it is in a scalar register.</p></li>
+<li><p><strong>t</strong>: This register operand is allowed if it is in a tensor register.</p></li>
+<li><p><strong>f</strong>: This register operand is allowed if it is in a float register.</p></li>
+<li><p><strong>p</strong>: This register operand is allowed if it is in a predicate register.</p></li>
+</ul>
+<p>Multiple basic letters can be combined as constraint operands. These constraints are represented as multiple alternatives and the compiler can choose the best one as constraint operands.</p>
+<p>Some modifier characters can be used to modify the constraint letters. The following are the modifiers that are allowed:</p>
+<ul class="simple">
+<li><p><strong>=</strong>: This operand is written by this instruction.</p></li>
+<li><p><strong>+</strong>: This operand is both read and written by the instruction. Others without = and + can only be read.</p></li>
+<li><p><strong>&amp;</strong>: This operand is an early-clobbered operand, which is written before the instruction finishes using the input operands. Only written operands can use &amp;.</p></li>
+</ul>
+<p>The following is a simple example for these cases:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">i32x8</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">asm</span><span class="p">(</span>
+    <span class="s2">&quot;{add %[var_a].b, t1.b, t1.b;}&quot;</span><span class="p">,</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;var_a&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;=&amp;t&quot;</span><span class="p">,</span> <span class="n">a</span><span class="p">]}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="inputs">
+<h2>Inputs<a class="headerlink" href="#inputs" title="Permalink to this heading"></a></h2>
+<p>The inputs parameter is a dictionary which follows:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>        {`asmSymbolicName`: [`constraint`, `Expression`]}
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">asmSymbolicName</span></code> and <code class="docutils literal notranslate"><span class="pre">constraint</span></code> are the same as the ones in the outputs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Expression</span></code> specifies a DSL variable or expression that is passed to the inline assembly as an input.</p></li>
+</ul>
+<p>An empty input dictionary is permitted.</p>
+</section>
+<section id="clobbers">
+<h2>Clobbers<a class="headerlink" href="#clobbers" title="Permalink to this heading"></a></h2>
+<p>This is a list of registers or other values that are changed by the assembler template, beyond those listed in the outputs section.</p>
+<p>An empty clobber list is permitted.</p>
+</section>
+<section id="qualifiers">
+<h2>Qualifiers<a class="headerlink" href="#qualifiers" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>volatile</strong>: The typical use of extended asm statements is to manipulate input values to produce output values. However, your asm statements may also produce side effects. If so, you may need to use the volatile qualifier to disable certain optimizations.</p></li>
+<li><p><strong>inline</strong>: If you use an inline qualifier, the assembler will take the inline assembly code as the possible smallest size.</p></li>
+</ul>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<p>The following is a simple example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">byter1</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">byter2</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">byter3</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">S</span><span class="o">.</span><span class="n">asm</span><span class="p">(</span>
+    <span class="s2">&quot;add %[namex], %[namey], %[namez];&quot;</span><span class="p">,</span>
+    <span class="n">outputs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;namex&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;=&amp;r&quot;</span><span class="p">,</span> <span class="n">byter1</span><span class="p">]},</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;namey&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">byter2</span><span class="p">],</span> <span class="s2">&quot;namez&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">byter3</span><span class="p">]}</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This example will produce the following OpenCL code:</p>
+<div class="highlight-c++ notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="n">byter1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">byter2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">byter3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span><span class="p">;</span>
+<span class="n">__asm__</span><span class="p">(</span>
+<span class="w">    </span><span class="s">&quot;add %[namex], %[namey], %[namez];&quot;</span>
+<span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="n">namex</span><span class="p">]</span><span class="w"> </span><span class="s">&quot;=&amp;r&quot;</span><span class="p">(</span><span class="n">byter1</span><span class="p">)</span>
+<span class="w">    </span><span class="o">:</span><span class="w"> </span><span class="p">[</span><span class="n">namey</span><span class="p">]</span><span class="w"> </span><span class="s">&quot;r&quot;</span><span class="p">(</span><span class="n">byter2</span><span class="p">),</span><span class="w"> </span><span class="p">[</span><span class="n">namez</span><span class="p">]</span><span class="w"> </span><span class="s">&quot;r&quot;</span><span class="p">(</span><span class="n">byter3</span><span class="p">)</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_use_macros.html" class="btn btn-neutral float-left" title="How to Use Macros" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_use_aiff.html" class="btn btn-neutral float-right" title="How to use AIFF" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

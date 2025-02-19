@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use Macros &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Use Inline Assembly" href="how_to_use_inline_assembly.html" />
+    <link rel="prev" title="How to Write the Operator Plugin" href="how_to_write_the_operator_plugin.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Use Macros</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#why-use-macros">Why use Macros</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#macro-principle">Macro Principle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#macro-language-spec">Macro Language Spec</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#macro-symbol-resolution">Macro Symbol Resolution</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#macro-example">Macro Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Use Macros</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_use_macros.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-use-macros">
+<h1>How to Use Macros<a class="headerlink" href="#how-to-use-macros" title="Permalink to this heading"></a></h1>
+<p>When implementing a kernel, the body of the PrimFunc may contain repeated chunks of code, or long pieces of code that make the PrimFunc harder to read. In such a situation, we would like to group some codes into other macros and make the main function body clean and readable.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong><a class="reference internal" href="../explanation/pysim.html"><span class="doc std std-doc">PySim</span></a> does not support macros.</strong> If your DSL program has used a macro,
+you cannot debug it directly in Python, only can run and debug it through the AIPU simulator or
+hardware, so we recommend using <a class="reference internal" href="how_to_use_subfunctions.html"><span class="doc std std-doc">subfunctions</span></a> as more as possible.</p>
+</div>
+<section id="why-use-macros">
+<h2>Why use Macros<a class="headerlink" href="#why-use-macros" title="Permalink to this heading"></a></h2>
+<p>The macros would only serve as a tool to help organize the original source, and make the main code clean and readable.</p>
+</section>
+<section id="macro-principle">
+<h2>Macro Principle<a class="headerlink" href="#macro-principle" title="Permalink to this heading"></a></h2>
+<p>The Macro is similar to C preprocessor.</p>
+<p>The macro would never have any actual calls generated to the PrimFunc body. Instead, they would be pasted (inlined) into TIR.</p>
+<p>For macro call <code class="docutils literal notranslate"><span class="pre">macro_name(arg1,</span> <span class="pre">arg2,</span> <span class="pre">arg3,</span> <span class="pre">...)</span></code>, the values are substituted into the body of the macro, and the body with the substituted values is then inserted at the point where the call is located.</p>
+</section>
+<section id="macro-language-spec">
+<h2>Macro Language Spec<a class="headerlink" href="#macro-language-spec" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>decorator: function that is used as a macro should be decorated with <code class="docutils literal notranslate"><span class="pre">&#64;S.macro</span></code></p></li>
+<li><p>parameters: all parameters can follow Python syntax, i.e. positional, keyword, etc. Type annotations are not required, but are allowed.</p></li>
+<li><p>macro call: <code class="docutils literal notranslate"><span class="pre">macro_name(arg1,</span> <span class="pre">arg2,</span> <span class="pre">arg3,</span> <span class="pre">...)</span></code>, the same as the function call syntax.</p></li>
+<li><p>hygienic: this is the option to control the symbol resolution rules of macro. It is set to True (<code class="docutils literal notranslate"><span class="pre">&#64;S.macro(hygienic=True)</span></code>) by default.</p>
+<ul>
+<li><p>hygienic=True: if all symbols used in the macro’s body are resolved to values from the location of the macro definition.</p></li>
+<li><p>hygienic=False: the macro will have its symbols resolved to values at the time of macro use.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="macro-symbol-resolution">
+<h2>Macro Symbol Resolution<a class="headerlink" href="#macro-symbol-resolution" title="Permalink to this heading"></a></h2>
+<p>In the following example, the symbol <code class="docutils literal notranslate"><span class="pre">n</span></code> is not in macro parameters, but used in the macro body.</p>
+<p>Let’s see these two cases:</p>
+<ol class="arabic">
+<li><p><strong>Static Capture</strong>: Symbol resolved to the value at the time of macro definition</p>
+<p>In this case, the <strong>hygienic</strong> is set to <code class="docutils literal notranslate"><span class="pre">True</span></code> by default. The symbol <code class="docutils literal notranslate"><span class="pre">n</span></code> is resolved at the time of macro definition, and its value is 8.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">macro</span>
+<span class="k">def</span> <span class="nf">add_func</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+         <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+         <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">add_func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">add_func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The generated code is:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Dynamic Capture</strong>: Symbol resolved to the value at the time of macro use.</p>
+<p>In this case, you should explicitly set <code class="docutils literal notranslate"><span class="pre">hygienic=False</span></code>. The symbol of <code class="docutils literal notranslate"><span class="pre">n</span></code> will be resolved to the value at the time of macro use.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">macro</span><span class="p">(</span><span class="n">hygienic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">add_func</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+    <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">,</span>
+         <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">,</span>
+         <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">add_func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">add_func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The generated code will be:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="macro-example">
+<h2>Macro Example<a class="headerlink" href="#macro-example" title="Permalink to this heading"></a></h2>
+<p>Here we use Macro in the example of the concat operator. The concat takes 4 inputs with shape(8) and concatenates into the output of shape(4*8).</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>
+<span class="n">c</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">macro</span><span class="p">(</span><span class="n">hygienic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">body</span><span class="p">(</span><span class="n">inp</span><span class="p">):</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">concat</span><span class="p">(</span>
+    <span class="n">a1</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">a2</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">a3</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">a4</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+<span class="p">):</span>
+    <span class="n">lsram</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_buffer</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">tec_i</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">tec_range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">body</span><span class="p">(</span><span class="n">a1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">body</span><span class="p">(</span><span class="n">a2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">body</span><span class="p">(</span><span class="n">a3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">body</span><span class="p">(</span><span class="n">a4</span><span class="p">)</span>
+        <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">out</span> <span class="o">+</span> <span class="n">tec_i</span> <span class="o">*</span> <span class="n">c</span><span class="p">,</span> <span class="n">lsram</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this example, the macro body has 3 symbols:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">inp</span></code>: in the macro parameter</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c</span></code>: defined as const c=8</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lsram</span></code>: not defined at the time of macro definition</p></li>
+</ul>
+<p>If we use <code class="docutils literal notranslate"><span class="pre">&#64;S.macro</span></code>, with hygienic set to True by default, the symbol will be resolved at the time of macro definition. However, <code class="docutils literal notranslate"><span class="pre">lsram</span></code> is not defined at the time of macro definition. Then you will get the error:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">error</span><span class="p">:</span> <span class="n">Undefined</span> <span class="n">variable</span><span class="p">:</span> <span class="n">lsram</span>
+</pre></div>
+</div>
+<p>You can solve this problem in two ways:</p>
+<ol class="arabic">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">&#64;S.macro(hygienic=False)</span></code>, then the symbol of <code class="docutils literal notranslate"><span class="pre">lsram</span></code> will be resolved at the time of macro use, with lsram defined with this code:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">lsram</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_buffer</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The generated code will be:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">concat</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a1</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a2</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a3</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a4</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">out</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">     </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="w">     </span><span class="n">__lsram</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lsram</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>
+<span class="w">     </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">         </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">     </span><span class="p">}</span>
+<span class="w">     </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">         </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">     </span><span class="p">}</span>
+<span class="w">     </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">         </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a3</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">     </span><span class="p">}</span>
+<span class="w">     </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">         </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a4</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">     </span><span class="p">}</span>
+<span class="w">     </span><span class="n">DMA1D</span><span class="p">((</span><span class="n">out</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">8</span><span class="p">)),</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w"> </span><span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p>Put <code class="docutils literal notranslate"><span class="pre">lsram</span></code> into macro parameters and use the default <code class="docutils literal notranslate"><span class="pre">&#64;S.macro(hygienic=True)</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span> <span class="n">c</span> <span class="o">=</span> <span class="mi">8</span>
+ <span class="n">n</span> <span class="o">=</span> <span class="mi">4</span>
+ <span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>
+
+ <span class="nd">@S</span><span class="o">.</span><span class="n">macro</span>
+ <span class="k">def</span> <span class="nf">body</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">lsram</span><span class="p">):</span>
+     <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+ <span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+ <span class="k">def</span> <span class="nf">concat</span><span class="p">(</span>
+     <span class="n">a1</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+     <span class="n">a2</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+     <span class="n">a3</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+     <span class="n">a4</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+     <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+ <span class="p">):</span>
+     <span class="n">lsram</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_buffer</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+     <span class="k">for</span> <span class="n">tec_i</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">tec_range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+         <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+             <span class="n">body</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span> <span class="n">lsram</span><span class="p">)</span>
+         <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+             <span class="n">body</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span> <span class="n">lsram</span><span class="p">)</span>
+         <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+             <span class="n">body</span><span class="p">(</span><span class="n">a3</span><span class="p">,</span> <span class="n">lsram</span><span class="p">)</span>
+         <span class="k">if</span> <span class="n">tec_i</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+             <span class="n">body</span><span class="p">(</span><span class="n">a4</span><span class="p">,</span> <span class="n">lsram</span><span class="p">)</span>
+         <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">out</span><span class="o">+</span> <span class="n">tec_i</span> <span class="o">*</span> <span class="n">c</span><span class="p">,</span> <span class="n">lsram</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The generated code is:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="w"> </span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">concat</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a1</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a2</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a3</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">a4</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">out</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="w"> </span><span class="n">__lsram</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">lsram</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>
+<span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">     </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a1</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w"> </span><span class="p">}</span>
+<span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">     </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a2</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w"> </span><span class="p">}</span>
+<span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">     </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a3</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w"> </span><span class="p">}</span>
+<span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">     </span><span class="n">DMA1D</span><span class="p">(</span><span class="n">a4</span><span class="p">,</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w"> </span><span class="p">}</span>
+<span class="w"> </span><span class="n">DMA1D</span><span class="p">((</span><span class="n">out</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">8</span><span class="p">)),</span><span class="w"> </span><span class="n">lsram</span><span class="p">,</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w"> </span><span class="p">}</span>
+
+</pre></div>
+</div>
+<p><strong>In summary</strong>, if you put all the symbols used in the macro body in macro parameters, you can just use <code class="docutils literal notranslate"><span class="pre">&#64;S.macro</span></code>. If you want to only put the variant one in macro parameters, with other common symbols defined at the time of macro use, use <code class="docutils literal notranslate"><span class="pre">&#64;S.macro(hygienic=False)</span></code>.</p>
+</li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_write_the_operator_plugin.html" class="btn btn-neutral float-left" title="How to Write the Operator Plugin" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_use_inline_assembly.html" class="btn btn-neutral float-right" title="How to Use Inline Assembly" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

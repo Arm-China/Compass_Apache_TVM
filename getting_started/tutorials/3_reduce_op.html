@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 3: Reduce Operator &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 4: LUT Operator" href="4_lut_op.html" />
+    <link rel="prev" title="Tutorial 2: Dynamic Add" href="2_dynamic_add.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html">Tutorial 0: Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html">Tutorial 1: Static Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html">Tutorial 2: Dynamic Add</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial 3: Reduce Operator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-built-in">Basic Built-in</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#writing-a-max-reduction-operator-with-1-dimensional-data">Writing a Max Reduction Operator with 1-Dimensional Data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#writing-a-max-reduction-operator-with-2-dimensional-data-alone-row-axis">Writing a Max Reduction Operator with 2-Dimensional Data (Alone Row Axis)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html">Tutorial 4: LUT Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html">Tutorial 5: Quantization Operator</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Tutorials</a> &raquo;</li>
+      <li>Tutorial 3: Reduce Operator</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/getting_started/tutorials/3_reduce_op.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="tutorial-3-reduce-operator">
+<h1>Tutorial 3: Reduce Operator<a class="headerlink" href="#tutorial-3-reduce-operator" title="Permalink to this heading"></a></h1>
+<p>In this tutorial, you will write a simple reduction operator using Compass DSL. You will learn about:</p>
+<ul class="simple">
+<li><p>The basic builtin of max, vrpmax</p></li>
+<li><p>How to write a max-reduction operator with 1D data</p></li>
+<li><p>How to write a max-reduction operator with 2D data (alone row axis)</p></li>
+</ul>
+<section id="basic-built-in">
+<h2>Basic Built-in<a class="headerlink" href="#basic-built-in" title="Permalink to this heading"></a></h2>
+<p>Before we write the reduction operator, let’s look at some basic built-in about the max operator.</p>
+<ul class="simple">
+<li><p>max: compute the elementwise maximum of two vectors</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">x</span><span class="p">:</span> <span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span> <span class="mi">8</span>
+    <span class="n">y</span><span class="p">:</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span>
+
+  <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+  <span class="n">out</span><span class="p">:</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span> <span class="mi">8</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>vrpmax: compute the reduction maximum value of the vector</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="n">x</span><span class="p">:</span> <span class="mi">10</span> <span class="mi">20</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span> <span class="mi">8</span>
+
+  <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vrpmax</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+  <span class="n">out</span><span class="p">:</span> <span class="mi">20</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>For addtional information, you can refer to <code class="docutils literal notranslate"><span class="pre">vadd</span></code>, <code class="docutils literal notranslate"><span class="pre">vrpadd</span></code>.</p>
+</section>
+<section id="writing-a-max-reduction-operator-with-1-dimensional-data">
+<h2>Writing a Max Reduction Operator with 1-Dimensional Data<a class="headerlink" href="#writing-a-max-reduction-operator-with-1-dimensional-data" title="Permalink to this heading"></a></h2>
+<p>We want to write a reduction operation to find the maximum element in a 1-Dimension array.</p>
+<p>First, we need to consider the basic logic of how a reduction operates. Here is a conceptual pseudocode for a 1D max reduction:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">max_reduction_1d</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+    <span class="n">max_val</span> <span class="o">=</span> <span class="nb">input</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">:</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">maximum</span><span class="p">(</span><span class="n">max_val</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">max_val</span>
+</pre></div>
+</div>
+<p>If we want to implement this with vector built-in, we can use <code class="docutils literal notranslate"><span class="pre">max</span></code> and <code class="docutils literal notranslate"><span class="pre">vrpmax</span></code>. The basic idea is:</p>
+<ol class="arabic simple">
+<li><p>Convert the loop_n into n//VEC_LEN, for each loop, perform the vector maximum operation using <code class="docutils literal notranslate"><span class="pre">max</span></code>.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">vrpmax</span></code> to compute the reductional maximum value of the vector computed by the previous step.</p></li>
+</ol>
+<p><img alt="" src="../../_images/reduction_max_1d.jpg" /></p>
+<p>Here is the kernel code:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;uint32&quot;</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">4</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">max_reduction_1d</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">v_max</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">uint32x8</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># for uint, init v_max with 0</span>
+    <span class="k">for</span> <span class="n">vi</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">//</span> <span class="mi">8</span><span class="p">):</span>
+        <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">vi</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+        <span class="n">v_max</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">v_max</span><span class="p">,</span> <span class="n">va</span><span class="p">)</span>
+    <span class="n">v_max</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vrpmax</span><span class="p">(</span><span class="n">v_max</span><span class="p">)</span>
+    <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="writing-a-max-reduction-operator-with-2-dimensional-data-alone-row-axis">
+<h2>Writing a Max Reduction Operator with 2-Dimensional Data (Alone Row Axis)<a class="headerlink" href="#writing-a-max-reduction-operator-with-2-dimensional-data-alone-row-axis" title="Permalink to this heading"></a></h2>
+<p>In this section, we want to compute the maximum along the rows of a 2D array:</p>
+<ul class="simple">
+<li><p>input: [batch, n]</p></li>
+<li><p>output: [batch]</p></li>
+</ul>
+<p>Here is a conceptual pseudocode for a 2D max reduction along rows:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">max_reduction_2d</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">:</span>
+        <span class="n">max_val</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+            <span class="n">max_val</span> <span class="o">=</span> <span class="n">maximum</span><span class="p">(</span><span class="n">max_val</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_val</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+</pre></div>
+</div>
+<p>In this case, we can split the batch dimensions into NUM_TEC parts, and for each TEC, reuse the 1-Dimension logic.
+<img alt="" src="../../_images/reduction_max_2d.jpg" /></p>
+<p>Here is the kernel code:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">batch</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">NUM_TEC</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">each_tec_batch</span> <span class="o">=</span> <span class="n">batch</span> <span class="o">//</span> <span class="n">NUM_TEC</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">max_reduction_2d</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="c1"># a [batch,n]</span>
+    <span class="c1"># b [batch]</span>
+    <span class="k">for</span> <span class="n">ti</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">tec_range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">NUM_TEC</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">loop_t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">each_tec_batch</span><span class="p">):</span>
+            <span class="n">off_batch</span> <span class="o">=</span> <span class="n">ti</span> <span class="o">*</span> <span class="n">each_tec_batch</span> <span class="o">+</span> <span class="n">loop_t</span>
+            <span class="c1"># 1d-max reduction</span>
+            <span class="n">v_max</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">uint32x8</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">vi</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">//</span> <span class="mi">8</span><span class="p">):</span>
+                <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">off_batch</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="n">vi</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+                <span class="n">v_max</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">v_max</span><span class="p">,</span> <span class="n">va</span><span class="p">)</span>
+            <span class="n">v_max</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vrpmax</span><span class="p">(</span><span class="n">v_max</span><span class="p">)</span>
+            <span class="c1"># store output</span>
+            <span class="n">b</span><span class="p">[</span><span class="n">off_batch</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_max</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="complete-code">
+<h2>Complete Code<a class="headerlink" href="#complete-code" title="Permalink to this heading"></a></h2>
+<p>You can find the sample code in <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH/tvm/aipu/samples/dsl/tutorial_3_reduce_op.py</span></code>.
+The placeholder <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH</span></code> represents the location where you install the Compass DSL
+Python package, in general, it will be something like <code class="docutils literal notranslate"><span class="pre">~/.local/lib/python3.8/site-packages</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="2_dynamic_add.html" class="btn btn-neutral float-left" title="Tutorial 2: Dynamic Add" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="4_lut_op.html" class="btn btn-neutral float-right" title="Tutorial 4: LUT Operator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

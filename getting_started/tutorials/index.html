@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorials &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 0: Quick Start" href="0_quick_start.html" />
+    <link rel="prev" title="Build and Run Workflow" href="../build_and_run_workflow.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html">Tutorial 0: Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html">Tutorial 1: Static Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html">Tutorial 2: Dynamic Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html">Tutorial 3: Reduce Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html">Tutorial 4: LUT Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html">Tutorial 5: Quantization Operator</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Tutorials</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/getting_started/tutorials/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorials">
+<h1>Tutorials<a class="headerlink" href="#tutorials" title="Permalink to this heading"></a></h1>
+<p>The tutorials show how to write an operator using Compass DSL.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="0_quick_start.html">Tutorial 0: Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#write-basic-compass-dsl-function">1. Write Basic Compass DSL Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#build-the-function">2. Build the Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#inspect-opencl-c-code">3. Inspect OpenCL C Code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#run-in-python-pysim">4. Run in Python (<span class="xref myst">PySim</span>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#run-on-npu-simulator">5. Run on NPU Simulator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#run-on-remote-hardware-device-through-rpc">6. Run on Remote Hardware Device through RPC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#profile">7. Profile</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="1_static_add.html">Tutorial 1: Static Add</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html#inputs-outputs">Inputs &amp; Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html#use-lsram">Use LSRAM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html#split-data-for-4-tecs">Split Data for 4 TECs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html#use-dma-to-move-data">Use DMA to Move Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html#vectorize">Vectorize</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html#build-and-run-kernel">Build and Run Kernel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="2_dynamic_add.html">Tutorial 2: Dynamic Add</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html#inputs-outputs">Inputs &amp; Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html#calculate-elements-number-on-lsram">Calculate Elements Number on LSRAM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html#split-data-for-tecs">Split Data for TECs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html#calculation">Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="3_reduce_op.html">Tutorial 3: Reduce Operator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html#basic-built-in">Basic Built-in</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html#writing-a-max-reduction-operator-with-1-dimensional-data">Writing a Max Reduction Operator with 1-Dimensional Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html#writing-a-max-reduction-operator-with-2-dimensional-data-alone-row-axis">Writing a Max Reduction Operator with 2-Dimensional Data (Alone Row Axis)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="4_lut_op.html">Tutorial 4: LUT Operator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html#inputs-outputs">Inputs &amp; Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html#prepare-lut-table">Prepare LUT Table</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html#kernel-function">Kernel Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html#subroutine-call-device-function">Subroutine Call Device Function</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="5_quantization_op.html">Tutorial 5: Quantization Operator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html#inputs-outputs">Inputs &amp; Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html#calculation">Calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html#upgrade-type">Upgrade type</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html#operation-of-signed-and-unsigned">Operation of Signed and Unsigned</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html#downgrade-type-and-pack">Downgrade Type and Pack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html#complete-code">Complete Code</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../build_and_run_workflow.html" class="btn btn-neutral float-left" title="Build and Run Workflow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="0_quick_start.html" class="btn btn-neutral float-right" title="Tutorial 0: Quick Start" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

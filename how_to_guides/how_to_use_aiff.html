@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to use AIFF &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="About This Documentation" href="../explanation/about_this_doc.html" />
+    <link rel="prev" title="How to Use Inline Assembly" href="how_to_use_inline_assembly.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to use AIFF</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#write-a-kernel">Write a kernel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#function-parameter">Function parameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#function-body">Function body</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#configure-aiff">Configure AIFF</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#create-an-aiff-object">Create an AIFF object</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#empty">Empty</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#from-a-file">From a File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#from-an-array">From an Array</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#configure-aiff-registers">Configure AIFF registers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#add-new-register-config-optional">Add new register config (Optional)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configure-value-registers">Configure value registers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configure-address-registers">Configure address registers</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#generate-the-descriptor">Generate the descriptor</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#run">Run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multi-aiff">Multi-AIFF</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to use AIFF</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_use_aiff.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-use-aiff">
+<h1>How to use AIFF<a class="headerlink" href="#how-to-use-aiff" title="Permalink to this heading"></a></h1>
+<p>This section describes how to use AIFF in Compass DSL.</p>
+<p>AIFF is a specific accelerator unit inside the Zhouyi NPU with powerful computing capabilities to perform a lot of calculations.</p>
+<p>This tutorial does not provide details of how to configure AIFF, but focuses on how to use AIFF in Compass DSL.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this heading"></a></h2>
+<p>In general, the way you write kernel functions has not changed much. The main change is in unittest.</p>
+<p>There is a core concept in AIFF called descriptor. A descriptor is actually an array of register values, and in the kernel function we treat it like a pointer.</p>
+<p>In reality, descriptors are usually generated in plugins. However, when using DSL in unittest, the plugins are not actually called, so no descriptor is generated. Therefore, we introduced the AIFF class to easily generate descriptors in unittest.</p>
+<p>In order to use AIFF in DSL, the main work is to correctly configure the AIFF class in unittest and generate the corresponding descriptor.</p>
+</section>
+<section id="write-a-kernel">
+<h2>Write a kernel<a class="headerlink" href="#write-a-kernel" title="Permalink to this heading"></a></h2>
+<section id="function-parameter">
+<h3>Function parameter<a class="headerlink" href="#function-parameter" title="Permalink to this heading"></a></h3>
+<p>In a function, the descriptor is considered to be a pointer from outside.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">aiff_func</span><span class="p">(</span>
+    <span class="n">inp</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">desc</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)</span>
+<span class="p">):</span>
+
+</pre></div>
+</div>
+<p>Here we receive a descriptor parameter, whose type is a pointer to uint32.
+Also, since there are three different descriptor types, you can write as follows:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">aiff_func</span><span class="p">(</span>
+    <span class="n">inp</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">act</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)</span>
+<span class="p">):</span>
+</pre></div>
+</div>
+<p>Note that inputs and outputs can be omitted if not needed.
+That is, the code can be simplified to:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">aiff_func</span><span class="p">(</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">act</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)</span>
+<span class="p">):</span>
+</pre></div>
+</div>
+</section>
+<section id="function-body">
+<h3>Function body<a class="headerlink" href="#function-body" title="Permalink to this heading"></a></h3>
+<p>Inside the function body, you can start AIFF by the descriptor parameter.
+We provide two interfaces:</p>
+<ul class="simple">
+<li><p>S.aiff(ctrl_desc, param_desc, act_desc)</p></li>
+<li><p>S.async_aiff(ctrl_desc, param_desc, act_desc, event)</p></li>
+</ul>
+<p>Since these descriptors are treated as pointers, there are various different ways to use them inside the function.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">aiff</span><span class="p">(</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">act</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">aiff</span><span class="p">(</span><span class="n">desc</span> <span class="o">+</span> <span class="mi">72</span> <span class="o">+</span> <span class="mi">48</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">desc</span> <span class="o">+</span> <span class="mi">72</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">async_aiff</span><span class="p">(</span><span class="n">ctrl</span> <span class="o">+</span> <span class="mi">464</span><span class="p">,</span> <span class="n">param</span> <span class="o">+</span> <span class="mi">88</span><span class="p">,</span> <span class="n">act</span> <span class="o">+</span> <span class="mi">72</span><span class="p">,</span> <span class="n">ev1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In addition, any DSL features are supported.
+For example, flexible width vector, Python interact and RPC.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">aiff_func</span><span class="p">(</span><span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">desc</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_id</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">S</span><span class="o">.</span><span class="n">aiff</span><span class="p">(</span><span class="n">desc</span> <span class="o">+</span> <span class="mi">72</span> <span class="o">+</span> <span class="mi">48</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">desc</span> <span class="o">+</span> <span class="mi">72</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">75</span> <span class="o">*</span> <span class="mi">75</span> <span class="o">*</span> <span class="mi">32</span><span class="p">):</span>
+        <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configure-aiff">
+<h2>Configure AIFF<a class="headerlink" href="#configure-aiff" title="Permalink to this heading"></a></h2>
+<p>The AIFF class is a user-interactive class that facilitates configuration of the AIFF registers.</p>
+<section id="create-an-aiff-object">
+<h3>Create an AIFF object<a class="headerlink" href="#create-an-aiff-object" title="Permalink to this heading"></a></h3>
+<p>There are three ways to create an AIFF object:</p>
+<section id="empty">
+<h4>Empty<a class="headerlink" href="#empty" title="Permalink to this heading"></a></h4>
+<p>You can create an empty AIFF object directly.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">Aiff</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>In this case you need to configure all AIFF registers.</p>
+</section>
+<section id="from-a-file">
+<h4>From a File<a class="headerlink" href="#from-a-file" title="Permalink to this heading"></a></h4>
+<p>You can create an AIFF object from a descriptor file.</p>
+<p>The descriptor file can be produced by other Zhouyi Compass utils like <code class="docutils literal notranslate"><span class="pre">aipurun</span></code>, whose name usually is <code class="docutils literal notranslate"><span class="pre">temp.desc</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">Aiff</span><span class="p">(</span><span class="n">descriptor</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this case, only the control part of the descriptor will be used, because the other part is meaningless.</p>
+</section>
+<section id="from-an-array">
+<h4>From an Array<a class="headerlink" href="#from-an-array" title="Permalink to this heading"></a></h4>
+<p>You can create an AIFF object from an Array.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ctrl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mh">0x0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">104</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint32&quot;</span><span class="p">)</span>
+<span class="n">ctrl</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">33</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="mi">44</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="mi">49</span><span class="p">,</span> <span class="mi">50</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="mh">0x81</span><span class="p">,</span> <span class="mh">0xD</span><span class="p">,</span> <span class="mh">0x20000</span><span class="p">,</span> <span class="mh">0x10170</span><span class="p">,</span> <span class="mh">0x3</span><span class="p">,</span> <span class="mh">0x70220</span><span class="p">,</span> <span class="mh">0x1E0620</span><span class="p">,</span> <span class="mh">0x2</span><span class="p">,</span> <span class="mh">0x2212</span><span class="p">,</span> <span class="mh">0x960096</span><span class="p">,</span> <span class="mh">0x960096</span><span class="p">,</span> <span class="mh">0x4B004B</span><span class="p">,</span> <span class="mh">0x1</span><span class="p">,</span> <span class="mh">0x200020</span><span class="p">,</span> <span class="mh">0x4B0096</span><span class="p">,</span> <span class="mh">0x4B0096</span><span class="p">)</span>
+<span class="n">ctrl</span><span class="p">[[</span><span class="mi">57</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">83</span><span class="p">,</span> <span class="mi">84</span><span class="p">,</span> <span class="mi">87</span><span class="p">,</span> <span class="mi">96</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="mh">0x12C0</span><span class="p">,</span> <span class="mh">0xAFC80</span><span class="p">,</span> <span class="mh">0xAFC80</span><span class="p">,</span> <span class="mh">0x90040</span><span class="p">,</span> <span class="mh">0x22100002</span><span class="p">,</span> <span class="mh">0x90050</span><span class="p">,</span> <span class="mh">0x960</span><span class="p">,</span> <span class="mh">0x2BF20</span><span class="p">,</span> <span class="mh">0x2BF20</span><span class="p">,</span> <span class="mh">0x40020</span><span class="p">)</span>
+
+<span class="n">aiff</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">Aiff</span><span class="p">(</span><span class="n">descriptor</span><span class="o">=</span><span class="n">ctrl</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In this case, the array values are from the dumped descriptor file.</p>
+</section>
+</section>
+<section id="configure-aiff-registers">
+<h3>Configure AIFF registers<a class="headerlink" href="#configure-aiff-registers" title="Permalink to this heading"></a></h3>
+<p>In some cases (such as descriptor chain), a single AIFF register configuration is not enough, so there can be multiple register configurations in an AIFF class.</p>
+<p>Note that each register configuration represents once AIFF execution. In other words, each register configuration will generate one node in the descriptor chain.</p>
+<p>Each AIFF object represents once start interaction between the TEC and AIFF. After the start interaction, the AIFF can execute multiple times autonomously. As for how many times it will be run, it depends on the count of register configurations in the object. In other words, each object will generate one descriptor chain.</p>
+<section id="add-new-register-config-optional">
+<h4>Add new register config (Optional)<a class="headerlink" href="#add-new-register-config-optional" title="Permalink to this heading"></a></h4>
+<p>We provide an interface to add a new AIFF register configuration.</p>
+<ul class="simple">
+<li><p>add_new_register_config(self, idx=None, copy_idx=None)</p></li>
+</ul>
+<p>The idx parameter means where the new register configuration is inserted. The default is the last one.</p>
+<p>The copy_idx parameter means which previous register configuration to copy. Because in most cases only a few places in the new register configuration need to be changed, it is more efficient to copy the previous configuration.</p>
+<p>Use the interface as follows:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">aiff</span><span class="o">.</span><span class="n">add_new_register_config</span><span class="p">(</span><span class="n">copy_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="configure-value-registers">
+<h4>Configure value registers<a class="headerlink" href="#configure-value-registers" title="Permalink to this heading"></a></h4>
+<p>The configuration format is aiff.func_unit.register.field_info.</p>
+<p>Func unit:</p>
+<ul class="simple">
+<li><p>mtp</p></li>
+<li><p>ptp</p></li>
+<li><p>itp</p></li>
+<li><p>wrb</p></li>
+<li><p>unb</p></li>
+</ul>
+<p>Register:</p>
+<ul class="simple">
+<li><p>act_c_ctrl</p></li>
+<li><p>wt_compress</p></li>
+<li><p>…</p></li>
+</ul>
+<p>Field info:</p>
+<ul class="simple">
+<li><p>iact_chan</p></li>
+<li><p>oact_chan</p></li>
+<li><p>…</p></li>
+</ul>
+<p>There may be multiple func units. You can use an index to specify a specific unit.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">act_c_ctrl</span><span class="o">.</span><span class="n">iact_chan</span> <span class="o">=</span> <span class="mi">1056</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">act_c_ctrl</span><span class="o">.</span><span class="n">oact_chan</span> <span class="o">=</span> <span class="mi">96</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">wt_compress</span><span class="o">.</span><span class="n">compression_format</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">wt_compress</span><span class="o">.</span><span class="n">wt_size</span> <span class="o">=</span> <span class="mi">2598</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">act_c_ctrl</span><span class="o">.</span><span class="n">iact_chan</span> <span class="o">=</span> <span class="mi">1056</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">act_c_ctrl</span><span class="o">.</span><span class="n">oact_chan</span> <span class="o">=</span> <span class="mi">80</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">wt_compress</span><span class="o">.</span><span class="n">compression_format</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">wt_compress</span><span class="o">.</span><span class="n">wt_size</span> <span class="o">=</span> <span class="mi">2550</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">wrb</span><span class="o">.</span><span class="n">mode_ctrl</span><span class="o">.</span><span class="n">region_en</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>Here <code class="docutils literal notranslate"><span class="pre">mtp</span></code> means mtp of the last register configuration.
+If you want to change the previous configuration, you can specify the index of the register configuration:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">aiff</span><span class="o">.</span><span class="n">reg_cfgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">act_c_ctrl</span><span class="o">.</span><span class="n">iact_chan</span> <span class="o">=</span> <span class="mi">1056</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">reg_cfgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">mtp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">act_c_ctrl</span><span class="o">.</span><span class="n">oact_chan</span> <span class="o">=</span> <span class="mi">96</span>
+</pre></div>
+</div>
+</section>
+<section id="configure-address-registers">
+<h4>Configure address registers<a class="headerlink" href="#configure-address-registers" title="Permalink to this heading"></a></h4>
+<p>There are some registers that need to be configured with Tensor addresses. Since there is no concept of address in Python, you can configure the tensor directly, and it will be automatically replaced with the address of the tensor. The tensor that needs to be configured in the register is created in unittest.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">inp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">1024</span><span class="p">))</span>
+
+<span class="n">aiff</span><span class="o">.</span><span class="n">ptp</span><span class="o">.</span><span class="n">iact_addr</span> <span class="o">=</span> <span class="n">inp</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">wrb</span><span class="o">.</span><span class="n">region1_oact_addr</span> <span class="o">=</span> <span class="n">out</span>
+</pre></div>
+</div>
+<p>In addition, sometimes you need to configure the offset of a tensor, which can be conveniently represented by NumPy slices.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">aiff</span><span class="o">.</span><span class="n">reg_cfgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">wrb</span><span class="o">.</span><span class="n">region1_oact_addr</span> <span class="o">=</span> <span class="n">out</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">64</span><span class="p">:]</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">reg_cfgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">wrb</span><span class="o">.</span><span class="n">region0_oact_addr</span> <span class="o">=</span> <span class="n">out</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">128</span><span class="p">:]</span>
+<span class="n">aiff</span><span class="o">.</span><span class="n">reg_cfgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">wrb</span><span class="o">.</span><span class="n">region1_oact_addr</span> <span class="o">=</span> <span class="n">out</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">224</span><span class="p">:]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="generate-the-descriptor">
+<h3>Generate the descriptor<a class="headerlink" href="#generate-the-descriptor" title="Permalink to this heading"></a></h3>
+<p>Finally, you only need to call the <code class="docutils literal notranslate"><span class="pre">gen_descriptor</span></code> of the AIFF class to generate the descriptor required for operation.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">return</span> <span class="n">aiff</span><span class="o">.</span><span class="n">gen_descriptor</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The returned descriptor is an object of the <code class="docutils literal notranslate"><span class="pre">DescChainArray</span></code> class. It is an array which contains the descriptor chain of ctrl, param and act.</p>
+<p>The default order of returned descriptors is ctrl, param, act. You can combine them in any way you want.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">desc_chain_arr</span> <span class="o">=</span> <span class="n">aiff</span><span class="o">.</span><span class="n">gen_descriptor</span><span class="p">()</span>
+<span class="k">return</span> <span class="n">desc_chain_arr</span><span class="o">.</span><span class="n">param</span> <span class="o">+</span> <span class="n">desc_chain_arr</span><span class="o">.</span><span class="n">act</span> <span class="o">+</span> <span class="n">desc_chain_arr</span><span class="o">.</span><span class="n">ctrl</span>
+</pre></div>
+</div>
+<p>Here reorder it as param, act, ctrl.</p>
+</section>
+</section>
+<section id="run">
+<h2>Run<a class="headerlink" href="#run" title="Permalink to this heading"></a></h2>
+<p>There is no change to the way DSL runs. The only thing to note is that the parameters passed in need to correspond to the parameters declared in the kernel function.</p>
+<p>For a single descriptor parameter:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">aiff_func</span><span class="p">(</span>
+    <span class="n">desc</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)</span>
+<span class="p">):</span>
+    <span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">test_aiff</span><span class="p">():</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;uint8&quot;</span>
+    <span class="n">inp</span> <span class="o">=</span> <span class="n">rand</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">150</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="n">gt_out</span> <span class="o">=</span> <span class="n">get_gt</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+    <span class="n">aiff</span> <span class="o">=</span> <span class="n">get_aiff</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+
+    <span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">()</span>
+    <span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">aiff_func</span><span class="p">)</span>
+
+    <span class="n">py_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">get_desc</span><span class="p">(</span><span class="n">aiff</span><span class="p">,</span> <span class="n">py_out</span><span class="p">)</span>
+    <span class="n">aiff_func</span><span class="p">(</span><span class="n">py_out</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+    <span class="n">testing</span><span class="o">.</span><span class="n">assert_allclose</span><span class="p">(</span><span class="n">py_out</span><span class="p">,</span> <span class="n">gt_out</span><span class="p">)</span>
+
+    <span class="n">aipu_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">desc</span> <span class="o">=</span> <span class="n">get_desc</span><span class="p">(</span><span class="n">aiff</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">)</span>
+    <span class="n">ex</span><span class="p">(</span><span class="n">aipu_out</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+    <span class="n">testing</span><span class="o">.</span><span class="n">assert_allclose</span><span class="p">(</span><span class="n">aipu_out</span><span class="p">,</span> <span class="n">gt_out</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For multiple descriptor parameters:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">aiff_func</span><span class="p">(</span>
+    <span class="n">ctrl</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">act</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;u32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)</span>
+<span class="p">):</span>
+    <span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">test_aiff</span><span class="p">():</span>
+    <span class="o">...</span>
+    <span class="n">aiff_func</span><span class="p">(</span><span class="n">py_out</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">param</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">act</span><span class="p">)</span>
+
+    <span class="o">...</span>
+    <span class="n">ex</span><span class="p">(</span><span class="n">aipu_out</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">ctrl</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">param</span><span class="p">,</span> <span class="n">desc</span><span class="o">.</span><span class="n">act</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-aiff">
+<h2>Multi-AIFF<a class="headerlink" href="#multi-aiff" title="Permalink to this heading"></a></h2>
+<p>Multiple physical AIFFs exist simultaneously in the Zhouyi X3 target. Obviously, in this case, multiple AIFFs will start, and one AIFF object is not enough.</p>
+<p>The solution is to create multiple AIFF objects. The key is to organize the relationship between descriptors.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">desc0</span> <span class="o">=</span> <span class="n">aiff0</span><span class="o">.</span><span class="n">gen_descriptor</span><span class="p">()</span>
+<span class="n">desc1</span> <span class="o">=</span> <span class="n">aiff1</span><span class="o">.</span><span class="n">gen_descriptor</span><span class="p">()</span>
+
+<span class="c1"># Puts all ctrl together and so on.</span>
+<span class="k">def</span> <span class="nf">puts_together</span><span class="p">(</span><span class="n">desc0</span><span class="p">,</span> <span class="n">desc1</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">desc0</span><span class="o">.</span><span class="n">ctrl</span> <span class="o">+</span> <span class="n">desc1</span><span class="o">.</span><span class="n">ctrl</span> <span class="o">+</span> <span class="n">desc0</span><span class="o">.</span><span class="n">param</span> <span class="o">+</span> <span class="n">desc1</span><span class="o">.</span><span class="n">param</span> <span class="o">+</span> <span class="n">desc0</span><span class="o">.</span><span class="n">act</span> <span class="o">+</span> <span class="n">desc1</span><span class="o">.</span><span class="n">act</span>
+
+<span class="c1"># Or puts every chain independently.</span>
+<span class="k">def</span> <span class="nf">puts_independently</span><span class="p">(</span><span class="n">desc0</span><span class="p">,</span> <span class="n">desc1</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">desc0</span> <span class="o">+</span> <span class="n">desc1</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_use_inline_assembly.html" class="btn btn-neutral float-left" title="How to Use Inline Assembly" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../explanation/about_this_doc.html" class="btn btn-neutral float-right" title="About This Documentation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Use Subfunctions &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Use a Pointer" href="how_to_use_pointer.html" />
+    <link rel="prev" title="How to Write a Basic Kernel" href="how_to_write_a_basic_kernel.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to Use Subfunctions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-concept-of-subfunctions">The Concept of Subfunctions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#what-are-subfunctions">What Are Subfunctions?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#benefits-of-using-subfunctions">Benefits of Using Subfunctions</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#subfunction-language-spec">Subfunction Language Spec</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#defining-subfunctions">Defining Subfunctions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calling-subfunctions">Calling Subfunctions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#parameters">Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#example">Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>How to Use Subfunctions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/how_to_guides/how_to_use_subfunctions.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="how-to-use-subfunctions">
+<h1>How to Use Subfunctions<a class="headerlink" href="#how-to-use-subfunctions" title="Permalink to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
+<p>In various programming contexts, especially when working with Domain-Specific Languages (DSLs), subfunctions play a crucial role.
+They not only help in reducing code complexity but also enhance code readability and reusability.
+However, despite the seemingly straightforward concept of subfunctions, using them correctly and efficiently requires certain skills and knowledge.</p>
+<p>This tutorial is designed to delve into the use of subfunctions within DSLs, guiding you step by step on how to effectively utilize subfunctions to optimize your DSL code.
+Whether you are new to DSLs or looking to improve the quality of your existing code, this tutorial will provide valuable insights and techniques.</p>
+<p>Through this tutorial, you will learn:</p>
+<ul class="simple">
+<li><p>The basic concepts of subfunctions.</p></li>
+<li><p>How to define subfunctions.</p></li>
+<li><p>Different ways to call subfunctions and how to pass parameters to them.</p></li>
+<li><p>How to leverage subfunction return values to simplify code logic.</p></li>
+</ul>
+</section>
+<section id="the-concept-of-subfunctions">
+<h2>The Concept of Subfunctions<a class="headerlink" href="#the-concept-of-subfunctions" title="Permalink to this heading"></a></h2>
+<p>Subfunctions are a fundamental concept in programming, allowing for the modularization of code into smaller, reusable blocks.
+In the context of DSL, subfunctions play a pivotal role in organizing code in a way that enhances readability, maintainability, and efficiency.</p>
+<section id="what-are-subfunctions">
+<h3>What Are Subfunctions?<a class="headerlink" href="#what-are-subfunctions" title="Permalink to this heading"></a></h3>
+<p>Subfunctions, also known as subroutines or methods in various programming paradigms, are essentially blocks of code designed to perform a specific task.
+Once defined, these blocks can be invoked or called multiple times throughout a program, potentially with varying parameters, to execute the task for which they were designed.
+This modular approach to programming helps in breaking down complex problems into manageable pieces.</p>
+</section>
+<section id="benefits-of-using-subfunctions">
+<h3>Benefits of Using Subfunctions<a class="headerlink" href="#benefits-of-using-subfunctions" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><strong>Code Reusability</strong>: Once a subfunction is defined, it can be reused throughout the codebase, reducing redundancy and the potential for errors.</p></li>
+<li><p><strong>Improved Readability</strong>: Subfunctions help to abstract away the complexity of operations, making the main code flow easier to read and understand.</p></li>
+<li><p><strong>Ease of Maintenance</strong>: With distinct functionality encapsulated in subfunctions, updating and maintaining code becomes more straightforward. Changes made in a subfunction automatically propagate wherever the subfunction is called.</p></li>
+<li><p><strong>Simplified Debugging</strong>: Debugging becomes easier as developers can isolate and test individual subfunctions, ensuring each part of the code performs as expected before integrating them into the larger system.</p></li>
+</ul>
+</section>
+</section>
+<section id="subfunction-language-spec">
+<h2>Subfunction Language Spec<a class="headerlink" href="#subfunction-language-spec" title="Permalink to this heading"></a></h2>
+<p>In this section, we will cover how to define and call subfunctions within Compass DSL, integrating these steps into a seamless workflow.</p>
+<section id="defining-subfunctions">
+<h3>Defining Subfunctions<a class="headerlink" href="#defining-subfunctions" title="Permalink to this heading"></a></h3>
+<p>In Compass DSL, defining a subfunction is more like Python.
+Here we define an add function.
+It takes two parameters, <code class="docutils literal notranslate"><span class="pre">a</span></code> and <code class="docutils literal notranslate"><span class="pre">b</span></code>, and returns their sum.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&#64;S.prim_func</span></code> is a decorator meaning this is a prim func.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">def</span></code> begins the definition of a subfunction.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">add</span></code> is the subfunction name.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">a:</span> <span class="pre">S.i32,</span> <span class="pre">b:</span> <span class="pre">S.i32</span></code> are the input parameters and their type annotation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-&gt;</span> <span class="pre">S.i32</span></code> is the return type. If omitted, the return type is void.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">return</span></code> outputs a value from the subfunction. If omitted, the subfunction returns <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+</ul>
+</section>
+<section id="calling-subfunctions">
+<h3>Calling Subfunctions<a class="headerlink" href="#calling-subfunctions" title="Permalink to this heading"></a></h3>
+<p>To use a subfunction, you call it by its name and pass the required arguments:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="c1"># result: 8</span>
+</pre></div>
+</div>
+</section>
+<section id="parameters">
+<h3>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h3>
+<p>There are many parameter types that can be passed:</p>
+<ul class="simple">
+<li><p>Scalar, like S.i32, S.u8</p></li>
+<li><p>Vector, like S.i32x8, S.u8x32</p></li>
+<li><p>Pointer, S.ptr</p></li>
+</ul>
+<p>Note that due to design reasons, the function does not support recursive calls.</p>
+</section>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<p>Here is a code snippet taken from bitonic sort:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">cons_seq</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;shared&quot;</span><span class="p">)):</span>
+    <span class="n">step_num</span> <span class="o">=</span> <span class="n">log2</span><span class="p">(</span><span class="n">num</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">step_num</span><span class="p">):</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">t</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num</span> <span class="o">//</span> <span class="n">step</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sort_seq</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sort_seq</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">i</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">bitonic_sort</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">dst</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">is_ascended</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="n">shared_buf</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="n">num</span><span class="p">,),</span> <span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;shared&quot;</span><span class="p">)</span>
+    <span class="n">tid</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_id</span><span class="p">()</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="n">num</span> <span class="o">//</span> <span class="mi">4</span>
+
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">shared_buf</span> <span class="o">+</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="n">src</span> <span class="o">+</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+
+    <span class="n">cons_seq</span><span class="p">(</span><span class="n">shared_buf</span><span class="p">)</span>
+    <span class="n">sort_seq</span><span class="p">(</span><span class="n">shared_buf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">is_ascended</span><span class="p">)</span>
+
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">dst</span> <span class="o">+</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="n">shared_buf</span> <span class="o">+</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">step</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>the generated code will be:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">cons_seq</span><span class="p">(</span><span class="n">__local</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">src</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">step_num</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">log2</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">step_num</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="p">(</span><span class="n">t</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">));</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="p">(</span><span class="mi">1024</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">step</span><span class="p">);</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">cse_var_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">step</span><span class="p">);</span>
+<span class="w">      </span><span class="kt">int</span><span class="w"> </span><span class="n">cse_var_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">step</span><span class="p">);</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">((</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">sort_seq</span><span class="p">(</span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">cse_var_2</span><span class="p">,</span><span class="w"> </span><span class="n">cse_var_1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">sort_seq</span><span class="p">(</span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">cse_var_2</span><span class="p">,</span><span class="w"> </span><span class="n">cse_var_1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">bitonic_sort</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">dst</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">is_ascended</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">__local</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">shared_buf_buf</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span>
+<span class="w">  </span><span class="n">__local</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">shared_buf</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">shared_buf_buf</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">tid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_local_id</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">step</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">256</span><span class="p">;</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">cse_var_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">tid</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">step</span><span class="p">);</span>
+<span class="w">  </span><span class="kt">int</span><span class="w"> </span><span class="n">cse_var_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">step</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span>
+<span class="w">  </span><span class="n">DMA1D</span><span class="p">((</span><span class="n">src</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cse_var_2</span><span class="p">),</span><span class="w"> </span><span class="p">(</span><span class="n">shared_buf</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cse_var_2</span><span class="p">),</span><span class="w"> </span><span class="n">cse_var_1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">  </span><span class="n">barrier</span><span class="p">(</span><span class="n">CLK_LOCAL_MEM_FENCE</span><span class="p">);</span>
+<span class="w">  </span><span class="n">cons_seq</span><span class="p">(</span><span class="n">shared_buf</span><span class="p">);</span>
+<span class="w">  </span><span class="n">sort_seq</span><span class="p">(</span><span class="n">shared_buf</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span><span class="w"> </span><span class="n">is_ascended</span><span class="p">);</span>
+<span class="w">  </span><span class="n">DMA1D</span><span class="p">((</span><span class="n">dst</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cse_var_2</span><span class="p">),</span><span class="w"> </span><span class="p">(</span><span class="n">shared_buf</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cse_var_2</span><span class="p">),</span><span class="w"> </span><span class="n">cse_var_1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">  </span><span class="n">barrier</span><span class="p">(</span><span class="n">CLK_LOCAL_MEM_FENCE</span><span class="p">);</span>
+<span class="w">  </span><span class="n">barrier</span><span class="p">(</span><span class="n">CLK_LOCAL_MEM_FENCE</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this heading"></a></h2>
+<p>Understanding and effectively utilizing subfunctions is crucial for any developer working with DSL.
+By organizing code into logical blocks, developers can create more readable, maintainable, and efficient applications.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="how_to_write_a_basic_kernel.html" class="btn btn-neutral float-left" title="How to Write a Basic Kernel" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="how_to_use_pointer.html" class="btn btn-neutral float-right" title="How to Use a Pointer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

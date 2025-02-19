@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Script API &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Synchronization" href="ir/synchronization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="ir/index.html">Builtin API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Script API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.prim_func"><code class="docutils literal notranslate"><span class="pre">prim_func()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.macro"><code class="docutils literal notranslate"><span class="pre">macro()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.tir.Pointer"><code class="docutils literal notranslate"><span class="pre">Pointer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.is_nullptr"><code class="docutils literal notranslate"><span class="pre">Pointer.is_nullptr</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.as_ptr"><code class="docutils literal notranslate"><span class="pre">Pointer.as_ptr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__getitem__"><code class="docutils literal notranslate"><span class="pre">Pointer.__getitem__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__add__"><code class="docutils literal notranslate"><span class="pre">Pointer.__add__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__radd__"><code class="docutils literal notranslate"><span class="pre">Pointer.__radd__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__sub__"><code class="docutils literal notranslate"><span class="pre">Pointer.__sub__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__lt__"><code class="docutils literal notranslate"><span class="pre">Pointer.__lt__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__le__"><code class="docutils literal notranslate"><span class="pre">Pointer.__le__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__gt__"><code class="docutils literal notranslate"><span class="pre">Pointer.__gt__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__ge__"><code class="docutils literal notranslate"><span class="pre">Pointer.__ge__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__eq__"><code class="docutils literal notranslate"><span class="pre">Pointer.__eq__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.tir.Pointer.__ne__"><code class="docutils literal notranslate"><span class="pre">Pointer.__ne__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.tir.BuildManager"><code class="docutils literal notranslate"><span class="pre">BuildManager</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.BuildManager.__init__"><code class="docutils literal notranslate"><span class="pre">BuildManager.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.BuildManager.lower"><code class="docutils literal notranslate"><span class="pre">BuildManager.lower()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.BuildManager.gen_op_lib"><code class="docutils literal notranslate"><span class="pre">BuildManager.gen_op_lib()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.BuildManager.build"><code class="docutils literal notranslate"><span class="pre">BuildManager.build()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.tir.executor.Executor"><code class="docutils literal notranslate"><span class="pre">Executor</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.executor.Executor.c_code"><code class="docutils literal notranslate"><span class="pre">Executor.c_code</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.executor.Executor.rpc_sess"><code class="docutils literal notranslate"><span class="pre">Executor.rpc_sess</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.executor.Executor.run"><code class="docutils literal notranslate"><span class="pre">Executor.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.executor.Executor.benchmark"><code class="docutils literal notranslate"><span class="pre">Executor.benchmark()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.tir.executor.Executor.profile"><code class="docutils literal notranslate"><span class="pre">Executor.profile()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.utils.get_rpc_session"><code class="docutils literal notranslate"><span class="pre">get_rpc_session()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.utils.hw_native_vdtype"><code class="docutils literal notranslate"><span class="pre">hw_native_vdtype()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.utils.rand"><code class="docutils literal notranslate"><span class="pre">rand()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.ir.ir.vectorized"><code class="docutils literal notranslate"><span class="pre">vectorized()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.ir.ir.block"><code class="docutils literal notranslate"><span class="pre">block()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.ir.ir.grid"><code class="docutils literal notranslate"><span class="pre">grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.ir.axis.spatial"><code class="docutils literal notranslate"><span class="pre">spatial()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.ir.axis.reduce"><code class="docutils literal notranslate"><span class="pre">reduce()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm.aipu.script.ir.axis.remap"><code class="docutils literal notranslate"><span class="pre">remap()</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Script API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/script_api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tvm.aipu.script">
+<span id="script-api"></span><h1>Script API<a class="headerlink" href="#module-tvm.aipu.script" title="Permalink to this heading"></a></h1>
+<p>Zhouyi Compass script APIs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.prim_func">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.</span></span><span class="sig-name descname"><span class="pre">prim_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_entry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_inline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.prim_func" title="Permalink to this definition"></a></dt>
+<dd><p>Decorator for prim_func definitions.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>func<span class="classifier">Callable</span></dt><dd><p>The function to be parsed as prim func.</p>
+</dd>
+<dt>is_entry: Optional[bool]</dt><dd><p>Whether the function is entry kernel. If this option is not set, it will automatically
+perform function dependency analysis to infer which function is the entry kernel function.</p>
+</dd>
+<dt>is_inline<span class="classifier">Optional[bool]</span></dt><dd><p>Whether the function is treated as an inline function in codegen.</p>
+<ul class="simple">
+<li><p>None: codegen will not add any attribute for the current function.</p></li>
+<li><p>True: codegen will add “_CLC_INLINE” attr for the current function.</p></li>
+<li><p>False: codegen will add “_CLC_NOINLINE” attr for the current function.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">xxx</span><span class="p">):</span>
+    <span class="n">xxx</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span><span class="p">(</span><span class="n">is_inline</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">utils_func</span><span class="p">(</span><span class="n">xxx</span><span class="p">):</span>
+    <span class="n">xxx</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span><span class="p">(</span><span class="n">is_entry</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">kernel_func</span><span class="p">(</span><span class="n">xxx</span><span class="p">):</span>
+    <span class="n">utils_func</span><span class="p">(</span><span class="n">xxx</span><span class="p">)</span>
+    <span class="n">func</span><span class="p">(</span><span class="n">xxx</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.macro">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.</span></span><span class="sig-name descname"><span class="pre">macro</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hygienic</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.macro" title="Permalink to this definition"></a></dt>
+<dd><p>Decorator for macro definitions.</p>
+<section id="id1">
+<h2>Parameters<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
+<dl>
+<dt>hygienic: Optional[bool]</dt><dd><p>Specifies whether the macro is hygienic or not.</p>
+<p>A macro is hygienic if all symbols used in the macro’s body are resolved
+to values from the location of the macro definition. A non-hygienic macro
+will have its symbols resolved to values at the time of macro use.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Examples<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tvm.aipu</span> <span class="kn">import</span> <span class="n">script</span> <span class="k">as</span> <span class="n">S</span>
+
+<span class="n">x_value</span> <span class="o">=</span> <span class="mi">128</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">macro</span><span class="p">(</span><span class="n">hygienic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">static_capture</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+    <span class="n">B</span><span class="p">[</span><span class="n">x_value</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">x_value</span><span class="p">]</span>     <span class="c1">## x_value binds to 128</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">macro</span><span class="p">(</span><span class="n">hygienic</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">dynamic_capture</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+    <span class="n">B</span><span class="p">[</span><span class="n">x_value</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">x_value</span><span class="p">]</span>     <span class="c1">## x_value will bind at the time of use</span>
+
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">use1</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;fp32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">B</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;fp32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">x_value</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">static_capture</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>    <span class="c1">## Produces B[128] = A[128]</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">use2</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;fp32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">B</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;fp32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">x_value</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+        <span class="n">dynamic_capture</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">)</span>   <span class="c1">## Produces B[x_value] = A[x_value]</span>
+</pre></div>
+</div>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../how_to_guides/how_to_use_macros.html"><span class="doc">How to Use Macros</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tvm.tir.Pointer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tvm.tir.</span></span><span class="sig-name descname"><span class="pre">Pointer</span></span><a class="headerlink" href="#tvm.tir.Pointer" title="Permalink to this definition"></a></dt>
+<dd><p>Represents the concept that corresponds to the C/C++ pointer.</p>
+<p>Just like the pointer of C/C++, below operations are supported.</p>
+<ul class="simple">
+<li><p>Move forward and backward through adding or subtracting an integer value.</p></li>
+<li><p>Read and write data as a 1-dimension array.</p></li>
+<li><p>Check whether it is a null pointer or not.</p></li>
+<li><p>Compare with the other pointer instance.</p></li>
+<li><p>Cast to another type pointer.</p></li>
+</ul>
+<dl class="py property">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.is_nullptr">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_nullptr</span></span><a class="headerlink" href="#tvm.tir.Pointer.is_nullptr" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the current pointer instance is a null pointer or not.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.as_ptr">
+<span class="sig-name descname"><span class="pre">as_ptr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.as_ptr" title="Permalink to this definition"></a></dt>
+<dd><p>Cast to another pointer whose data type is the given one.</p>
+<section id="id3">
+<h2>Parameters<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The target data type.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Pointer</span></dt><dd><p>The new temporary pointer instance.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indices</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__getitem__" title="Permalink to this definition"></a></dt>
+<dd><p>Read data as a 1-dimension array.</p>
+<section id="id4">
+<h2>Parameters<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>indices<span class="classifier">Union[sgentype, slice]</span></dt><dd><p>The index used to access the concrete data. Multiple data will be read if it is a slice.</p>
+</dd>
+</dl>
+</section>
+<section id="id5">
+<h2>Returns<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">single or multiple times of the data type of the pointer</span></dt><dd><p>The result data that is read out.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__add__">
+<span class="sig-name descname"><span class="pre">__add__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__add__" title="Permalink to this definition"></a></dt>
+<dd><p>Move the pointer to the higher address space.</p>
+<section id="id6">
+<h2>Parameters<a class="headerlink" href="#id6" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">sgentype</span></dt><dd><p>The step that the pointer will be moved, in units of data type of the pointer.</p>
+</dd>
+</dl>
+</section>
+<section id="id7">
+<h2>Returns<a class="headerlink" href="#id7" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Pointer</span></dt><dd><p>The new temporary pointer instance.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__radd__">
+<span class="sig-name descname"><span class="pre">__radd__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__radd__" title="Permalink to this definition"></a></dt>
+<dd><p>Move the pointer to the higher address space.</p>
+<section id="id8">
+<h2>Parameters<a class="headerlink" href="#id8" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">sgentype</span></dt><dd><p>The step that the pointer will be moved, in units of data type of the pointer.</p>
+</dd>
+</dl>
+</section>
+<section id="id9">
+<h2>Returns<a class="headerlink" href="#id9" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Pointer</span></dt><dd><p>The new temporary pointer instance.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__sub__">
+<span class="sig-name descname"><span class="pre">__sub__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__sub__" title="Permalink to this definition"></a></dt>
+<dd><p>Move the pointer to the lower address space.</p>
+<section id="id10">
+<h2>Parameters<a class="headerlink" href="#id10" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">sgentype</span></dt><dd><p>The step that the pointer will be moved, in units of data type of the pointer.</p>
+</dd>
+</dl>
+</section>
+<section id="id11">
+<h2>Returns<a class="headerlink" href="#id11" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Pointer</span></dt><dd><p>The new temporary pointer instance.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__lt__">
+<span class="sig-name descname"><span class="pre">__lt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__lt__" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the address that the pointer represents is &lt; that of “other”.</p>
+<section id="id12">
+<h2>Parameters<a class="headerlink" href="#id12" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">Pointer</span></dt><dd><p>The other pointer instance that will be compared with.</p>
+</dd>
+</dl>
+</section>
+<section id="id13">
+<h2>Returns<a class="headerlink" href="#id13" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">bool</span></dt><dd><p>The compare result.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__le__">
+<span class="sig-name descname"><span class="pre">__le__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__le__" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the address that the pointer represents is &lt;= that of “other”.</p>
+<section id="id14">
+<h2>Parameters<a class="headerlink" href="#id14" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">Pointer</span></dt><dd><p>The other pointer instance that will be compared with.</p>
+</dd>
+</dl>
+</section>
+<section id="id15">
+<h2>Returns<a class="headerlink" href="#id15" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">bool</span></dt><dd><p>The compare result.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__gt__">
+<span class="sig-name descname"><span class="pre">__gt__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__gt__" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the address that the pointer represents is &gt; that of “other”.</p>
+<section id="id16">
+<h2>Parameters<a class="headerlink" href="#id16" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">Pointer</span></dt><dd><p>The other pointer instance that will be compared with.</p>
+</dd>
+</dl>
+</section>
+<section id="id17">
+<h2>Returns<a class="headerlink" href="#id17" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">bool</span></dt><dd><p>The compare result.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__ge__">
+<span class="sig-name descname"><span class="pre">__ge__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__ge__" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the address that the pointer represents is &gt;= that of “other”.</p>
+<section id="id18">
+<h2>Parameters<a class="headerlink" href="#id18" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">Pointer</span></dt><dd><p>The other pointer instance that will be compared with.</p>
+</dd>
+</dl>
+</section>
+<section id="id19">
+<h2>Returns<a class="headerlink" href="#id19" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">bool</span></dt><dd><p>The compare result.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__eq__">
+<span class="sig-name descname"><span class="pre">__eq__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__eq__" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the address that the pointer represents is == that of “other”.</p>
+<section id="id20">
+<h2>Parameters<a class="headerlink" href="#id20" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">Pointer</span></dt><dd><p>The other pointer instance that will be compared with.</p>
+</dd>
+</dl>
+</section>
+<section id="id21">
+<h2>Returns<a class="headerlink" href="#id21" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">bool</span></dt><dd><p>The compare result.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.tir.Pointer.__ne__">
+<span class="sig-name descname"><span class="pre">__ne__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.tir.Pointer.__ne__" title="Permalink to this definition"></a></dt>
+<dd><p>Check whether the address that the pointer represents is != that of “other”.</p>
+<section id="id22">
+<h2>Parameters<a class="headerlink" href="#id22" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>other<span class="classifier">Pointer</span></dt><dd><p>The other pointer instance that will be compared with.</p>
+</dd>
+</dl>
+</section>
+<section id="id23">
+<h2>Returns<a class="headerlink" href="#id23" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">bool</span></dt><dd><p>The compare result.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tvm.aipu.tir.BuildManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tvm.aipu.tir.</span></span><span class="sig-name descname"><span class="pre">BuildManager</span></span><a class="headerlink" href="#tvm.aipu.tir.BuildManager" title="Permalink to this definition"></a></dt>
+<dd><p>The user interface of DSL program compilation.</p>
+<section id="id24">
+<h2>Examples<a class="headerlink" href="#id24" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">add_func</span><span class="p">(</span><span class="n">xxx</span><span class="p">):</span>
+    <span class="n">xxx</span>
+
+<span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;X2_1204&quot;</span><span class="p">)</span>
+<span class="n">mod</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">add_func</span><span class="p">)</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">add_func</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.aipu.tir.BuildManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X2_1204'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disabled_pass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.tir.BuildManager.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor.</p>
+<section id="id25">
+<h3>Parameters<a class="headerlink" href="#id25" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>target<span class="classifier">Union[str, tvm.target.Target]</span></dt><dd><p>The target that it is built for. It can be a literal target string or a
+tvm.target.Target object.</p>
+</dd>
+<dt>output_dir<span class="classifier">Optional[str]</span></dt><dd><p>The directory to store all files generated during DSL program compilation and execution.
+If not set, a temporary directory inside the current working directory will be used.</p>
+</dd>
+<dt>cc_options<span class="classifier">Optional[str]</span></dt><dd><p>The extra compilation options that need to be passed to the Compass OpenCL compiler.</p>
+</dd>
+<dt>disabled_pass<span class="classifier">Optional[Union[List[str], Tuple[str]]]</span></dt><dd><p>The passes need to be disabled during DSL program compilation.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.aipu.tir.BuildManager.lower">
+<span class="sig-name descname"><span class="pre">lower</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.tir.BuildManager.lower" title="Permalink to this definition"></a></dt>
+<dd><p>The lower interface of DSL program compilation.</p>
+<section id="id26">
+<h3>Parameters<a class="headerlink" href="#id26" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>inp<span class="classifier">Union[tvm.te.Schedule, tvm.tir.PrimFunc, tvm.IRModule]</span></dt><dd><p>The TE schedule or TensorIR PrimFunc/IRModule to be lowered.</p>
+</dd>
+<dt>args<span class="classifier">Optional[List[Union[tvm.tir.Buffer, tvm.te.Tensor, tvm.tir.Var]]]</span></dt><dd><p>The argument lists to the function for TE schedule. It should be None if you want to
+lower TensorIR.</p>
+</dd>
+<dt>name<span class="classifier">Optional[str]</span></dt><dd><p>The name of the result entry TensorIR PrimFunc. It is required for TE schedule, optional
+for TensorIR PrimFunc, and unused for TensorIR IRModule. For TensorIR PrimFunc, if set,
+it will override the current value of attribute “global_symbol” of the entry TensorIR
+PrimFunc.</p>
+</dd>
+<dt>binds<span class="classifier">Optional[Mapping[tvm.te.Tensor, tvm.tir.Buffer]]</span></dt><dd><p>Dictionary that maps the Tensor to Buffer which specified the data layout requirement of
+the function. By default, a new compact buffer is created for each tensor in the
+argument.</p>
+</dd>
+</dl>
+</section>
+<section id="id27">
+<h3>Returns<a class="headerlink" href="#id27" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>ret<span class="classifier">tvm.IRModule</span></dt><dd><p>The result IRModule.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.aipu.tir.BuildManager.gen_op_lib">
+<span class="sig-name descname"><span class="pre">gen_op_lib</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.tir.BuildManager.gen_op_lib" title="Permalink to this definition"></a></dt>
+<dd><p>Generate Compass OpenCL code, compile it, and save it to the specified path.</p>
+<section id="id28">
+<h3>Parameters<a class="headerlink" href="#id28" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>inp<span class="classifier">Union[tvm.te.Schedule, tvm.tir.PrimFunc, tvm.IRModule]</span></dt><dd><p>The TE schedule or TensorIR PrimFunc/IRModule to be lowered.</p>
+</dd>
+<dt>args<span class="classifier">Optional[List[Union[tvm.tir.Buffer, tvm.te.Tensor, tvm.tir.Var]]]</span></dt><dd><p>The argument lists to the function for TE schedule. It should be None if you want to
+lower TensorIR.</p>
+</dd>
+<dt>name<span class="classifier">Optional[str]</span></dt><dd><p>The name of the result entry TensorIR PrimFunc. It is required for TE schedule, optional
+for TensorIR PrimFunc, and unused for TensorIR IRModule. For TensorIR PrimFunc, if set,
+it will override the current value of attribute “global_symbol” of the entry TensorIR
+PrimFunc.</p>
+</dd>
+<dt>binds<span class="classifier">Optional[Mapping[tvm.te.Tensor, tvm.tir.Buffer]]</span></dt><dd><p>Dictionary that maps the Tensor to Buffer which specified the data layout requirement of
+the function. By default, a new compact buffer is created for each tensor in the
+argument.</p>
+</dd>
+<dt>output_path<span class="classifier">Optional[str]</span></dt><dd><p>The path of the output object file that is compiled from the generated Compass OpenCL
+code file. If not set, it will be constructed using argument “output_dir” of the
+constructor and the name of entry PrimFunc.</p>
+</dd>
+<dt>verbose<span class="classifier">Optional[bool]</span></dt><dd><p>Print output path if verbose is True. By default, it is False.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.aipu.tir.BuildManager.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.tir.BuildManager.build" title="Permalink to this definition"></a></dt>
+<dd><p>The build interface of DSL program compilation.</p>
+<section id="id29">
+<h3>Parameters<a class="headerlink" href="#id29" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>inp<span class="classifier">Union[tvm.te.Schedule, tvm.tir.PrimFunc, tvm.IRModule]</span></dt><dd><p>The TE schedule or TensorIR PrimFunc/IRModule to be lowered.</p>
+</dd>
+<dt>args<span class="classifier">Optional[List[Union[tvm.tir.Buffer, tvm.te.Tensor, tvm.tir.Var]]]</span></dt><dd><p>The argument lists to the function for TE schedule. It should be None if you want to
+lower TensorIR.</p>
+</dd>
+<dt>name<span class="classifier">Optional[str]</span></dt><dd><p>The name of the result entry TensorIR PrimFunc. It is required for TE schedule, optional
+for TensorIR PrimFunc, and unused for TensorIR IRModule. For TensorIR PrimFunc, if set,
+it will override the current value of attribute “global_symbol” of the entry TensorIR
+PrimFunc.</p>
+</dd>
+<dt>binds<span class="classifier">Optional[Mapping[tvm.te.Tensor, tvm.tir.Buffer]]</span></dt><dd><p>Dictionary that maps the Tensor to Buffer which specified the data layout requirement of
+the function. By default, a new compact buffer is created for each tensor in the
+argument.</p>
+</dd>
+</dl>
+</section>
+<section id="id30">
+<h3>Returns<a class="headerlink" href="#id30" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>ret<span class="classifier">tvm.aipu.tir.executor.Executor</span></dt><dd><p>The object that is responsible for the subsequent execution job.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tvm.aipu.tir.executor.Executor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">tvm.aipu.tir.executor.</span></span><span class="sig-name descname"><span class="pre">Executor</span></span><a class="headerlink" href="#tvm.aipu.tir.executor.Executor" title="Permalink to this definition"></a></dt>
+<dd><p>The class responsible for executing the DSL program.</p>
+<section id="id31">
+<h2>Examples<a class="headerlink" href="#id31" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">add_func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="n">xxx</span>
+
+<span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">()</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">add_func</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py property">
+<dt class="sig sig-object py" id="tvm.aipu.tir.executor.Executor.c_code">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">c_code</span></span><a class="headerlink" href="#tvm.aipu.tir.executor.Executor.c_code" title="Permalink to this definition"></a></dt>
+<dd><p>Get the Compass OpenCL code of the DSL program.</p>
+<section id="id32">
+<h3>Examples<a class="headerlink" href="#id32" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">c_code</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="tvm.aipu.tir.executor.Executor.rpc_sess">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rpc_sess</span></span><a class="headerlink" href="#tvm.aipu.tir.executor.Executor.rpc_sess" title="Permalink to this definition"></a></dt>
+<dd><p>Get or set the RPC session that is used to run a DSL program on a remote device. For
+setting, the value must be an instance of class “tvm.rpc.RPCSession” and already connected
+to the RPC server.</p>
+<section id="id33">
+<h3>Examples<a class="headerlink" href="#id33" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tvm.aipu.utils</span> <span class="kn">import</span> <span class="n">get_rpc_session</span>
+
+<span class="n">ex</span><span class="o">.</span><span class="n">rpc_sess</span> <span class="o">=</span> <span class="n">get_rpc_session</span><span class="p">()</span>
+<span class="n">ex</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>  <span class="c1"># Run on remote device through RPC.</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.aipu.tir.executor.Executor.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.tir.executor.Executor.run" title="Permalink to this definition"></a></dt>
+<dd><p>The run end-to-end interface of DSL program execution.</p>
+<section id="id34">
+<h3>Parameters<a class="headerlink" href="#id34" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>args<span class="classifier">List</span></dt><dd><p>The execution arguments, which should be aligned with the parameters of the DSL program.</p>
+</dd>
+</dl>
+</section>
+<section id="id35">
+<h3>Examples<a class="headerlink" href="#id35" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tvm.aipu.utils</span> <span class="kn">import</span> <span class="n">rand</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">)</span>
+<span class="n">aipu_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int8&quot;</span><span class="p">)</span>
+<span class="n">ex</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>  <span class="c1"># Can also be &quot;ex(a, aipu_out, 100)&quot;.</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.aipu.tir.executor.Executor.benchmark">
+<span class="sig-name descname"><span class="pre">benchmark</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_repeat_ms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit_zero_time_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cooldown_interval_ms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeats_to_cooldown</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.tir.executor.Executor.benchmark" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate runtime of a function by repeatedly calling it.</p>
+<p>Use this function to get an accurate measurement of the runtime of a function. The function
+is run multiple times in order to account for variability in measurements, processor speed
+or other external factors.  Mean, median, standard deviation, min and max runtime are all
+reported. On the AIPU specifically, synchonization and data transfer operations are not
+counted towards the runtime. This allows for fair comparison of runtimes across different
+functions and models.</p>
+<p>The benchmarking loop looks approximately like so:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeat</span><span class="p">):</span>
+    <span class="n">time_start</span> <span class="o">=</span> <span class="n">now</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number</span><span class="p">):</span>
+        <span class="n">func_name</span><span class="p">()</span>
+    <span class="n">time_end</span> <span class="o">=</span> <span class="n">now</span><span class="p">()</span>
+    <span class="n">total_times</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">time_end</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">)</span><span class="o">/</span><span class="n">number</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="id36">
+<h3>Parameters<a class="headerlink" href="#id36" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>args: Sequence[Object]</dt><dd><p>Arguments to the function. These are cached before running timing code, so that data
+transfer costs are not counted in the runtime.</p>
+</dd>
+<dt>repeat: Optional[int]</dt><dd><p>Number of times to run the outer loop of the timing code (see above). The output will
+contain <cite>repeat</cite> number of datapoints.</p>
+</dd>
+<dt>number: Optional[int]</dt><dd><p>Number of times to run the inner loop of the timing code. This inner loop is run in
+between the timer starting and stopping. In order to amortize any timing overhead,
+<cite>number</cite> should be increased when the runtime of the function is small (less than a 1/10
+of a millisecond).</p>
+</dd>
+<dt>min_repeat_ms: Optional[int]</dt><dd><p>If set, the inner loop will be run until it takes longer than <cite>min_repeat_ms</cite>
+milliseconds. This can be used to ensure that the function is run enough to get an
+accurate measurement.</p>
+</dd>
+<dt>limit_zero_time_iterations: Optional[int]</dt><dd><p>The maximum number of repeats when measured time is equal to 0.
+It helps to avoid hanging during measurements.</p>
+</dd>
+<dt>cooldown_interval_ms: Optional[int]</dt><dd><p>The cooldown interval in milliseconds between the number of repeats defined by
+<cite>repeats_to_cooldown</cite>.</p>
+</dd>
+<dt>repeats_to_cooldown: Optional[int]</dt><dd><p>The number of repeats before the cooldown is activated.</p>
+</dd>
+</dl>
+</section>
+<section id="note">
+<h3>Note<a class="headerlink" href="#note" title="Permalink to this heading"></a></h3>
+<p>The function will be invoked  (1 + number x repeat) times,
+with the first call discarded in case there is lazy initialization.</p>
+</section>
+<section id="id37">
+<h3>Returns<a class="headerlink" href="#id37" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>ret: BenchmarkResult</dt><dd><p>Runtimes of the function. Use <cite>.mean</cite> to access the mean runtime, use <cite>.results</cite> to
+access the individual runtimes (in seconds).</p>
+</dd>
+</dl>
+</section>
+<section id="id38">
+<h3>Examples<a class="headerlink" href="#id38" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">benchmark</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">n</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id39">
+<h3>See Also<a class="headerlink" href="#id39" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../getting_started/tutorials/0_quick_start.html"><span class="doc">Tutorial 0: Quick Start</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tvm.aipu.tir.executor.Executor.profile">
+<span class="sig-name descname"><span class="pre">profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.tir.executor.Executor.profile" title="Permalink to this definition"></a></dt>
+<dd><p>Collect accurate performance information on remote device and return total cycles.</p>
+<section id="id40">
+<h3>Parameters<a class="headerlink" href="#id40" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>args<span class="classifier">List</span></dt><dd><p>The execution arguments, which should be aligned with the parameters of the DSL program.</p>
+</dd>
+</dl>
+</section>
+<section id="id41">
+<h3>Returns<a class="headerlink" href="#id41" title="Permalink to this heading"></a></h3>
+<dl class="simple">
+<dt>total_cycles<span class="classifier">int</span></dt><dd><p>The total hardware cycles it took to execute the DSL program.</p>
+</dd>
+</dl>
+</section>
+<section id="id42">
+<h3>Examples<a class="headerlink" href="#id42" title="Permalink to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ex</span><span class="o">.</span><span class="n">profile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id43">
+<h3>See Also<a class="headerlink" href="#id43" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html"><span class="doc">How to Use Profiler</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<span class="target" id="module-tvm.aipu.utils"></span><p>Common AIPU utilities.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.utils.get_rpc_session">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.utils.</span></span><span class="sig-name descname"><span class="pre">get_rpc_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rpc_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracker_host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracker_port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.utils.get_rpc_session" title="Permalink to this definition"></a></dt>
+<dd><p>Connect to the RPC tracker and get an RPC session with the RPC key.</p>
+<section id="id44">
+<h2>Parameters<a class="headerlink" href="#id44" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>session_timeout<span class="classifier">Optional[float]</span></dt><dd><p>The duration of the session, which allows the server to kill
+the connection when duration is longer than this value.
+When duration is zero, it means that the request must always be kept alive.</p>
+</dd>
+<dt>rpc_key<span class="classifier">Optional[str]</span></dt><dd><p>The type key of the device.
+If rpc_key = “None”, get it from env “AIPU_TVM_RPC_KEY”.</p>
+</dd>
+<dt>tracker_host<span class="classifier">Optional[str]</span></dt><dd><p>The hostname or IP address of the RPC tracker.
+If tracker_host = “None”, get it from env “AIPU_TVM_RPC_TRACKER_IP”.</p>
+</dd>
+<dt>tracker_port: Optional[int, str]</dt><dd><p>The port of the RPC tracker.
+If tracker_port = “None”, get it from env “AIPU_TVM_RPC_TRACKER_PORT”.</p>
+</dd>
+<dt>priority<span class="classifier">Optional[int]</span></dt><dd><p>The priority of the request.
+If priority = “None”, get it from env “AIPU_TVM_RPC_PRIORITY”.</p>
+</dd>
+</dl>
+</section>
+<section id="id45">
+<h2>Returns<a class="headerlink" href="#id45" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>sess<span class="classifier">tvm.rpc.RPCSession</span></dt><dd><p>The RPC session that is already connected to the RPC server.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.utils.hw_native_vdtype">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.utils.</span></span><span class="sig-name descname"><span class="pre">hw_native_vdtype</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.utils.hw_native_vdtype" title="Permalink to this definition"></a></dt>
+<dd><p>Get the corresponding hardware native vector data type.</p>
+<section id="id46">
+<h2>Parameters<a class="headerlink" href="#id46" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The given data type, can be any scalar or vector data type except boolean ones.</p>
+</dd>
+</dl>
+</section>
+<section id="id47">
+<h2>Returns<a class="headerlink" href="#id47" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret: DataType</dt><dd><p>The corresponding hardware native vector data type.</p>
+</dd>
+</dl>
+</section>
+<section id="id48">
+<h2>Examples<a class="headerlink" href="#id48" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate from string objects.</span>
+<span class="n">i8x32</span> <span class="o">=</span> <span class="n">hw_native_vdtype</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">)</span>
+<span class="n">fp32x8</span> <span class="o">=</span> <span class="n">hw_native_vdtype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+
+<span class="c1"># Generate from DataType objects.</span>
+<span class="n">u16x16</span> <span class="o">=</span> <span class="n">hw_native_vdtype</span><span class="p">(</span><span class="n">DataType</span><span class="p">(</span><span class="s2">&quot;uint16&quot;</span><span class="p">))</span>
+<span class="n">i32x8</span> <span class="o">=</span> <span class="n">hw_native_vdtype</span><span class="p">(</span><span class="n">DataType</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id49">
+<h2>See Also<a class="headerlink" href="#id49" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../language_basics/types.html"><span class="doc">Types</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.utils.rand">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.utils.</span></span><span class="sig-name descname"><span class="pre">rand</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">low</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">high</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enable_corner_values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_python_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.utils.rand" title="Permalink to this definition"></a></dt>
+<dd><p>Random values in a given shape, dtype and [low, high) range (including low, excluding high).</p>
+<section id="id50">
+<h2>Parameters<a class="headerlink" href="#id50" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>shape<span class="classifier">Union[int, Tuple[int], List[int]]</span></dt><dd><p>The element number on which rand is performed.</p>
+</dd>
+<dt>dtype<span class="classifier">str</span></dt><dd><p>The data type.</p>
+</dd>
+<dt>low<span class="classifier">Optional[int, float]</span></dt><dd><p>The minimum threshold for the rand range.</p>
+</dd>
+<dt>high<span class="classifier">Optional[int, float]</span></dt><dd><p>The maximum threshold for the rand range.</p>
+</dd>
+<dt>enable_corner_values<span class="classifier">Optional[bool]</span></dt><dd><p>Whether the corner values are forced to be included.
+Note:
+1. The corner values contain: low or dtype minimum value, high or dtype maximum value,
+and zero value when zero is in the random range.
+2. When the value is True and the number of elements is less than the number of corner
+values, it is uncertain whether corner values are forced to be included: the existence of
+corner values depends on randomness.</p>
+</dd>
+<dt>return_python_type<span class="classifier">Optional[bool]</span></dt><dd><p>Whether return the result as Python native type or not, if it is False, the result are
+returned as NumPy type.</p>
+</dd>
+</dl>
+</section>
+<section id="id51">
+<h2>Returns<a class="headerlink" href="#id51" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>out: Union[float, int, List[float], List[int], numpy.ndarray]</dt><dd><p>Rand values, scalar when shape is 1 or numpy.ndarray when shape is a tuple of int.</p>
+</dd>
+</dl>
+</section>
+<section id="id52">
+<h2>Examples<a class="headerlink" href="#id52" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate NumPy objects.</span>
+<span class="n">ndarray_i8_a</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">)</span>
+<span class="n">ndarray_fp16_b</span> <span class="o">=</span> <span class="n">rand</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span> <span class="s2">&quot;float16&quot;</span><span class="p">,</span> <span class="n">low</span><span class="o">=-</span><span class="mi">100</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">ndarray_int16_c</span> <span class="o">=</span> <span class="n">rand</span><span class="p">((</span><span class="mi">1</span><span class="p">,),</span> <span class="s2">&quot;int16&quot;</span><span class="p">)</span>
+<span class="n">numpy_fp32_c</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+
+<span class="c1"># Generate Python native type objects.</span>
+<span class="n">float_list_d</span> <span class="o">=</span> <span class="n">rand</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">5.5</span><span class="p">,</span> <span class="n">return_python_type</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">int_value_e</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="n">enable_corner_values</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_python_type</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">int_list_f</span> <span class="o">=</span> <span class="n">rand</span><span class="p">((</span><span class="mi">1</span><span class="p">,),</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="n">return_python_type</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<span class="target" id="module-tvm.aipu.script.ir.ir"></span><p>The official part of IR APIs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.ir.vectorized">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.ir.</span></span><span class="sig-name descname"><span class="pre">vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PrimExpr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PrimExpr</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ForFrame</span></span></span><a class="headerlink" href="#tvm.aipu.script.ir.ir.vectorized" title="Permalink to this definition"></a></dt>
+<dd><p>The vectorized For statement.</p>
+<section id="id53">
+<h2>Parameters<a class="headerlink" href="#id53" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>start<span class="classifier">PrimExpr</span></dt><dd><p>The minimum value of iteration.</p>
+</dd>
+<dt>stop<span class="classifier">PrimExpr</span></dt><dd><p>The maximum value of iteration.</p>
+</dd>
+<dt>annotations<span class="classifier">Dict[str, Any]</span></dt><dd><p>The optional annotations of the For statement.</p>
+</dd>
+</dl>
+</section>
+<section id="id54">
+<h2>Returns<a class="headerlink" href="#id54" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>res<span class="classifier">frame.ForFrame</span></dt><dd><p>The ForFrame.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.ir.block">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.ir.</span></span><span class="sig-name descname"><span class="pre">block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_realize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">BlockFrame</span></span></span><a class="headerlink" href="#tvm.aipu.script.ir.ir.block" title="Permalink to this definition"></a></dt>
+<dd><p>The block declaration statement.</p>
+<section id="id55">
+<h2>Parameters<a class="headerlink" href="#id55" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>name<span class="classifier">str</span></dt><dd><p>The name of the block.</p>
+</dd>
+<dt>no_realize<span class="classifier">bool</span></dt><dd><p>The flag whether to construct BlockRealize or Block.</p>
+</dd>
+</dl>
+</section>
+<section id="id56">
+<h2>Returns<a class="headerlink" href="#id56" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>res<span class="classifier">frame.BlockFrame</span></dt><dd><p>The BlockFrame.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.ir.grid">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.ir.</span></span><span class="sig-name descname"><span class="pre">grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">extents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PrimExpr</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ForFrame</span></span></span><a class="headerlink" href="#tvm.aipu.script.ir.ir.grid" title="Permalink to this definition"></a></dt>
+<dd><p>The grid For statement.</p>
+<section id="id57">
+<h2>Parameters<a class="headerlink" href="#id57" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>extents<span class="classifier">PrimExpr</span></dt><dd><p>The extents of the iteration.</p>
+</dd>
+</dl>
+</section>
+<section id="id58">
+<h2>Returns<a class="headerlink" href="#id58" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>res<span class="classifier">frame.ForFrame</span></dt><dd><p>The ForFrame.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<span class="target" id="module-tvm.aipu.script.ir.axis"></span><p>The axis part of IR APIs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.axis.spatial">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.axis.</span></span><span class="sig-name descname"><span class="pre">spatial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Range</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">PrimExpr</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">PrimExpr</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PrimExpr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'int32'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Var</span></span></span><a class="headerlink" href="#tvm.aipu.script.ir.axis.spatial" title="Permalink to this definition"></a></dt>
+<dd><p>The spatial block axis defining function.</p>
+<section id="id59">
+<h2>Parameters<a class="headerlink" href="#id59" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dom<span class="classifier">Union[Range, List[PrimExpr], Tuple[PrimExpr]]</span></dt><dd><p>The domain of the iteration variable.</p>
+</dd>
+<dt>binding<span class="classifier">PrimExpr</span></dt><dd><p>The binding value of the iteration variable.</p>
+</dd>
+<dt>dtype<span class="classifier">str</span></dt><dd><p>The data type of the iteration variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id60">
+<h2>Returns<a class="headerlink" href="#id60" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>res<span class="classifier">Var</span></dt><dd><p>The iteration variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.axis.reduce">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.axis.</span></span><span class="sig-name descname"><span class="pre">reduce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Range</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">PrimExpr</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">PrimExpr</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PrimExpr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'int32'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Var</span></span></span><a class="headerlink" href="#tvm.aipu.script.ir.axis.reduce" title="Permalink to this definition"></a></dt>
+<dd><p>The reduced block axis defining function.</p>
+<section id="id61">
+<h2>Parameters<a class="headerlink" href="#id61" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dom<span class="classifier">Union[Range, List[PrimExpr], Tuple[PrimExpr]]</span></dt><dd><p>The domain of the iteration variable.</p>
+</dd>
+<dt>binding<span class="classifier">PrimExpr</span></dt><dd><p>The binding value of the iteration variable.</p>
+</dd>
+<dt>dtype<span class="classifier">str</span></dt><dd><p>The data type of the iteration variable.</p>
+</dd>
+</dl>
+</section>
+<section id="id62">
+<h2>Returns<a class="headerlink" href="#id62" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>res<span class="classifier">Var</span></dt><dd><p>The iteration variable.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.axis.remap">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.axis.</span></span><span class="sig-name descname"><span class="pre">remap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kinds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bindings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">PrimExpr</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'int32'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Var</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Var</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#tvm.aipu.script.ir.axis.remap" title="Permalink to this definition"></a></dt>
+<dd><p>The block axis remapping function.</p>
+<section id="id63">
+<h2>Parameters<a class="headerlink" href="#id63" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>kinds<span class="classifier">str</span></dt><dd><p>The types of the iteration variables.</p>
+</dd>
+<dt>bindings<span class="classifier">List[PrimExpr]</span></dt><dd><p>The binding values of the iteration variables.</p>
+</dd>
+<dt>dtype<span class="classifier">str</span></dt><dd><p>The data types of the iteration variables.</p>
+</dd>
+</dl>
+</section>
+<section id="id64">
+<h2>Returns<a class="headerlink" href="#id64" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>res<span class="classifier">Var</span></dt><dd><p>The iteration variables.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ir/synchronization.html" class="btn btn-neutral float-left" title="Synchronization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

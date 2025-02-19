@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Miscellaneous" href="miscellaneous.html" />
+    <link rel="prev" title="Math" href="math.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Builtin API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html">Arithmetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html">Bitwise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html">Compare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html">Conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html">Math</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Memory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.ptr"><code class="docutils literal notranslate"><span class="pre">ptr()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.match_buffer"><code class="docutils literal notranslate"><span class="pre">match_buffer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.alloc"><code class="docutils literal notranslate"><span class="pre">alloc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.alloc_buffer"><code class="docutils literal notranslate"><span class="pre">alloc_buffer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.alloc_const"><code class="docutils literal notranslate"><span class="pre">alloc_const()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.vload"><code class="docutils literal notranslate"><span class="pre">vload()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.vstore"><code class="docutils literal notranslate"><span class="pre">vstore()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.vload_gather"><code class="docutils literal notranslate"><span class="pre">vload_gather()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.vstore_scatter"><code class="docutils literal notranslate"><span class="pre">vstore_scatter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.dma_copy"><code class="docutils literal notranslate"><span class="pre">dma_copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.async_dma_copy"><code class="docutils literal notranslate"><span class="pre">async_dma_copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.dma_transpose2d"><code class="docutils literal notranslate"><span class="pre">dma_transpose2d()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.dma_upsample"><code class="docutils literal notranslate"><span class="pre">dma_upsample()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.dma_memset"><code class="docutils literal notranslate"><span class="pre">dma_memset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tvm.aipu.script.ir.memory.flush_cache"><code class="docutils literal notranslate"><span class="pre">flush_cache()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html">Miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html">Permuation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html">Synchronization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Builtin API</a> &raquo;</li>
+      <li>Memory</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/reference/ir/memory.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-tvm.aipu.script.ir.memory">
+<span id="memory"></span><h1>Memory<a class="headerlink" href="#module-tvm.aipu.script.ir.memory" title="Permalink to this heading"></a></h1>
+<p>The memory part of IR APIs.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.ptr">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">ptr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'private'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.ptr" title="Permalink to this definition"></a></dt>
+<dd><p>Annotates a function parameter as a pointer.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The data type of the data that the pointer points to.</p>
+<ul class="simple">
+<li><p>Scalar dtype:<code class="docutils literal notranslate"><span class="pre">int8</span></code>, <code class="docutils literal notranslate"><span class="pre">uint8</span></code>, <code class="docutils literal notranslate"><span class="pre">int16</span></code>, <code class="docutils literal notranslate"><span class="pre">uint6</span></code>, <code class="docutils literal notranslate"><span class="pre">int32</span></code>, <code class="docutils literal notranslate"><span class="pre">uint32</span></code>,
+<code class="docutils literal notranslate"><span class="pre">float16</span></code>, <code class="docutils literal notranslate"><span class="pre">float32</span></code>, <code class="docutils literal notranslate"><span class="pre">void</span></code></p></li>
+<li><p>Vector dtype:<code class="docutils literal notranslate"><span class="pre">int8x32</span></code>, <code class="docutils literal notranslate"><span class="pre">uint8x32</span></code>, <code class="docutils literal notranslate"><span class="pre">int16x16</span></code>, <code class="docutils literal notranslate"><span class="pre">uint16x16</span></code>, <code class="docutils literal notranslate"><span class="pre">int32x8</span></code>,
+<code class="docutils literal notranslate"><span class="pre">uint32x8</span></code>, <code class="docutils literal notranslate"><span class="pre">float16x16</span></code>, <code class="docutils literal notranslate"><span class="pre">float32x8</span></code></p></li>
+</ul>
+</dd>
+<dt>scope<span class="classifier">Optional[str]</span></dt><dd><p>The memory space of the data that the pointer points to. The valid choices are listed
+below.</p>
+<ul class="simple">
+<li><p><strong>global:</strong> Represent the global DDR space of Address Space Extension region ID (ASID) 0.</p></li>
+<li><p><strong>global.1:</strong> Represent the global DDR space of ASID 1.</p></li>
+<li><p><strong>global.2:</strong> Represent the global DDR space of ASID 2.</p></li>
+<li><p><strong>global.3:</strong> Represent the global DDR space of ASID 3.</p></li>
+<li><p><strong>private:</strong> Represent the stack space of each TEC.</p></li>
+<li><p><strong>lsram:</strong> Represent the local SRAM space of each TEC.</p></li>
+<li><p><strong>shared:</strong> Represent the shared SRAM space between all TECs in the same core.</p></li>
+<li><p><strong>constant:</strong> Represent the global constant DDR space.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Pointer</span></dt><dd><p>The pointer instance.</p>
+</dd>
+</dl>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="see-also">
+<h2>See Also<a class="headerlink" href="#see-also" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html"><span class="doc">How to Use a Pointer</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.match_buffer">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">match_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pointer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.match_buffer" title="Permalink to this definition"></a></dt>
+<dd><p>Matches a pointer with the specified shape.</p>
+<section id="id1">
+<h2>Parameters<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>pointer<span class="classifier">Pointer</span></dt><dd><p>The data pointer to be matched.</p>
+</dd>
+<dt>shape<span class="classifier">Union[List[PrimExpr], Tuple[PrimExpr], PrimExpr, Integral]</span></dt><dd><p>The data shape to match.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h2>Returns<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Buffer</span></dt><dd><p>The matched buffer.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h2>Examples<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 2D transpose demo b[j, i] = a[i, j]</span>
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">B</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">h</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">w</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">int32</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">match_buffer</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">))</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">match_buffer</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">S</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">):</span>
+        <span class="n">b</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.alloc">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">alloc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'private'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.alloc" title="Permalink to this definition"></a></dt>
+<dd><p>Allocates buffer with shape, dtype, scope, and returns the pointer.</p>
+<section id="id4">
+<h2>Parameters<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>shape<span class="classifier">Union[List[int], Tuple[int], int]</span></dt><dd><p>The shape of buffer.</p>
+</dd>
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The data type of buffer elements. Can be scalar dtype or vector dtype.</p>
+</dd>
+<dt>scope<span class="classifier">Optional[str]</span></dt><dd><p>The memory space in which the data is allocated. The valid choices are listed below.</p>
+<ul class="simple">
+<li><p><strong>private:</strong> Represent the stack space of each TEC.</p></li>
+<li><p><strong>lsram:</strong> Represent the local SRAM space of each TEC.</p></li>
+<li><p><strong>shared:</strong> Represent the shared SRAM space between all TECs in the same core.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="id5">
+<h2>Returns<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Pointer</span></dt><dd><p>The allocated buffer pointer.</p>
+</dd>
+</dl>
+</section>
+<section id="id6">
+<h2>Examples<a class="headerlink" href="#id6" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lsram_a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram_a</span><span class="p">,</span> <span class="n">ddr_a</span><span class="p">,</span> <span class="mi">1024</span><span class="p">)</span>
+
+<span class="n">lsram_a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="s2">&quot;float16x16&quot;</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;shared&quot;</span><span class="p">)</span>
+<span class="n">lsram_a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">((</span><span class="mi">256</span><span class="p">,),</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+<span class="n">lsram_a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc</span><span class="p">([</span><span class="mi">1024</span><span class="p">],</span> <span class="s2">&quot;int8&quot;</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id7">
+<h2>See Also<a class="headerlink" href="#id7" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html"><span class="doc">How to Use a Pointer</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.alloc_buffer">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">alloc_buffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'private'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.alloc_buffer" title="Permalink to this definition"></a></dt>
+<dd><p>The buffer allocation function, returns the allocated buffer.</p>
+<section id="id8">
+<h2>Parameters<a class="headerlink" href="#id8" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>shape<span class="classifier">Union[List[int], Tuple[int], int]</span></dt><dd><p>The shape of buffer.</p>
+</dd>
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The data type of buffer elements. Can be scalar dtype or vector dtype.</p>
+</dd>
+<dt>scope<span class="classifier">Optional[str]</span></dt><dd><p>The memory space in which the data is allocated. The valid choices are listed below.</p>
+<ul class="simple">
+<li><p><strong>private:</strong> Represent the stack space of each TEC.</p></li>
+<li><p><strong>lsram:</strong> Represent the local SRAM space of each TEC.</p></li>
+<li><p><strong>shared:</strong> Represent the shared SRAM space between all TECs in the same core.</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="id9">
+<h2>Returns<a class="headerlink" href="#id9" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Buffer</span></dt><dd><p>The allocated buffer.</p>
+</dd>
+</dl>
+</section>
+<section id="id10">
+<h2>Examples<a class="headerlink" href="#id10" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">lsram_a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_buffer</span><span class="p">([</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">],</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="s2">&quot;lsram&quot;</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram_a</span><span class="p">,</span> <span class="n">ddr_a</span><span class="p">,</span> <span class="mi">32</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">lsram_a</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span>
+</pre></div>
+</div>
+</section>
+<section id="id11">
+<h2>See Also<a class="headerlink" href="#id11" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html"><span class="doc">How to Use a Pointer</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.alloc_const">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">alloc_const</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.alloc_const" title="Permalink to this definition"></a></dt>
+<dd><p>Allocates constant data.</p>
+<section id="id12">
+<h2>Parameters<a class="headerlink" href="#id12" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>shape<span class="classifier">Union[List[PrimExpr], Tuple[PrimExpr]]</span></dt><dd><p>The shape of const buffer.</p>
+</dd>
+<dt>dtype<span class="classifier">Union[str, DataType]</span></dt><dd><p>The data type of const buffer elements.</p>
+</dd>
+<dt>data<span class="classifier">np.array</span></dt><dd><p>The data of const buffer.</p>
+</dd>
+</dl>
+</section>
+<section id="id13">
+<h2>Returns<a class="headerlink" href="#id13" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">Buffer</span></dt><dd><p>The allocated buffer.</p>
+</dd>
+</dl>
+</section>
+<section id="id14">
+<h2>Examples<a class="headerlink" href="#id14" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The &quot;lut_data&quot; can be created in pure Python environment during compile time.</span>
+<span class="n">lut_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">512</span><span class="p">)),</span><span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float16&quot;</span><span class="p">)</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">inp</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;fp16&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;fp16&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">lut</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_const</span><span class="p">((</span><span class="mi">512</span><span class="p">,),</span> <span class="s2">&quot;float16&quot;</span><span class="p">,</span> <span class="n">lut_data</span><span class="p">)</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.vload">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">vload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lanes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.vload" title="Permalink to this definition"></a></dt>
+<dd><p>Load a vector from contiguous or strided memory addresses.</p>
+<ul class="simple">
+<li><p>The inactive elements of result vector are set to zero.</p></li>
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id15">
+<h2>Parameters<a class="headerlink" href="#id15" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ptr<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the base memory address.</p>
+</dd>
+<dt>mask<span class="classifier">Optional[Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+<dt>lanes<span class="classifier">Optional[int]</span></dt><dd><p>The lanes of result vector dtype. If omitted, will be automatically determined based on
+the type of input address.</p>
+</dd>
+<dt>stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The stride of each element. Will take one element every so many stride intervals.</p>
+</dd>
+</dl>
+</section>
+<section id="id16">
+<h2>Returns<a class="headerlink" href="#id16" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="supported-dtype">
+<h2>Supported DType<a class="headerlink" href="#supported-dtype" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id17">
+<h2>Examples<a class="headerlink" href="#id17" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">)</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;3T5F&quot;</span><span class="p">)</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;1T31F&quot;</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;16T16F&quot;</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id18">
+<h2>See Also<a class="headerlink" href="#id18" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vload, __vload_stride</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.vstore">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">vstore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.vstore" title="Permalink to this definition"></a></dt>
+<dd><p>Store active elements of <code class="docutils literal notranslate"><span class="pre">value</span></code> to contiguous or strided memory addresses.</p>
+<ul class="simple">
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id19">
+<h2>Parameters<a class="headerlink" href="#id19" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>value<span class="classifier">PrimExpr</span></dt><dd><p>The vector that needs to be stored.</p>
+</dd>
+<dt>ptr<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the base memory address.</p>
+</dd>
+<dt>mask<span class="classifier">Optional[Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+<dt>stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The stride of each element. Will store one element every so many stride intervals.</p>
+</dd>
+</dl>
+</section>
+<section id="id20">
+<h2>Supported DType<a class="headerlink" href="#id20" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id21">
+<h2>Examples<a class="headerlink" href="#id21" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">ptr_a</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">ptr_a</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;3T5F&quot;</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">ptr_a</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">ptr_a</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;T7F&quot;</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id22">
+<h2>See Also<a class="headerlink" href="#id22" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vstore, __vstore_stride</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.vload_gather">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">vload_gather</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.vload_gather" title="Permalink to this definition"></a></dt>
+<dd><p>Load a vector from discrete memory addresses. The addresses are calculated by
+<code class="docutils literal notranslate"><span class="pre">ptr</span> <span class="pre">+</span> <span class="pre">indices</span> <span class="pre">*</span> <span class="pre">elem_size_in_byte</span></code>.</p>
+<ul class="simple">
+<li><p>The inactive elements of result vector are set to zero.</p></li>
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id23">
+<h2>Parameters<a class="headerlink" href="#id23" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ptr<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the base memory address.</p>
+</dd>
+<dt>indices<span class="classifier">PrimExpr</span></dt><dd><p>The indices used to calculate the discrete memory addresses, it must be a 16-bit integer
+vector, its length decide the length of result vector.</p>
+</dd>
+<dt>mask<span class="classifier">Optional[Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+</dl>
+</section>
+<section id="id24">
+<h2>Returns<a class="headerlink" href="#id24" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ret<span class="classifier">PrimExpr</span></dt><dd><p>The result expression.</p>
+</dd>
+</dl>
+</section>
+<section id="id25">
+<h2>Supported DType<a class="headerlink" href="#id25" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id26">
+<h2>Examples<a class="headerlink" href="#id26" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload_gather</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">vb</span><span class="p">)</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload_gather</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;T7F&quot;</span><span class="p">)</span>
+<span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload_gather</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id27">
+<h2>See Also<a class="headerlink" href="#id27" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vload_gather</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.vstore_scatter">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">vstore_scatter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.vstore_scatter" title="Permalink to this definition"></a></dt>
+<dd><p>Store active elements of <code class="docutils literal notranslate"><span class="pre">value</span></code> to discrete memory addresses. The addresses are calculated
+by <code class="docutils literal notranslate"><span class="pre">ptr</span> <span class="pre">+</span> <span class="pre">indices</span> <span class="pre">*</span> <span class="pre">elem_size_in_byte</span></code>.</p>
+<ul class="simple">
+<li><p>The feature Flexible Width Vector is supported.</p></li>
+<li><p>The feature Multiple Width Vector is supported.</p></li>
+</ul>
+<section id="id28">
+<h2>Parameters<a class="headerlink" href="#id28" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>value<span class="classifier">PrimExpr</span></dt><dd><p>The vector that need to be stored.</p>
+</dd>
+<dt>ptr<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the base memory address.</p>
+</dd>
+<dt>indices<span class="classifier">PrimExpr</span></dt><dd><p>The indices used to calculate the discrete memory addresses, it must be a 16-bit integer
+vector, its length should be equal to that of <code class="docutils literal notranslate"><span class="pre">value</span></code>.</p>
+</dd>
+<dt>mask<span class="classifier">Optional[Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]]</span></dt><dd><p>The predication mask to indicate which elements of the vector are active for the operation.
+<code class="docutils literal notranslate"><span class="pre">None</span></code> means all elements are active.</p>
+</dd>
+</dl>
+</section>
+<section id="id29">
+<h2>Supported DType<a class="headerlink" href="#id29" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id30">
+<h2>Examples<a class="headerlink" href="#id30" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">vstore_scatter</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">ptr_a</span><span class="p">,</span> <span class="n">vb</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore_scatter</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">ptr_a</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;3T5F&quot;</span><span class="p">)</span>
+<span class="n">S</span><span class="o">.</span><span class="n">vstore_scatter</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="n">ptr_a</span><span class="p">,</span> <span class="n">vb</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">S</span><span class="o">.</span><span class="n">tail_mask</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id31">
+<h2>See Also<a class="headerlink" href="#id31" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __vstore_scatter</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.dma_copy">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">dma_copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.dma_copy" title="Permalink to this definition"></a></dt>
+<dd><p>Copy the specified number of elements from the source address to the destination address
+via DMA.</p>
+<section id="id32">
+<h2>Parameters<a class="headerlink" href="#id32" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dst<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the destination memory address.</p>
+</dd>
+<dt>src<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the source memory address.</p>
+</dd>
+<dt>width<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The number of data to be transfer inside one stride jump.</p>
+</dd>
+<dt>src_stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The number of source data will be jump over for each stride jump. <code class="docutils literal notranslate"><span class="pre">None</span></code> means equal with
+the value of <code class="docutils literal notranslate"><span class="pre">width</span></code>, i.e., load from the source memory address continuously.</p>
+</dd>
+<dt>times<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The total times of the stride jump.</p>
+</dd>
+<dt>dst_stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The number of destination data will be jump over for each stride jump. <code class="docutils literal notranslate"><span class="pre">None</span></code> means equal
+with the value of <code class="docutils literal notranslate"><span class="pre">width</span></code>, i.e., store to the destination memory address continuously.</p>
+</dd>
+</dl>
+</section>
+<section id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>The pointer type of <code class="docutils literal notranslate"><span class="pre">src</span></code> and <code class="docutils literal notranslate"><span class="pre">dst</span></code> must be same.</p></li>
+<li><p>Only below scope combinations of <code class="docutils literal notranslate"><span class="pre">src</span></code> and <code class="docutils literal notranslate"><span class="pre">dst</span></code> are not supported.</p>
+<ul>
+<li><p>The scope of <code class="docutils literal notranslate"><span class="pre">src</span></code> is <code class="docutils literal notranslate"><span class="pre">lsram</span></code> and the scope of <code class="docutils literal notranslate"><span class="pre">dst</span></code> is <code class="docutils literal notranslate"><span class="pre">lsram</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>.</p></li>
+<li><p>The scope of <code class="docutils literal notranslate"><span class="pre">src</span></code> is <code class="docutils literal notranslate"><span class="pre">shared</span></code> and the scope of <code class="docutils literal notranslate"><span class="pre">dst</span></code> is <code class="docutils literal notranslate"><span class="pre">lsram</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="id33">
+<h2>Examples<a class="headerlink" href="#id33" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># The 1D scenario.</span>
+<span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">ptr_b</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="c1"># The 2D scenario. Transfer all &quot;@&quot; in &quot;@@@@@xxx@@@@@xxx@@@@@xxx@@@@@xxx&quot; and store them</span>
+<span class="c1"># continuously in destination.</span>
+<span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">ptr_b</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">src_stride</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id34">
+<h2>See Also<a class="headerlink" href="#id34" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html"><span class="doc">How to Use DMA</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.async_dma_copy">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">async_dma_copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">times</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.async_dma_copy" title="Permalink to this definition"></a></dt>
+<dd><p>Copy the specified number of elements from the source address to the destination address
+asynchronously via DMA.</p>
+<p>Once DMA’s configuration is finished, this API will return and the behind code will be executed
+immediately, at the same time the data is transferring via DMA.</p>
+<section id="id35">
+<h2>Parameters<a class="headerlink" href="#id35" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dst<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the destination memory address.</p>
+</dd>
+<dt>src<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the source memory address.</p>
+</dd>
+<dt>width<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The number of data to be transfer inside one stride jump.</p>
+</dd>
+<dt>src_stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The number of source data will be jump over for each stride jump. <code class="docutils literal notranslate"><span class="pre">None</span></code> means equal with
+the value of <code class="docutils literal notranslate"><span class="pre">width</span></code>, i.e., load from the source memory address continuously.</p>
+</dd>
+<dt>times<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The total times of the stride jump.</p>
+</dd>
+<dt>dst_stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The number of destination data will be jump over for each stride jump. <code class="docutils literal notranslate"><span class="pre">None</span></code> means equal
+with the value of <code class="docutils literal notranslate"><span class="pre">width</span></code>, i.e., store to the destination memory address continuously.</p>
+</dd>
+<dt>event<span class="classifier">PrimExpr</span></dt><dd><p>The event need to be triggered when the entire data transmission is completed. Note if the
+event is using by others, the DMA hardware will be blocked until the event is triggered by
+others, then the data transmission will start. The API <code class="docutils literal notranslate"><span class="pre">S.wait_events</span></code> can be used to wait
+the DMA operation to finish.</p>
+</dd>
+</dl>
+</section>
+<section id="id36">
+<h2>Notes<a class="headerlink" href="#id36" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>The pointer type of <code class="docutils literal notranslate"><span class="pre">src</span></code> and <code class="docutils literal notranslate"><span class="pre">dst</span></code> must be same.</p></li>
+<li><p>Only below scope combinations of <code class="docutils literal notranslate"><span class="pre">src</span></code> and <code class="docutils literal notranslate"><span class="pre">dst</span></code> are not supported.</p>
+<ul>
+<li><p>The scope of <code class="docutils literal notranslate"><span class="pre">src</span></code> is <code class="docutils literal notranslate"><span class="pre">lsram</span></code> and the scope of <code class="docutils literal notranslate"><span class="pre">dst</span></code> is <code class="docutils literal notranslate"><span class="pre">lsram</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>.</p></li>
+<li><p>The scope of <code class="docutils literal notranslate"><span class="pre">src</span></code> is <code class="docutils literal notranslate"><span class="pre">shared</span></code> and the scope of <code class="docutils literal notranslate"><span class="pre">dst</span></code> is <code class="docutils literal notranslate"><span class="pre">lsram</span></code> or <code class="docutils literal notranslate"><span class="pre">shared</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="id37">
+<h2>Examples<a class="headerlink" href="#id37" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">ev0</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">alloc_events</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># The 1D scenario.</span>
+<span class="n">S</span><span class="o">.</span><span class="n">async_dma_copy</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">ptr_b</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">ev0</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">va</span> <span class="o">+</span> <span class="n">vb</span>
+<span class="n">S</span><span class="o">.</span><span class="n">wait_events</span><span class="p">(</span><span class="n">ev0</span><span class="p">)</span>
+
+<span class="c1"># The 2D scenario. Transfer all &quot;@&quot; in &quot;@@@@@xxx@@@@@xxx@@@@@xxx@@@@@xxx&quot; and store them</span>
+<span class="c1"># continuously in destination.</span>
+<span class="n">S</span><span class="o">.</span><span class="n">async_dma_copy</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="n">ptr_b</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">src_stride</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="n">ev0</span><span class="p">)</span>
+<span class="n">vc</span> <span class="o">=</span> <span class="n">va</span> <span class="o">+</span> <span class="n">vb</span>
+<span class="n">S</span><span class="o">.</span><span class="n">wait_events</span><span class="p">(</span><span class="n">ev0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id38">
+<h2>See Also<a class="headerlink" href="#id38" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html"><span class="doc">How to Use DMA</span></a></p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.dma_transpose2d">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">dma_transpose2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.dma_transpose2d" title="Permalink to this definition"></a></dt>
+<dd><p>Uses DMA to transpose for 2d data.</p>
+<section id="id39">
+<h2>Parameters<a class="headerlink" href="#id39" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dst: Pointer</dt><dd><p>The pointer that store the destination memory address.</p>
+</dd>
+<dt>src: Pointer</dt><dd><p>The pointer that store the source memory address.</p>
+</dd>
+<dt>row: Union[PrimExpr, int]</dt><dd><p>The row to be transposed of input 2d data [row, col].</p>
+</dd>
+<dt>col: Union[PrimExpr, int]</dt><dd><p>The col to be transposed of input 2d data [row, col].</p>
+</dd>
+<dt>dst_stride: Optional[Union[PrimExpr, int]]</dt><dd><p>The width_stride of output 2d data. Default dst_stride = row.</p>
+</dd>
+<dt>src_stirde: Optional[Union[PrimExpr, int]]</dt><dd><p>The width_stride of input 2d data. Default src_stride = col.</p>
+</dd>
+</dl>
+</section>
+<section id="id40">
+<h2>Supported DType<a class="headerlink" href="#id40" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id41">
+<h2>Examples<a class="headerlink" href="#id41" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">dma_transpose2d</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">src</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.dma_upsample">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">dma_upsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">h_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_c_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_c_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_w_stride</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.dma_upsample" title="Permalink to this definition"></a></dt>
+<dd><p>DMA upsample data from source <code class="docutils literal notranslate"><span class="pre">src</span></code> to destination <code class="docutils literal notranslate"><span class="pre">dst</span></code>. Supports two directions between
+<code class="docutils literal notranslate"><span class="pre">src</span></code> and <code class="docutils literal notranslate"><span class="pre">dst</span></code>:
+1. global -&gt; [lsram, shared].
+2. [lsram, shared] -&gt; global.</p>
+<p>Note:
+1. Each call of <code class="docutils literal notranslate"><span class="pre">dma_upsample</span></code> does a surface on 2D input in WC layout physically, not a 3D
+input.
+2. If you want to upsample 3D input with <code class="docutils literal notranslate"><span class="pre">h_scale</span></code>, <code class="docutils literal notranslate"><span class="pre">w_scale</span></code> for H, W dimensions
+respectively, you need to call H times <code class="docutils literal notranslate"><span class="pre">dma_upsample</span></code>, where H is H dimension of input in HWC
+layout.</p>
+<section id="id42">
+<h2>Parameters<a class="headerlink" href="#id42" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dst<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the destination memory address.</p>
+</dd>
+<dt>src<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the source memory address.</p>
+</dd>
+<dt>h_scale<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The scale on h direction.</p>
+</dd>
+<dt>w_scale<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The scale on w direction.</p>
+</dd>
+<dt>c<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The c of each move on source.</p>
+</dd>
+<dt>w<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The w of each move on source.</p>
+</dd>
+<dt>src_c_stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The c stride of each move on source. Default src_c_stride = c.</p>
+</dd>
+<dt>dst_c_stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The c stride of each move on destination. Default dst_c_stride = c.</p>
+</dd>
+<dt>dst_w_stride<span class="classifier">Optional[Union[PrimExpr, int]]</span></dt><dd><p>The w stride of each move on destination. Default dst_w_stride = w_scale * w.</p>
+</dd>
+</dl>
+</section>
+<section id="id43">
+<h2>Supported DType<a class="headerlink" href="#id43" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id44">
+<h2>Examples<a class="headerlink" href="#id44" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Case0: an easy use case</span>
+<span class="n">S</span><span class="o">.</span><span class="n">dma_upsample</span><span class="p">(</span><span class="n">dst</span><span class="o">=</span><span class="n">ddr_ptr</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="n">sram_ptr</span><span class="p">,</span> <span class="n">h_scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">w_scale</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># Source 2D data in WC layout(w=2, c=3)</span>
+<span class="c1"># [</span>
+<span class="c1">#   [0 1 2],</span>
+<span class="c1">#   [3 4 5],</span>
+<span class="c1"># ]</span>
+<span class="c1"># Upsampled destination 3D data in HWC layout</span>
+<span class="c1"># [</span>
+<span class="c1">#   [</span>
+<span class="c1">#     [0 1 2],</span>
+<span class="c1">#     [0 1 2],</span>
+<span class="c1">#     [0 1 2],</span>
+<span class="c1">#</span>
+<span class="c1">#     [3 4 5],</span>
+<span class="c1">#     [3 4 5],</span>
+<span class="c1">#     [3 4 5],</span>
+<span class="c1">#   ],</span>
+<span class="c1">#   [</span>
+<span class="c1">#     [0 1 2],</span>
+<span class="c1">#     [0 1 2],</span>
+<span class="c1">#     [0 1 2],</span>
+<span class="c1">#</span>
+<span class="c1">#     [3 4 5],</span>
+<span class="c1">#     [3 4 5],</span>
+<span class="c1">#     [3 4 5],</span>
+<span class="c1">#   ],</span>
+<span class="c1"># ]</span>
+
+<span class="c1"># Case1: a comprehensive use case</span>
+<span class="n">S</span><span class="o">.</span><span class="n">dma_upsample</span><span class="p">(</span><span class="n">dst</span><span class="o">=</span><span class="n">ddr_ptr</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="n">sram_ptr</span><span class="p">,</span> <span class="n">h_scale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">w_scale</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+             <span class="n">c</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">src_c_stride</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">dst_c_stride</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">dst_w_stride</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+
+<span class="c1"># Source 2D data in WC layout(c=3, w=2, src_c_stride=4)</span>
+<span class="c1"># [</span>
+<span class="c1">#   [0 1 2 ?],</span>
+<span class="c1">#   [3 4 5 ?],</span>
+<span class="c1"># ]</span>
+<span class="c1"># Upsampled destination 3D data in HWC layout(dst_w_stride=7, dst_c_stride=5)</span>
+<span class="c1"># [</span>
+<span class="c1">#   [</span>
+<span class="c1">#     [0 1 2 ? ?],</span>
+<span class="c1">#     [0 1 2 ? ?],</span>
+<span class="c1">#     [0 1 2 ? ?],</span>
+<span class="c1">#</span>
+<span class="c1">#     [3 4 5 ? ?],</span>
+<span class="c1">#     [3 4 5 ? ?],</span>
+<span class="c1">#     [3 4 5 ? ?],</span>
+<span class="c1">#</span>
+<span class="c1">#     [? ? ? ? ?],</span>
+<span class="c1">#   ],</span>
+<span class="c1">#   [</span>
+<span class="c1">#     [0 1 2 ? ?],</span>
+<span class="c1">#     [0 1 2 ? ?],</span>
+<span class="c1">#     [0 1 2 ? ?],</span>
+<span class="c1">#</span>
+<span class="c1">#     [3 4 5 ? ?],</span>
+<span class="c1">#     [3 4 5 ? ?],</span>
+<span class="c1">#     [3 4 5 ? ?],</span>
+<span class="c1">#</span>
+<span class="c1">#     [? ? ? ? ?],</span>
+<span class="c1">#   ],</span>
+<span class="c1"># ]</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.dma_memset">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">dma_memset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ptr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.dma_memset" title="Permalink to this definition"></a></dt>
+<dd><p>Fills the first num elements of addr to the specific value.</p>
+<section id="id45">
+<h2>Parameters<a class="headerlink" href="#id45" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>ptr<span class="classifier">Pointer</span></dt><dd><p>The pointer that store the base memory address.</p>
+</dd>
+<dt>value<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The same dtype as addr dtype.
+The value to be set.</p>
+</dd>
+<dt>num<span class="classifier">Union[PrimExpr, int]</span></dt><dd><p>The number of scalar elements that need to be set.</p>
+</dd>
+</dl>
+</section>
+<section id="id46">
+<h2>Supported DType<a class="headerlink" href="#id46" title="Permalink to this heading"></a></h2>
+<blockquote>
+<div><p>“int8/16/32”, “uint8/16/32”, “float16/32”.</p>
+</div></blockquote>
+</section>
+<section id="id47">
+<h2>Examples<a class="headerlink" href="#id47" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">dma_memset</span><span class="p">(</span><span class="n">ptr_a</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tvm.aipu.script.ir.memory.flush_cache">
+<span class="sig-prename descclassname"><span class="pre">tvm.aipu.script.ir.memory.</span></span><span class="sig-name descname"><span class="pre">flush_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invalidate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tvm.aipu.script.ir.memory.flush_cache" title="Permalink to this definition"></a></dt>
+<dd><p>Flushes the whole level 1 data cache by writing back to DDR.</p>
+<section id="id48">
+<h2>Parameters<a class="headerlink" href="#id48" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>invalidate<span class="classifier">bool</span></dt><dd><p>Whether invalidates the data or not.</p>
+</dd>
+</dl>
+</section>
+<section id="id49">
+<h2>Examples<a class="headerlink" href="#id49" title="Permalink to this heading"></a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">()</span>
+<span class="n">S</span><span class="o">.</span><span class="n">flush_cache</span><span class="p">(</span><span class="n">invalidate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id50">
+<h2>See Also<a class="headerlink" href="#id50" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Zhouyi Compass OpenCL Programming Guide: __flush_cache</p></li>
+</ul>
+</section>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="math.html" class="btn btn-neutral float-left" title="Math" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="miscellaneous.html" class="btn btn-neutral float-right" title="Miscellaneous" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

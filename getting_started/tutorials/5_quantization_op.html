@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 5: Quantization Operator &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Functions" href="../../language_basics/functions.html" />
+    <link rel="prev" title="Tutorial 4: LUT Operator" href="4_lut_op.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html">Tutorial 0: Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html">Tutorial 1: Static Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html">Tutorial 2: Dynamic Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html">Tutorial 3: Reduce Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html">Tutorial 4: LUT Operator</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial 5: Quantization Operator</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#inputs-outputs">Inputs &amp; Outputs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calculation">Calculation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#upgrade-type">Upgrade type</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#operation-of-signed-and-unsigned">Operation of Signed and Unsigned</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#downgrade-type-and-pack">Downgrade Type and Pack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-code">Complete Code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Tutorials</a> &raquo;</li>
+      <li>Tutorial 5: Quantization Operator</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/getting_started/tutorials/5_quantization_op.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="tutorial-5-quantization-operator">
+<h1>Tutorial 5: Quantization Operator<a class="headerlink" href="#tutorial-5-quantization-operator" title="Permalink to this heading"></a></h1>
+<p>Based on previous Tutorial 1 Static Add and Tutorial 2 Dynamic Add, in this tutorial, you will write a quantization vector addition with dynamic kernel using Compass DSL. You will learn about:</p>
+<ul class="simple">
+<li><p>How to upgrade low-level wide types to high-precision types.</p></li>
+<li><p>How to determine the type of output when two operands are signed and unsigned in an operation.</p></li>
+<li><p>How to convert high width types to low width types.</p></li>
+</ul>
+<section id="inputs-outputs">
+<h2>Inputs &amp; Outputs<a class="headerlink" href="#inputs-outputs" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Inputs:</p>
+<ul>
+<li><p>Tensor(a,shape=(n,), dtype=”int8”)</p></li>
+<li><p>Tensor(b,shape=(n,), dtype=”int8”)</p></li>
+</ul>
+</li>
+<li><p>Output:</p>
+<ul>
+<li><p>Tensor(c,shape=(n,), dtype=”int8”)</p></li>
+</ul>
+</li>
+<li><p>Others:</p>
+<ul>
+<li><p>zero point:</p>
+<ul>
+<li><p>input0 zp: int16</p></li>
+<li><p>input1 zp: int16</p></li>
+<li><p>output zp: int16</p></li>
+</ul>
+</li>
+<li><p>scale</p>
+<ul>
+<li><p>input0 scale: uint16</p></li>
+<li><p>input1 scale: uint16</p></li>
+<li><p>output scale: uint8</p></li>
+</ul>
+</li>
+<li><p>shift: int8</p></li>
+</ul>
+</li>
+</ul>
+<p>So we can write the primfunc like this:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;int8&quot;</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span><span class="p">(</span><span class="n">is_entry</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">eltwise_add_func</span><span class="p">(</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">c</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">,</span>
+    <span class="n">zp_i0</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">,</span>
+    <span class="n">zp_i1</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">,</span>
+    <span class="n">zp_o</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">,</span>
+    <span class="n">scale_i0</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">u16</span><span class="p">,</span>
+    <span class="n">scale_i1</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">u16</span><span class="p">,</span>
+    <span class="n">scale_o</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">u8</span><span class="p">,</span>
+    <span class="n">shift</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i8</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="c1"># func body</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Quantization operator implementation is tight with the quantization stage. This tutorial concentrates on operator implementation but not quantization algorithm.</p>
+</section>
+<section id="calculation">
+<h2>Calculation<a class="headerlink" href="#calculation" title="Permalink to this heading"></a></h2>
+<p>The following is the main calculation process.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">compute</span><span class="p">(</span>
+    <span class="n">inp0_lsram</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;lsram&quot;</span><span class="p">),</span>
+    <span class="n">inp1_lsram</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;lsram&quot;</span><span class="p">),</span>
+    <span class="n">size</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">,</span>
+    <span class="n">zp_i0</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">,</span>
+    <span class="n">zp_i1</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">,</span>
+    <span class="n">zp_o</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i16</span><span class="p">,</span>
+    <span class="n">scale_i0</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">u16</span><span class="p">,</span>
+    <span class="n">scale_i1</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">u16</span><span class="p">,</span>
+    <span class="n">scale_o</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">u8</span><span class="p">,</span>
+    <span class="n">shift</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i8</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">((</span><span class="n">size</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">//</span> <span class="mi">8</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">inp0_lsram</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">inp1_lsram</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span>
+
+    <span class="c1"># Upgrade types: int8x32 --&gt; int32x8</span>
+    <span class="n">a32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+    <span class="n">b32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+
+    <span class="c1"># Compute: (a + zp_i0) * scale_i0</span>
+    <span class="n">a32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">a32</span><span class="p">,</span> <span class="n">zp_i0</span><span class="p">,</span> <span class="n">saturate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">a32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vmul</span><span class="p">(</span><span class="n">a32</span><span class="p">,</span> <span class="n">scale_i0</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Compute: (b + zp_i1) * scale_i1</span>
+    <span class="n">b32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">b32</span><span class="p">,</span> <span class="n">zp_i1</span><span class="p">,</span> <span class="n">saturate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">b32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vmul</span><span class="p">(</span><span class="n">b32</span><span class="p">,</span> <span class="n">scale_i1</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Element-wise Method Operated</span>
+    <span class="n">tmp_w</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">a32</span><span class="p">,</span> <span class="n">b32</span><span class="p">,</span> <span class="n">saturate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Multiply with scale_o</span>
+    <span class="n">tmp_w</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vmul</span><span class="p">(</span><span class="n">tmp_w</span><span class="p">,</span> <span class="n">scale_o</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Shift and do narrow convert type from 8-bit to 16-bit</span>
+    <span class="n">tmp_h</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">i16x16</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">shift</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">tmp_w</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsl</span><span class="p">(</span><span class="n">tmp_w</span><span class="p">,</span> <span class="o">-</span><span class="n">shift</span><span class="p">)</span>
+        <span class="n">tmp_h</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vnsrsr</span><span class="p">(</span><span class="n">tmp_w</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">to_h</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tmp_h</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vnsrsr</span><span class="p">(</span><span class="n">tmp_w</span><span class="p">,</span> <span class="n">shift</span><span class="p">,</span> <span class="n">to_h</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Subtract zero point of outputand narrow convert from 16-bit to 8-bit</span>
+    <span class="n">tmp_h</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vsub</span><span class="p">(</span><span class="n">tmp_h</span><span class="p">,</span> <span class="n">zp_o</span><span class="p">,</span> <span class="n">saturate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">tmp_b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vnsrsr</span><span class="p">(</span><span class="n">tmp_h</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Pack</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompt</span><span class="p">(</span><span class="n">tmp_b</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;8TFFF&quot;</span><span class="p">)</span>
+
+    <span class="c1"># save</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">inp0_lsram</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;8T24F&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="upgrade-type">
+<h2>Upgrade type<a class="headerlink" href="#upgrade-type" title="Permalink to this heading"></a></h2>
+<p>Perform type upgrade twice on elements: first from 8-bit type to 16-bit, then to 32-bit. Variable “a” has 32 8-bit elements, and the new variable “a32” has 8 32-bit elements.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="c1"># If &quot;a&quot; is int8x32 [0,1,2,3,...,31], then &quot;a32&quot; is int32x8 [0,1,2,3,4,5,6,7].</span>
+<span class="n">a32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+<span class="n">b32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">vxtl</span><span class="p">(</span><span class="n">b</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Therefore, the subsequent calculations are all on 32 bits.</p>
+</section>
+<section id="operation-of-signed-and-unsigned">
+<h2>Operation of Signed and Unsigned<a class="headerlink" href="#operation-of-signed-and-unsigned" title="Permalink to this heading"></a></h2>
+<p>Compute the obeys formula: <code class="docutils literal notranslate"><span class="pre">(a</span> <span class="pre">+</span> <span class="pre">zp_i0)</span> <span class="pre">*</span> <span class="pre">scale_i0</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">zp_i0</span></code>: the zero point of the first input</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">scale_i0</span></code>: the scale of the first input</p></li>
+</ul>
+<p>The zero point and scale of input0 are derived from the quantization stage. Here calculation follows the requirements and order of the quantization stage to ensure that accuracy is not lost.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">a32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">a32</span><span class="p">,</span> <span class="n">zp_i0</span><span class="p">,</span> <span class="n">saturate</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+<span class="n">a32</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vmul</span><span class="p">(</span><span class="n">a32</span><span class="p">,</span> <span class="n">scale_i0</span><span class="p">,</span> <span class="n">out_sign</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Addition uses the saturate version to avoid overflow. Because the zero point is a signed value, so the specifying sign of output is “s”. Considering that the result of addition is a signed value, thus the sign of output for multiplication is “s”.</p>
+</section>
+<section id="downgrade-type-and-pack">
+<h2>Downgrade Type and Pack<a class="headerlink" href="#downgrade-type-and-pack" title="Permalink to this heading"></a></h2>
+<p>Downgrade type by using S.vnsrsr: the “to_h” argument of S.vnsrsr specifies whether the type of outputs is 16-bit, otherwise it is lower bit (8-bit).</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="c1"># Assume &quot;tmp_h&quot; is int16x16 [0,1,2,3,...,15]</span>
+<span class="n">tmp_b</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vnsrsr</span><span class="p">(</span><span class="n">tmp_h</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># &quot;tmp_b&quot; is int8x32 [0,0,1,0,2,0,3,0,4,...,0,15,0]</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vcompt</span><span class="p">(</span><span class="n">tmp_b</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="s2">&quot;8TFFF&quot;</span><span class="p">)</span>  <span class="c1"># &quot;out&quot; is int8x32 [0,2,4,6,8,10,12,14,0,0,...,0]</span>
+</pre></div>
+</div>
+<p>Pack the interleaved result together while squeezing bubbles caused by narrow convert. The mask “8TFFF” specifies that elements in “tmp_b” need to remain, representing 8 interleaving elements visually - “0b10001000100010001000100010001” in binary.</p>
+</section>
+<section id="complete-code">
+<h2>Complete Code<a class="headerlink" href="#complete-code" title="Permalink to this heading"></a></h2>
+<p>You can find the sample code in <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH/tvm/aipu/samples/dsl/tutorial_5_quantization_op.py</span></code>.
+The placeholder <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH</span></code> represents the location where you install the Compass DSL
+Python package, in general, it will be something like <code class="docutils literal notranslate"><span class="pre">~/.local/lib/python3.8/site-packages</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="4_lut_op.html" class="btn btn-neutral float-left" title="Tutorial 4: LUT Operator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../../language_basics/functions.html" class="btn btn-neutral float-right" title="Functions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

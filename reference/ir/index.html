@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Builtin API &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Arithmetic" href="arithmetic.html" />
+    <link rel="prev" title="Static and Dynamic Kernel" href="../../explanation/static_and_dynamic_kernel.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Builtin API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html">Arithmetic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html">Bitwise</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html">Compare</a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html">Conversion</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html">Math</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html">Memory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html">Miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html">Permuation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html">Synchronization</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Builtin API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/reference/ir/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="builtin-api">
+<h1>Builtin API<a class="headerlink" href="#builtin-api" title="Permalink to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="arithmetic.html">Arithmetic</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vadd"><code class="docutils literal notranslate"><span class="pre">vadd()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vaddh"><code class="docutils literal notranslate"><span class="pre">vaddh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vabs"><code class="docutils literal notranslate"><span class="pre">vabs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vsub"><code class="docutils literal notranslate"><span class="pre">vsub()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vsubh"><code class="docutils literal notranslate"><span class="pre">vsubh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vmul"><code class="docutils literal notranslate"><span class="pre">vmul()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vmull"><code class="docutils literal notranslate"><span class="pre">vmull()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vmulh"><code class="docutils literal notranslate"><span class="pre">vmulh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vdiv"><code class="docutils literal notranslate"><span class="pre">vdiv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vmod"><code class="docutils literal notranslate"><span class="pre">vmod()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vdot"><code class="docutils literal notranslate"><span class="pre">vdot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vqdot"><code class="docutils literal notranslate"><span class="pre">vqdot()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vdpa"><code class="docutils literal notranslate"><span class="pre">vdpa()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vqdpa"><code class="docutils literal notranslate"><span class="pre">vqdpa()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vrpadd"><code class="docutils literal notranslate"><span class="pre">vrpadd()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vmml"><code class="docutils literal notranslate"><span class="pre">vmml()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vmma"><code class="docutils literal notranslate"><span class="pre">vmma()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.fma"><code class="docutils literal notranslate"><span class="pre">fma()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vfmae"><code class="docutils literal notranslate"><span class="pre">vfmae()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vfmao"><code class="docutils literal notranslate"><span class="pre">vfmao()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.vrint"><code class="docutils literal notranslate"><span class="pre">vrint()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="arithmetic.html#tvm.aipu.script.ir.arithmetic.clip"><code class="docutils literal notranslate"><span class="pre">clip()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="bitwise.html">Bitwise</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vand"><code class="docutils literal notranslate"><span class="pre">vand()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vor"><code class="docutils literal notranslate"><span class="pre">vor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vinv"><code class="docutils literal notranslate"><span class="pre">vinv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vall"><code class="docutils literal notranslate"><span class="pre">vall()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vany"><code class="docutils literal notranslate"><span class="pre">vany()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vxor"><code class="docutils literal notranslate"><span class="pre">vxor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vnsr"><code class="docutils literal notranslate"><span class="pre">vnsr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vnsrsr"><code class="docutils literal notranslate"><span class="pre">vnsrsr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vsr"><code class="docutils literal notranslate"><span class="pre">vsr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vsl"><code class="docutils literal notranslate"><span class="pre">vsl()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vror"><code class="docutils literal notranslate"><span class="pre">vror()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vcls"><code class="docutils literal notranslate"><span class="pre">vcls()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.clz"><code class="docutils literal notranslate"><span class="pre">clz()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vbrevs"><code class="docutils literal notranslate"><span class="pre">vbrevs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="bitwise.html#tvm.aipu.script.ir.bitwise.vpcnt"><code class="docutils literal notranslate"><span class="pre">vpcnt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="compare.html">Compare</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vceq"><code class="docutils literal notranslate"><span class="pre">vceq()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vcneq"><code class="docutils literal notranslate"><span class="pre">vcneq()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vcge"><code class="docutils literal notranslate"><span class="pre">vcge()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vcgt"><code class="docutils literal notranslate"><span class="pre">vcgt()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vcle"><code class="docutils literal notranslate"><span class="pre">vcle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vclt"><code class="docutils literal notranslate"><span class="pre">vclt()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.isnan"><code class="docutils literal notranslate"><span class="pre">isnan()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.isinf"><code class="docutils literal notranslate"><span class="pre">isinf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.max"><code class="docutils literal notranslate"><span class="pre">max()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.min"><code class="docutils literal notranslate"><span class="pre">min()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vmaxh"><code class="docutils literal notranslate"><span class="pre">vmaxh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vminh"><code class="docutils literal notranslate"><span class="pre">vminh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vrpmax"><code class="docutils literal notranslate"><span class="pre">vrpmax()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="compare.html#tvm.aipu.script.ir.compare.vrpmin"><code class="docutils literal notranslate"><span class="pre">vrpmin()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="conversion.html">Conversion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.i16x32"><code class="docutils literal notranslate"><span class="pre">i16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.u16x32"><code class="docutils literal notranslate"><span class="pre">u16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.i32x16"><code class="docutils literal notranslate"><span class="pre">i32x16()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.i32x32"><code class="docutils literal notranslate"><span class="pre">i32x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.u32x16"><code class="docutils literal notranslate"><span class="pre">u32x16()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.u32x32"><code class="docutils literal notranslate"><span class="pre">u32x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.fp16x32"><code class="docutils literal notranslate"><span class="pre">fp16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.int16x32"><code class="docutils literal notranslate"><span class="pre">int16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.uint16x32"><code class="docutils literal notranslate"><span class="pre">uint16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.int32x16"><code class="docutils literal notranslate"><span class="pre">int32x16()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.int32x32"><code class="docutils literal notranslate"><span class="pre">int32x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.uint32x16"><code class="docutils literal notranslate"><span class="pre">uint32x16()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.uint32x32"><code class="docutils literal notranslate"><span class="pre">uint32x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.float16x32"><code class="docutils literal notranslate"><span class="pre">float16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.size_i16x32"><code class="docutils literal notranslate"><span class="pre">size_i16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.size_i32x16"><code class="docutils literal notranslate"><span class="pre">size_i32x16()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.size_i32x32"><code class="docutils literal notranslate"><span class="pre">size_i32x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.size_int16x32"><code class="docutils literal notranslate"><span class="pre">size_int16x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.size_int32x16"><code class="docutils literal notranslate"><span class="pre">size_int32x16()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.size_int32x32"><code class="docutils literal notranslate"><span class="pre">size_int32x32()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.cast"><code class="docutils literal notranslate"><span class="pre">cast()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.i"><code class="docutils literal notranslate"><span class="pre">i()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.u"><code class="docutils literal notranslate"><span class="pre">u()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.reinterpret"><code class="docutils literal notranslate"><span class="pre">reinterpret()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.vxtl"><code class="docutils literal notranslate"><span class="pre">vxtl()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="conversion.html#tvm.aipu.script.ir.conversion.vxth"><code class="docutils literal notranslate"><span class="pre">vxth()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="math.html">Math</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.exp"><code class="docutils literal notranslate"><span class="pre">exp()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.log"><code class="docutils literal notranslate"><span class="pre">log()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.tanh"><code class="docutils literal notranslate"><span class="pre">tanh()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.sin"><code class="docutils literal notranslate"><span class="pre">sin()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.cos"><code class="docutils literal notranslate"><span class="pre">cos()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.rsqrt"><code class="docutils literal notranslate"><span class="pre">rsqrt()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.sqrt"><code class="docutils literal notranslate"><span class="pre">sqrt()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.floor"><code class="docutils literal notranslate"><span class="pre">floor()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.ceil"><code class="docutils literal notranslate"><span class="pre">ceil()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.ceildiv"><code class="docutils literal notranslate"><span class="pre">ceildiv()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html#tvm.aipu.script.ir.math.pow"><code class="docutils literal notranslate"><span class="pre">pow()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="memory.html">Memory</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.ptr"><code class="docutils literal notranslate"><span class="pre">ptr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.match_buffer"><code class="docutils literal notranslate"><span class="pre">match_buffer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.alloc"><code class="docutils literal notranslate"><span class="pre">alloc()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.alloc_buffer"><code class="docutils literal notranslate"><span class="pre">alloc_buffer()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.alloc_const"><code class="docutils literal notranslate"><span class="pre">alloc_const()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.vload"><code class="docutils literal notranslate"><span class="pre">vload()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.vstore"><code class="docutils literal notranslate"><span class="pre">vstore()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.vload_gather"><code class="docutils literal notranslate"><span class="pre">vload_gather()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.vstore_scatter"><code class="docutils literal notranslate"><span class="pre">vstore_scatter()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.dma_copy"><code class="docutils literal notranslate"><span class="pre">dma_copy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.async_dma_copy"><code class="docutils literal notranslate"><span class="pre">async_dma_copy()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.dma_transpose2d"><code class="docutils literal notranslate"><span class="pre">dma_transpose2d()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.dma_upsample"><code class="docutils literal notranslate"><span class="pre">dma_upsample()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.dma_memset"><code class="docutils literal notranslate"><span class="pre">dma_memset()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="memory.html#tvm.aipu.script.ir.memory.flush_cache"><code class="docutils literal notranslate"><span class="pre">flush_cache()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="miscellaneous.html">Miscellaneous</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.const_mask"><code class="docutils literal notranslate"><span class="pre">const_mask()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.tail_mask"><code class="docutils literal notranslate"><span class="pre">tail_mask()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.get_local_size"><code class="docutils literal notranslate"><span class="pre">get_local_size()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.get_local_id"><code class="docutils literal notranslate"><span class="pre">get_local_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.tec_range"><code class="docutils literal notranslate"><span class="pre">tec_range()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.perf_tick_begin"><code class="docutils literal notranslate"><span class="pre">perf_tick_begin()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.perf_tick_end"><code class="docutils literal notranslate"><span class="pre">perf_tick_end()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.aiff"><code class="docutils literal notranslate"><span class="pre">aiff()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.async_aiff"><code class="docutils literal notranslate"><span class="pre">async_aiff()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.printf"><code class="docutils literal notranslate"><span class="pre">printf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="miscellaneous.html#tvm.aipu.script.ir.miscellaneous.asm"><code class="docutils literal notranslate"><span class="pre">asm()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="permutation.html">Permuation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vconcat"><code class="docutils literal notranslate"><span class="pre">vconcat()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vsplit"><code class="docutils literal notranslate"><span class="pre">vsplit()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vzip"><code class="docutils literal notranslate"><span class="pre">vzip()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vcompt"><code class="docutils literal notranslate"><span class="pre">vcompt()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vcompc"><code class="docutils literal notranslate"><span class="pre">vcompc()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vrevs"><code class="docutils literal notranslate"><span class="pre">vrevs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vsel"><code class="docutils literal notranslate"><span class="pre">vsel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vshfl"><code class="docutils literal notranslate"><span class="pre">vshfl()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vbcast"><code class="docutils literal notranslate"><span class="pre">vbcast()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vsldl"><code class="docutils literal notranslate"><span class="pre">vsldl()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vtbl"><code class="docutils literal notranslate"><span class="pre">vtbl()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="permutation.html#tvm.aipu.script.ir.permutation.vreplic"><code class="docutils literal notranslate"><span class="pre">vreplic()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="synchronization.html">Synchronization</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html#tvm.aipu.script.ir.synchronization.barrier"><code class="docutils literal notranslate"><span class="pre">barrier()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html#tvm.aipu.script.ir.synchronization.alloc_events"><code class="docutils literal notranslate"><span class="pre">alloc_events()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html#tvm.aipu.script.ir.synchronization.wait_events"><code class="docutils literal notranslate"><span class="pre">wait_events()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronization.html#tvm.aipu.script.ir.synchronization.free_events"><code class="docutils literal notranslate"><span class="pre">free_events()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../../explanation/static_and_dynamic_kernel.html" class="btn btn-neutral float-left" title="Static and Dynamic Kernel" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="arithmetic.html" class="btn btn-neutral float-right" title="Arithmetic" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

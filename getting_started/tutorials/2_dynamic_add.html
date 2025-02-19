@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 2: Dynamic Add &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 3: Reduce Operator" href="3_reduce_op.html" />
+    <link rel="prev" title="Tutorial 1: Static Add" href="1_static_add.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="0_quick_start.html">Tutorial 0: Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html">Tutorial 1: Static Add</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial 2: Dynamic Add</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#inputs-outputs">Inputs &amp; Outputs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calculate-elements-number-on-lsram">Calculate Elements Number on LSRAM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#split-data-for-tecs">Split Data for TECs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calculation">Calculation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html">Tutorial 3: Reduce Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html">Tutorial 4: LUT Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html">Tutorial 5: Quantization Operator</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Tutorials</a> &raquo;</li>
+      <li>Tutorial 2: Dynamic Add</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/getting_started/tutorials/2_dynamic_add.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="tutorial-2-dynamic-add">
+<h1>Tutorial 2: Dynamic Add<a class="headerlink" href="#tutorial-2-dynamic-add" title="Permalink to this heading"></a></h1>
+<p>Based on Tutorial 1 Static Add, in this tutorial, you will write a simple vector addition with dynamic kernel using Compass DSL.</p>
+<section id="inputs-outputs">
+<h2>Inputs &amp; Outputs<a class="headerlink" href="#inputs-outputs" title="Permalink to this heading"></a></h2>
+<ul class="simple">
+<li><p>Inputs:</p>
+<ul>
+<li><p>Tensor(in0, shape=(n,), dtype=”float16”)</p></li>
+<li><p>Tensor(in1, shape=(n,), dtype=”float16”)</p></li>
+</ul>
+</li>
+<li><p>Output:</p>
+<ul>
+<li><p>Tensor(out, shape=(n,), dtype=”float16”)</p></li>
+</ul>
+</li>
+</ul>
+<p>So you can write the primfunc like this:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;float16&quot;</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">add_dynamic</span><span class="p">(</span><span class="n">in0</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">in1</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">out</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="c1"># func body</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="calculate-elements-number-on-lsram">
+<h2>Calculate Elements Number on LSRAM<a class="headerlink" href="#calculate-elements-number-on-lsram" title="Permalink to this heading"></a></h2>
+<p>Assume that the target is X2_1204, the total LSRAM size is 32 KB. Vector addition has two inputs and one output, and the output can reuse one of the input space. In this case, the data type with float16 needs 2 bytes. So the maximum number of elements on LSRAM is:</p>
+<p>FP16_ELEMS_ON_LSRAM = 32 * 1024 // 2 // 2</p>
+<p>The maximum number of vector with dtype float16 on LSRAM is:</p>
+<p>FP16x16_ELEMS_ON_LSRAM = FP16_ELEMS_ON_LSRAM // 16</p>
+</section>
+<section id="split-data-for-tecs">
+<h2>Split Data for TECs<a class="headerlink" href="#split-data-for-tecs" title="Permalink to this heading"></a></h2>
+<p>You can use S.get_local_size() to get total TEC count, and use S.get_local_id() to get the current TEC index. The number of Elements per TEC and offset of the current TEC can be calculated as follows:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">tec_cnt</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_size</span><span class="p">()</span>
+<span class="n">tid</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">get_local_id</span><span class="p">()</span>
+
+<span class="n">elems_per_tec</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">ceildiv</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">tec_cnt</span><span class="p">)</span>
+<span class="n">elems_cur_tec</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">elems_per_tec</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="n">elems_per_tec</span><span class="p">)</span>
+
+<span class="n">offset_cur_tec</span> <span class="o">=</span> <span class="n">tid</span> <span class="o">*</span> <span class="n">elems_per_tec</span>
+</pre></div>
+</div>
+<p>For example, assume that n is 10 and tec_cnt is 4.</p>
+<p>The offset_cur_tec will be: 0, 3, 6, 9</p>
+<p>The elems_cur_tec will be: 3, 3, 3, 1</p>
+</section>
+<section id="calculation">
+<h2>Calculation<a class="headerlink" href="#calculation" title="Permalink to this heading"></a></h2>
+<p>Here is the main calculation process.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">lsram_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">ceildiv</span><span class="p">(</span><span class="n">elems_cur_tec</span><span class="p">,</span> <span class="n">FP16_ELEMS_ON_LSRAM</span><span class="p">)):</span>
+    <span class="n">elems_cur_lsram</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">FP16_ELEMS_ON_LSRAM</span><span class="p">,</span> <span class="n">elems_cur_tec</span> <span class="o">-</span> <span class="n">lsram_idx</span> <span class="o">*</span> <span class="n">FP16_ELEMS_ON_LSRAM</span><span class="p">)</span>
+    <span class="n">offset_cur_lsram</span> <span class="o">=</span> <span class="n">offset_cur_tec</span> <span class="o">+</span> <span class="n">lsram_idx</span> <span class="o">*</span> <span class="n">FP16_ELEMS_ON_LSRAM</span>
+
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram_in0</span><span class="o">.</span><span class="n">as_ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span> <span class="n">in0</span> <span class="o">+</span> <span class="n">offset_cur_lsram</span><span class="p">,</span> <span class="n">elems_cur_lsram</span><span class="p">)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">lsram_in1</span><span class="o">.</span><span class="n">as_ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span> <span class="n">in1</span> <span class="o">+</span> <span class="n">offset_cur_lsram</span><span class="p">,</span> <span class="n">elems_cur_lsram</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">vec_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">ceildiv</span><span class="p">(</span><span class="n">elems_cur_lsram</span><span class="p">,</span> <span class="n">vdtype</span><span class="o">.</span><span class="n">lanes</span><span class="p">)):</span>
+        <span class="n">lsram_in0</span><span class="p">[</span><span class="n">vec_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">lsram_in0</span><span class="p">[</span><span class="n">vec_idx</span><span class="p">],</span> <span class="n">lsram_in1</span><span class="p">[</span><span class="n">vec_idx</span><span class="p">])</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">dma_copy</span><span class="p">(</span><span class="n">out</span> <span class="o">+</span> <span class="n">offset_cur_lsram</span><span class="p">,</span> <span class="n">lsram_in0</span><span class="o">.</span><span class="n">as_ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span> <span class="n">elems_cur_lsram</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple">
+<li><p>Calculate current elements and offset on LSRAM.</p></li>
+<li><p>Use dma_copy to move inputs data from DDR to LSRAM.</p></li>
+<li><p>Use vector addition for current elements. The output reuses the inp0 space.</p></li>
+<li><p>Use dma_copy to move output data from LSRAM to DDR.</p></li>
+</ol>
+</section>
+<section id="complete-code">
+<h2>Complete Code<a class="headerlink" href="#complete-code" title="Permalink to this heading"></a></h2>
+<p>You can find the sample code in <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH/tvm/aipu/samples/dsl/tutorial_2_dynamic_add.py</span></code>.
+The placeholder <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH</span></code> represents the location where you install the Compass DSL
+Python package, in general, it will be something like <code class="docutils literal notranslate"><span class="pre">~/.local/lib/python3.8/site-packages</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="1_static_add.html" class="btn btn-neutral float-left" title="Tutorial 1: Static Add" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="3_reduce_op.html" class="btn btn-neutral float-right" title="Tutorial 3: Reduce Operator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

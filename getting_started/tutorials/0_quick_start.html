@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial 0: Quick Start &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Tutorial 1: Static Add" href="1_static_add.html" />
+    <link rel="prev" title="Tutorials" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial 0: Quick Start</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#write-basic-compass-dsl-function">1. Write Basic Compass DSL Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-the-function">2. Build the Function</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#inspect-opencl-c-code">3. Inspect OpenCL C Code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-in-python-pysim">4. Run in Python (<span class="xref myst">PySim</span>)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-on-npu-simulator">5. Run on NPU Simulator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-on-remote-hardware-device-through-rpc">6. Run on Remote Hardware Device through RPC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#profile">7. Profile</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complete-code">Complete Code</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="1_static_add.html">Tutorial 1: Static Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="2_dynamic_add.html">Tutorial 2: Dynamic Add</a></li>
+<li class="toctree-l2"><a class="reference internal" href="3_reduce_op.html">Tutorial 3: Reduce Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="4_lut_op.html">Tutorial 4: LUT Operator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="5_quantization_op.html">Tutorial 5: Quantization Operator</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="index.html">Tutorials</a> &raquo;</li>
+      <li>Tutorial 0: Quick Start</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/getting_started/tutorials/0_quick_start.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="tutorial-0-quick-start">
+<h1>Tutorial 0: Quick Start<a class="headerlink" href="#tutorial-0-quick-start" title="Permalink to this heading"></a></h1>
+<p>In this tutorial, you will learn the basic workflow of Compass DSL. You will learn about how to:</p>
+<ul class="simple">
+<li><p>Write Basic Compass DSL Function</p></li>
+<li><p>Build the Function</p></li>
+<li><p>Inspect OpenCL C Code</p></li>
+<li><p>Run in Python (<a class="reference internal" href="../../explanation/pysim.html"><span class="doc std std-doc">PySim</span></a>)</p></li>
+<li><p>Run on NPU Simulator</p></li>
+<li><p>Run on Remote Hardware Device through RPC</p></li>
+<li><p>Profile</p></li>
+</ul>
+<section id="write-basic-compass-dsl-function">
+<h2>1. Write Basic Compass DSL Function<a class="headerlink" href="#write-basic-compass-dsl-function" title="Permalink to this heading"></a></h2>
+<p>You can write a simple function with decorator <code class="docutils literal notranslate"><span class="pre">S.prim_func</span></code>:</p>
+<ul class="simple">
+<li><p>The input and output data needs to be annotated as <code class="docutils literal notranslate"><span class="pre">S.ptr(dtype,</span> <span class="pre">&quot;global&quot;)</span></code>.</p></li>
+<li><p>The function body is the computations.</p></li>
+</ul>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tvm.aipu</span> <span class="kn">import</span> <span class="n">script</span> <span class="k">as</span> <span class="n">S</span>
+<span class="kn">from</span> <span class="nn">tvm</span> <span class="kn">import</span> <span class="n">aipu</span>
+
+
+<span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;float32&quot;</span>
+
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func_add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">c</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+        <span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="build-the-function">
+<h2>2. Build the Function<a class="headerlink" href="#build-the-function" title="Permalink to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">BuildManager</span></code> is the user interface for DSL program compilation.
+To define an instance of <code class="docutils literal notranslate"><span class="pre">BuildManager</span></code>, the <code class="docutils literal notranslate"><span class="pre">target</span></code> is required. The default target is <code class="docutils literal notranslate"><span class="pre">X2_1204</span></code>.
+You can then call the <code class="docutils literal notranslate"><span class="pre">build</span></code> method of <code class="docutils literal notranslate"><span class="pre">bm</span></code> to build the DSL function and get an executor.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;X2_1204&quot;</span><span class="p">)</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">func_add</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For more information, see <a class="reference internal" href="../build_and_run_workflow.html"><span class="doc std std-doc">build workflow of Compass DSL</span></a>.</p>
+</section>
+<section id="inspect-opencl-c-code">
+<h2>3. Inspect OpenCL C Code<a class="headerlink" href="#inspect-opencl-c-code" title="Permalink to this heading"></a></h2>
+<p>After building the function, you can get the generated OpenCL C code.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">c_code</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The generated OpenCL C code will be something like below.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func_add</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="run-in-python-pysim">
+<h2>4. Run in Python (<a class="reference internal" href="../../explanation/pysim.html"><span class="doc std std-doc">PySim</span></a>)<a class="headerlink" href="#run-in-python-pysim" title="Permalink to this heading"></a></h2>
+<p>You can run the DSL function in Python directly.</p>
+<p>In this case, you can directly call <code class="docutils literal notranslate"><span class="pre">func_add</span></code> by passing the appropriate arguments.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">n</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="p">),</span> <span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+<span class="n">py_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+<span class="n">func_add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">py_out</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="run-on-npu-simulator">
+<h2>5. Run on NPU Simulator<a class="headerlink" href="#run-on-npu-simulator" title="Permalink to this heading"></a></h2>
+<p>After the build step, the <code class="docutils literal notranslate"><span class="pre">ex</span></code> is an executable object. You can directly run it by passing the
+appropriate arguments.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">aipu_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+<span class="n">ex</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can directly print the output data.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">aipu_out</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="run-on-remote-hardware-device-through-rpc">
+<h2>6. Run on Remote Hardware Device through RPC<a class="headerlink" href="#run-on-remote-hardware-device-through-rpc" title="Permalink to this heading"></a></h2>
+<p>Compass DSL also supports running on hardware device through RPC.</p>
+<p>You need to set the RPC relevant environments:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_RPC_TRACKER_IP</span><span class="o">=</span><span class="s2">&quot;xxx&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_RPC_TRACKER_PORT</span><span class="o">=</span><span class="s2">&quot;xxx&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_RPC_KEY</span><span class="o">=</span><span class="s2">&quot;xxx&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">AIPU_TVM_DEVICE_COMPILER</span><span class="o">=</span><span class="s2">&quot;/xxx/aarch64-linux-gnu-g++&quot;</span>
+</pre></div>
+</div>
+<p>Establish an RPC session with the remote hardware device and run the function.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="c1"># Switch to execute on hardware device through RPC</span>
+<span class="c1"># rpc_key = &quot;None&quot; means get it from env &quot;AIPU_TVM_RPC_KEY&quot;.</span>
+<span class="n">ex</span><span class="o">.</span><span class="n">rpc_sess</span> <span class="o">=</span> <span class="n">get_rpc_session</span><span class="p">(</span><span class="n">session_timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">rpc_key</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">aipu_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+<span class="n">ex</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="profile">
+<h2>7. Profile<a class="headerlink" href="#profile" title="Permalink to this heading"></a></h2>
+<p>You can use the benchmark API to get the function execution time on remote hardware device.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ex</span><span class="o">.</span><span class="n">benchmark</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+<span class="c1"># Execution time summary:</span>
+<span class="c1"># mean (ms)   median (ms)    max (ms)     min (ms)     std (ms)</span>
+<span class="c1">#   0.6287       0.6287       0.6613       0.5962       0.0326</span>
+</pre></div>
+</div>
+<p>If the amount of data is too small, it is recommended to repeat multiple loops to reduce measurement
+errors, thereby obtaining more reliable performance data.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ex</span><span class="o">.</span><span class="n">benchmark</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also use the NPU profiler to collect accurate and detailed performance information.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">ex</span><span class="o">.</span><span class="n">profile</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+
+<span class="c1"># Total cycles from profiler: 2773</span>
+<span class="c1"># For more details about the profiler report, please see &quot;compass_dsl_xxx/runtime/profile_output.html&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="complete-code">
+<h2>Complete Code<a class="headerlink" href="#complete-code" title="Permalink to this heading"></a></h2>
+<p>You can find the sample code in <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH/tvm/aipu/samples/dsl/tutorial_0_quick_start.py</span></code>.
+The placeholder <code class="docutils literal notranslate"><span class="pre">PYTHON_PACKAGE_PATH</span></code> represents the location where you install the Compass DSL
+Python package, in general, it will be something like <code class="docutils literal notranslate"><span class="pre">~/.local/lib/python3.8/site-packages</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="1_static_add.html" class="btn btn-neutral float-right" title="Tutorial 1: Static Add" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

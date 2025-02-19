@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compass DSL &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Python Simulator (PySim)" href="pysim.html" />
+    <link rel="prev" title="Zhouyi NPU Architecture" href="zhouyi_npu_arch.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Compass DSL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#tvm-script-overview">TVM Script Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tvm-script-to-irmodule">TVM Script to IRModule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#compass-dsl-language">Compass DSL Language</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-design-principles">API Design Principles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mask">Mask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#parameter-type">Parameter Type</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#auto-broadcast">Auto Broadcast</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#concise-vector-intrinsic-apis">Concise vector intrinsic APIs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#compass-dsl-vs-tvm-script">Compass DSL vs. TVM Script</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tir-in-script">TIR in Script</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subroutine-call">Subroutine Call</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#macro">Macro</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Compass DSL</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/explanation/compass_dsl.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="compass-dsl">
+<h1>Compass DSL<a class="headerlink" href="#compass-dsl" title="Permalink to this heading"></a></h1>
+<p>Compass DSL is developed based on the TVM Script. Here is the outline of this section:</p>
+<ul class="simple">
+<li><p>TVM Script Overview</p></li>
+<li><p>From TVM Script to IRModule</p></li>
+<li><p>Compass DSL Language</p></li>
+<li><p>AIPU built in</p></li>
+<li><p>Compass DSL vs. TVM Script</p></li>
+</ul>
+<section id="tvm-script-overview">
+<h2>TVM Script Overview<a class="headerlink" href="#tvm-script-overview" title="Permalink to this heading"></a></h2>
+<p>Here is a figure from the TVM Documentation. The TVM Script will be parsed into IRModule, then several pass transformations/schedule transformations can be applied on IRModule, and finally the IRModule is built into an executable module.</p>
+<p><img alt="" src="../_images/tvm_life_of_irmodule.jpg" /></p>
+</section>
+<section id="tvm-script-to-irmodule">
+<h2>TVM Script to IRModule<a class="headerlink" href="#tvm-script-to-irmodule" title="Permalink to this heading"></a></h2>
+<p>This section shows how the TVM Script is converted to a TIR Module.</p>
+<p><img alt="" src="../_images/script_parse.jpg" /></p>
+<p>All user-written TVM Script/Compass DSL should be with the decorator <code class="docutils literal notranslate"><span class="pre">&#64;T.prim_func/&#64;S.prim_func</span></code>. Scripts are only Python string source code. In the parsing phase, the parser analyzes the string program and generates the Python AST. The Python AST is then run through with the help of Visitor Pattern and each node is converted into TentorIR structures with IRBuilder.</p>
+</section>
+<section id="compass-dsl-language">
+<h2>Compass DSL Language<a class="headerlink" href="#compass-dsl-language" title="Permalink to this heading"></a></h2>
+<p>Compass DSL is a statically typed subset of Python, so many Python features can apply directly to Compass DSL.</p>
+<ul class="simple">
+<li><p>dtype</p></li>
+<li><p>dtype cast</p></li>
+<li><p>mask</p></li>
+<li><p>variable (define, update, access)</p></li>
+<li><p>expr</p>
+<ul>
+<li><p>unaryOp</p></li>
+<li><p>binaryOp</p></li>
+<li><p>call</p></li>
+<li><p>subscript</p></li>
+<li><p>slice</p></li>
+</ul>
+</li>
+<li><p>stmt</p>
+<ul>
+<li><p>return</p></li>
+<li><p>assign</p></li>
+<li><p>for, while</p></li>
+<li><p>if</p></li>
+<li><p>with</p></li>
+</ul>
+</li>
+<li><p>function def, func call</p></li>
+<li><p>primfunc</p></li>
+<li><p>buffer, ptr:</p>
+<ul>
+<li><p>ptr</p></li>
+<li><p>alloc_buffer</p></li>
+<li><p>match_buffer</p></li>
+</ul>
+</li>
+</ul>
+<p>See the <a class="reference internal" href="../language_basics/index.html"><span class="doc std std-doc">Language Basics</span></a> for more details.</p>
+</section>
+<section id="api-design-principles">
+<h2>API Design Principles<a class="headerlink" href="#api-design-principles" title="Permalink to this heading"></a></h2>
+<section id="mask">
+<h3>Mask<a class="headerlink" href="#mask" title="Permalink to this heading"></a></h3>
+<p>Mask is widely used in Compass DSL, which means that simplicity and universality must be combined
+when considering its design.</p>
+<p>Mask accepts the following types:</p>
+<ul class="simple">
+<li><p>None: All elements are active.</p></li>
+<li><p>Array[bool]: From low to high, elements that are True are active. Insufficient values are automatically filled with False.</p></li>
+<li><p>PrimExpr: The variable masks which value can be determined at runtime. Must be a bool vector.</p></li>
+<li><p>str(Recommend): <a class="reference internal" href="../how_to_guides/how_to_use_mask.html#string-representation"><span class="std std-doc">String Representation</span></a></p></li>
+</ul>
+</section>
+<section id="parameter-type">
+<h3>Parameter Type<a class="headerlink" href="#parameter-type" title="Permalink to this heading"></a></h3>
+<p>In the Compass ISA, many instructions have multiple parameter types, such as add.ss, add.su, add.uu.</p>
+<p>When designing, in order to reduce the burden on users and avoid having to remember various
+different instruction forms, we removed these parameters from the interface. But there is a problem.
+If one parameter is a signed number and the other is an unsigned number, the output type cannot be
+determined. Therefore, the out_sign parameter is introduced.</p>
+<p>The general principle is that users only need to think about what they want to do, and leave the
+selection of instructions to the Compass DSL compiler.</p>
+</section>
+<section id="auto-broadcast">
+<h3>Auto Broadcast<a class="headerlink" href="#auto-broadcast" title="Permalink to this heading"></a></h3>
+<p>To simplify user usage, all vector interfaces support automatic broadcasting.</p>
+<p>So you can use scalar directly on the interface without creating a vector in advance, and you do not
+need to use vbcast to manually broadcast scalar variables.</p>
+</section>
+<section id="concise-vector-intrinsic-apis">
+<h3>Concise vector intrinsic APIs<a class="headerlink" href="#concise-vector-intrinsic-apis" title="Permalink to this heading"></a></h3>
+<p>Compass has many intrinsic with similar semantics, which are simplified into the same interface in
+DSL and controlled by parameters to reduce the user’s usage burden.</p>
+<p>Here are some examples:</p>
+<ul class="simple">
+<li><p>Combine int and its corresponding float version.</p></li>
+<li><p>20+ nsr -&gt; 1 API with 4 parameter + 1 high frequency alias.</p></li>
+<li><p>vasr, vasrr, vlsr, vlsrr -&gt; vsr.</p></li>
+<li><p>vsxtl, vuxtl -&gt; vxtl.</p></li>
+<li><p>vload, vload_stride -&gt; vload.</p></li>
+</ul>
+</section>
+</section>
+<section id="compass-dsl-vs-tvm-script">
+<h2>Compass DSL vs. TVM Script<a class="headerlink" href="#compass-dsl-vs-tvm-script" title="Permalink to this heading"></a></h2>
+<section id="tir-in-script">
+<h3>TIR in Script<a class="headerlink" href="#tir-in-script" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>TVM Script: ✔</p></li>
+<li><p>Compass DSL: ✔</p></li>
+</ul>
+<p>Compass DSL can reuse TVM Script TIR:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">T</span><span class="o">.</span><span class="n">exp</span>              <span class="n">S</span><span class="o">.</span><span class="n">exp</span>
+<span class="n">T</span><span class="o">.</span><span class="n">grid</span>             <span class="n">S</span><span class="o">.</span><span class="n">grid</span>
+<span class="n">T</span><span class="o">.</span><span class="n">vectorized</span>       <span class="n">S</span><span class="o">.</span><span class="n">vectorized</span>
+<span class="n">T</span><span class="o">.</span><span class="n">max</span>              <span class="n">S</span><span class="o">.</span><span class="n">max</span>
+<span class="n">T</span><span class="o">.</span><span class="n">alloc_buffer</span>     <span class="n">S</span><span class="o">.</span><span class="n">alloc_buffer</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>For more information about TIR API in Script, see <code class="docutils literal notranslate"><span class="pre">python/tvm/script/ir_builder/tir/ir.py</span></code> and <code class="docutils literal notranslate"><span class="pre">python/tvm/aipu/script/ir/ir.py</span></code>.</p>
+</section>
+<section id="subroutine-call">
+<h3>Subroutine Call<a class="headerlink" href="#subroutine-call" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>TVM Script: ✖</p></li>
+<li><p>Compass DSL: ✔</p></li>
+</ul>
+<p>The TVM Script does not support primfunc subroutine call. If you write the code like this, it will raise an error:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@T</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">subfunc</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+  <span class="n">xxx</span>
+
+<span class="nd">@T</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+  <span class="n">subfunc</span><span class="p">(</span><span class="o">...</span><span class="p">)</span> <span class="c1"># error: &#39;PrimFunc&#39; object is not callable</span>
+</pre></div>
+</div>
+<p>Compass DSL supports subroutine call. During the parse stage, it analyzes the function with its callees. Then in module building stage, kernel function (main function) and subroutine functions are added into the module. Here is a sample code:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">subfunc</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span><span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span><span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;int32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">subfunc</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The genereted c_code is:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">subfunc</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+
+<span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">subfunc</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span><span class="w"> </span><span class="n">subfunc</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="macro">
+<h3>Macro<a class="headerlink" href="#macro" title="Permalink to this heading"></a></h3>
+<ul class="simple">
+<li><p>TVM Script: ✔</p></li>
+<li><p>Compass DSL: ✔, but pysim does not support macro ✖</p></li>
+</ul>
+<p>The macro is similar to C preprocessor.</p>
+<p>The macro would never have any actual calls generated to the PrimFunc body. Instead, they would be pasted (inlined) into TIR.</p>
+<p>For macro call <code class="docutils literal notranslate"><span class="pre">macro_name(arg1,</span> <span class="pre">arg2,</span> <span class="pre">arg3,</span> <span class="pre">...)</span></code>, the values are substituted into the body of the macro, and the body with the substituted values is then inserted at the point where the call is located.</p>
+<p>Here is an exmaple of macro with static symbol capture.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span>  <span class="n">n</span> <span class="o">=</span> <span class="mi">8</span>
+
+  <span class="nd">@S</span><span class="o">.</span><span class="n">macro</span>
+  <span class="k">def</span> <span class="nf">add_func</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+      <span class="n">out</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">inp</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span>
+
+  <span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+  <span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="s2">&quot;i32&quot;</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">n</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">i32</span><span class="p">):</span>
+      <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+          <span class="n">add_func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+          <span class="n">add_func</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The generated code is:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">__kernel</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">func</span><span class="p">(</span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">__global</span><span class="w"> </span><span class="kt">int</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">b</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">8</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="zhouyi_npu_arch.html" class="btn btn-neutral float-left" title="Zhouyi NPU Architecture" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pysim.html" class="btn btn-neutral float-right" title="Python Simulator (PySim)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

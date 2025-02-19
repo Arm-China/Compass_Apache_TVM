@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build and Run Workflow &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tutorials" href="tutorials/index.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Build and Run Workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#general-build-workflow">General Build Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#buildmanager">BuildManager</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lower">Lower</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#codegen">Codegen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#builder">Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#executor">Executor</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/pysim.html">Python Simulator (PySim)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../explanation/static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Build and Run Workflow</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/getting_started/build_and_run_workflow.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="build-and-run-workflow">
+<h1>Build and Run Workflow<a class="headerlink" href="#build-and-run-workflow" title="Permalink to this heading"></a></h1>
+<p>This tutorial explains the build workflow of Compass DSL.</p>
+<ul class="simple">
+<li><p>What is BuildManager?</p></li>
+<li><p>What happens in lowering stage?</p></li>
+<li><p>What happens in Codegen stage?</p></li>
+<li><p>What is Builder?</p></li>
+<li><p>What is Executor?</p></li>
+</ul>
+<p>Here is a simple example that shows how to use API to build and run the primfunc.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tvm</span> <span class="kn">import</span> <span class="n">aipu</span>
+<span class="kn">from</span> <span class="nn">tvm.aipu</span> <span class="kn">import</span> <span class="n">script</span> <span class="k">as</span> <span class="n">S</span>
+
+<span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;int32&quot;</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">vb</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">test_func</span><span class="p">():</span>
+    <span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;X2_1204&quot;</span><span class="p">)</span>  <span class="c1"># What is BuildManager?</span>
+    <span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>                           <span class="c1"># What is the build workflow?</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">ex</span><span class="o">.</span><span class="n">c_code</span><span class="p">)</span>                              <span class="c1"># How Codegen works?</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">aipu_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">ex</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">)</span>                            <span class="c1"># What is Executor?</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">test_func</span><span class="p">()</span>
+</pre></div>
+</div>
+<section id="general-build-workflow">
+<h2>General Build Workflow<a class="headerlink" href="#general-build-workflow" title="Permalink to this heading"></a></h2>
+<p><img alt="" src="../_images/build_workflow.jpg" /></p>
+<p>The general build workflow is:</p>
+<ol class="arabic simple">
+<li><p>The primfunc function will be first lowered to a IR_Module.</p></li>
+<li><p>The IR_Module will go through the codegen and generate the c_code.</p></li>
+<li><p>The AIPU compiler will compile the c_code into an object file.</p></li>
+<li><p>The builder.build will generate the compass_ir, and gbuilder_plugin with the primfunc_info, then call the aipugb to generate the aipu.bin.</p></li>
+<li><p>The executor function is a runtime-module, which can be called directly with runtime arguments, run and get the outputs.</p></li>
+</ol>
+</section>
+<section id="buildmanager">
+<h2>BuildManager<a class="headerlink" href="#buildmanager" title="Permalink to this heading"></a></h2>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="s2">&quot;X2_1204&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The AIPU buildmanger is a user interface for DSL program compilation.</p>
+<p>To declare a buildmanger, the <code class="docutils literal notranslate"><span class="pre">target</span></code> is required. The default target is <strong>“X2_1204”</strong>.</p>
+<p>You can then call the <code class="docutils literal notranslate"><span class="pre">lower</span></code> or <code class="docutils literal notranslate"><span class="pre">build</span></code> method of bm:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">mod</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">primfunc</span><span class="p">)</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">primfunc</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="lower">
+<h2>Lower<a class="headerlink" href="#lower" title="Permalink to this heading"></a></h2>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>lowering: transform a program to a lower-level representation that is closer to the target.
+</pre></div>
+</div>
+<p>In the lower stage:</p>
+<ol class="arabic">
+<li><p>Turn the input (<code class="docutils literal notranslate"><span class="pre">Union[tvm.te.Schedule,</span> <span class="pre">tvm.tir.PrimFunc,</span> <span class="pre">IRModule]</span></code>) into IR_Module.</p></li>
+<li><p>Run a sequence of passes(transformations). Many of the transformations in lowering stage are <strong>target independent</strong>.</p>
+<p>It also allows to configure transformation parameters before applying transformations.</p>
+</li>
+</ol>
+</section>
+<section id="codegen">
+<h2>Codegen<a class="headerlink" href="#codegen" title="Permalink to this heading"></a></h2>
+<p>In the codegen stage,</p>
+<ol class="arabic simple">
+<li><p>Apply some <strong>target dependent</strong> passes(transformations).</p></li>
+<li><p>Call the Codegen Module to translate the IR_Module into string c_code.</p></li>
+</ol>
+</section>
+<section id="builder">
+<h2>Builder<a class="headerlink" href="#builder" title="Permalink to this heading"></a></h2>
+<p>The Builder is responsible for building the DSL program during execution.</p>
+<p>In the Builder.build stage:</p>
+<ol class="arabic simple">
+<li><p>Generate the compass_ir with primfunc_info</p></li>
+<li><p>Generate the gbuilder op_plugin</p></li>
+<li><p>Call aipugb to generate aipu.bin</p></li>
+<li><p>Return the runtime_module</p></li>
+</ol>
+</section>
+<section id="executor">
+<h2>Executor<a class="headerlink" href="#executor" title="Permalink to this heading"></a></h2>
+<p>Executor is responsible for executing the DSL program.
+The main feature of executor is that it has the ‘<strong>call</strong>’ method, which means that it is callable.</p>
+<p>In the Executor.run stage:</p>
+<ol class="arabic simple">
+<li><p>Get the executable packed function.</p></li>
+<li><p>Convert the runtime input arguments from <code class="docutils literal notranslate"><span class="pre">np.array</span></code> into <code class="docutils literal notranslate"><span class="pre">tvm.nd.array</span></code>.</p></li>
+<li><p>Run the compiled DSL program.</p></li>
+<li><p>Convert the outputs from <code class="docutils literal notranslate"><span class="pre">tvm.nd.array</span></code> to <code class="docutils literal notranslate"><span class="pre">np.array</span></code>.</p></li>
+</ol>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tutorials/index.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

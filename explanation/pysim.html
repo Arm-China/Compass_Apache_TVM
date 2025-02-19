@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Python Simulator (PySim) &mdash; Compass DSL 1.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Static and Dynamic Kernel" href="static_and_dynamic_kernel.html" />
+    <link rel="prev" title="Compass DSL" href="compass_dsl.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Compass DSL
+          </a>
+              <div class="version">
+                1.2
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/build_and_run_workflow.html">Build and Run Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Language Basics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/variables.html">Variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/types.html">Types</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/mask.html">Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/expression.html">Expression</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/statement.html">Statement</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../language_basics/flexible_width_and_multiple_width_vector.html">Flexible/Multiple Width Vector</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">How-to Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_a_basic_kernel.html">How to Write a Basic Kernel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_subfunctions.html">How to Use Subfunctions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_pointer.html">How to Use a Pointer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_dma.html">How to Use DMA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_mask.html">How to Use Mask</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_rpc.html">How to Use RPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_profiler.html">How to Use Profiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_debug_with_python.html">How to Debug with Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_write_the_operator_plugin.html">How to Write the Operator Plugin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_macros.html">How to Use Macros</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_inline_assembly.html">How to Use Inline Assembly</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how_to_guides/how_to_use_aiff.html">How to use AIFF</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Explanation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about_this_doc.html">About This Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zhouyi_npu_arch.html">Zhouyi NPU Architecture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="compass_dsl.html">Compass DSL</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Python Simulator (PySim)</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-pysim">What is PySim?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#why-pysim">Why PySim?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation-principle-of-pysim">Implementation Principle of PySim</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#one-interface-two-implementations">One Interface, Two Implementations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#wrap-kernel-function-with-pyprimfunc">Wrap Kernel Function with PyPrimFunc</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#path-to-buildmanger">Path to BuildManger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#path-to-pysim">Path to PySim</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multi-thread-to-simulate-all-circumstances">Multi-Thread to Simulate All Circumstances</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#single-thread-loop-to-simulate-simple-circumstances-neednt-sync">Single-Thread Loop to Simulate Simple Circumstances (Needn’t Sync)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="static_and_dynamic_kernel.html">Static and Dynamic Kernel</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/ir/index.html">Builtin API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/script_api.html">Script API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Compass DSL</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Python Simulator (PySim)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/explanation/pysim.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <!---SPDX-License-Identifier: Apache-2.0-->
+<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<section id="python-simulator-pysim">
+<h1>Python Simulator (PySim)<a class="headerlink" href="#python-simulator-pysim" title="Permalink to this heading"></a></h1>
+<section id="what-is-pysim">
+<h2>What is PySim?<a class="headerlink" href="#what-is-pysim" title="Permalink to this heading"></a></h2>
+<p>PySim is Python Simulator, which is a very important feature of Compass DSL. In Compass DSL, the kernel
+function decorated with <code class="docutils literal notranslate"><span class="pre">S.prim_func</span></code> is callable, and each API used in the kernel function has a
+corresponding implementation in Python, so we can run and debug it in Python.</p>
+</section>
+<section id="why-pysim">
+<h2>Why PySim?<a class="headerlink" href="#why-pysim" title="Permalink to this heading"></a></h2>
+<p>During the writing process of operator programs, most bugs encountered are the simple logical
+errors. However, during the debugging process, each modification needs to be recompiled and deployed
+to the Compass NPU Simulator or real device to run. Such repeated operations back and forth are very
+time-consuming, and after the program is compiled, you need to use the Compass OpenCL Debugger to
+debug the OpenCL code, which also brings greater difficulties.</p>
+<p>Therefore, we introduced PySim to the Compass DSL. When encountering logic errors in the program,
+debugging can be completed on the Python side without compiling and deploying every time, which
+greatly reduces the difficulty of debugging.</p>
+</section>
+<section id="implementation-principle-of-pysim">
+<h2>Implementation Principle of PySim<a class="headerlink" href="#implementation-principle-of-pysim" title="Permalink to this heading"></a></h2>
+<p>The use of Pysim is very simple. After writing a function using Compass DSL, first call BuildManager
+to perform syntax compilation check, and then call the function directly in Python.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tvm</span> <span class="kn">import</span> <span class="n">aipu</span>
+<span class="kn">from</span> <span class="nn">tvm.aipu</span> <span class="kn">import</span> <span class="n">script</span> <span class="k">as</span> <span class="n">S</span>
+
+<span class="n">dtype</span> <span class="o">=</span> <span class="s2">&quot;int32&quot;</span>
+<span class="n">n</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func_add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">vb</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+<span class="n">bm</span> <span class="o">=</span> <span class="n">aipu</span><span class="o">.</span><span class="n">tir</span><span class="o">.</span><span class="n">BuildManager</span><span class="p">()</span>
+<span class="n">ex</span> <span class="o">=</span> <span class="n">bm</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">func_add</span><span class="p">)</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+<span class="n">aipu_out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+<span class="n">func_add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">aipu_out</span><span class="p">)</span>  <span class="c1"># Run in Python(Pysim)</span>
+</pre></div>
+</div>
+<p>Then we use the above code as an example to describe the implementation principle of PySim.</p>
+<section id="one-interface-two-implementations">
+<h3>One Interface, Two Implementations<a class="headerlink" href="#one-interface-two-implementations" title="Permalink to this heading"></a></h3>
+<p>In order to allow an Compass DSL program to be compiled and deployed through <strong>BuildManager</strong>, and
+use the same code to run and debug through <strong>PySim</strong>, we have made two implementations of each
+interface, taking <code class="docutils literal notranslate"><span class="pre">S.vload</span></code> as an example:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@register_ir_api</span>
+<span class="k">def</span> <span class="nf">vload</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="o">...</span>
+
+<span class="nd">@register_ir_api</span>
+<span class="k">def</span> <span class="nf">_py_vload</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lanes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="o">...</span>
+</pre></div>
+</div>
+<p>For a <code class="docutils literal notranslate"><span class="pre">vload</span></code> interface, with the above two implementations, the first one is used when the Zhouyi Compass
+DSL program is compiling, and the second one is used when the Zhouyi Compass DSL program is running
+directly by the Python interpreter. The decorator <code class="docutils literal notranslate"><span class="pre">register_ir_api</span></code> is added to both
+implementations.</p>
+<p>Similarly, all interfaces have two implementations, and both have the decorator <code class="docutils literal notranslate"><span class="pre">register_ir_api</span></code>
+added. In the module import phase of the DSL program, all interfaces will be imported into the
+current namespace as module members. When importing each interface, the decorator <code class="docutils literal notranslate"><span class="pre">register_ir_api</span></code>
+is executed first.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">register_ir_api</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+	<span class="o">...</span>
+    <span class="k">if</span> <span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;tvm.aipu.script.&quot;</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Some IR API functions of TVM Script are created through generator, so</span>
+        <span class="c1"># their function name is same, e.g., that of T.int32 and T.uint32 is</span>
+        <span class="c1"># &quot;tvm.script.xxx.func_gen.&lt;locals&gt;.func&quot;.</span>
+        <span class="n">caller_code</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getframeinfo</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()</span><span class="o">.</span><span class="n">f_back</span><span class="p">)</span><span class="o">.</span><span class="n">code_context</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">caller_code</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;_&quot;</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">name</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;_py_&quot;</span><span class="p">,</span> <span class="s2">&quot;Decorate wrong function.&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="k">assert</span> <span class="n">_IR_API_NAME_2_IMPLEMENTS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> Override happened.&quot;</span>
+        <span class="n">_IR_API_NAME_2_IMPLEMENTS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
+        <span class="k">return</span> <span class="n">func</span>
+
+    <span class="k">assert</span> <span class="n">_IR_API_NAME_2_IMPLEMENTS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> Override happened.&quot;</span>
+    <span class="n">_IR_API_NAME_2_IMPLEMENTS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>In <code class="docutils literal notranslate"><span class="pre">register_ir_api</span></code>, determine which implementation it is by the function name, and then put the
+interface and its corresponding two implementation relationships into the table
+<code class="docutils literal notranslate"><span class="pre">_IR_API_NAME_2_IMPLEMENTS</span></code>. Finally, a decorator function <code class="docutils literal notranslate"><span class="pre">_wrapper</span></code> is returned to allocate the
+implementation when the interface is called.</p>
+<p>After completing the two implementations of all interfaces, the next thing we have to do is to
+ensure that the two execution paths of BuildManager and Pysim can get the correct implementation for
+use when executing the Compass DSL program.</p>
+</section>
+<section id="wrap-kernel-function-with-pyprimfunc">
+<h3>Wrap Kernel Function with PyPrimFunc<a class="headerlink" href="#wrap-kernel-function-with-pyprimfunc" title="Permalink to this heading"></a></h3>
+<p>In the Compass DSL program, each kernel function has a decorator <code class="docutils literal notranslate"><span class="pre">S.prim_func</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func_add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">vb</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">T</span><span class="o">.</span><span class="n">prim_func</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">prim_func</span><span class="p">(</span><span class="n">func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">private</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_entry</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># pylint: disable=unused-argument</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple wrapper of the corresponding API of TVM Script.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_decorator</span><span class="p">(</span><span class="n">myf</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">myf</span><span class="p">)(</span><span class="n">PyPrimFunc</span><span class="p">(</span><span class="n">myf</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;private&quot;</span><span class="p">:</span> <span class="n">private</span><span class="p">}))</span>
+
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">_decorator</span><span class="p">,</span> <span class="s2">&quot;dispatch_token&quot;</span><span class="p">,</span> <span class="s2">&quot;tir&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">)</span> <span class="k">if</span> <span class="n">func</span> <span class="k">else</span> <span class="n">_decorator</span>
+</pre></div>
+</div>
+<p>When calling kernel function <code class="docutils literal notranslate"><span class="pre">func_add</span></code>, you will first enter the decorator <code class="docutils literal notranslate"><span class="pre">S.prim_func</span></code>. You can
+see that it returns a class instance <code class="docutils literal notranslate"><span class="pre">PyPrimFunc(myf,</span> <span class="pre">{&quot;private&quot;:</span> <span class="pre">private})</span></code>, and <code class="docutils literal notranslate"><span class="pre">func_add</span></code> is
+assigned as a parameter to the <code class="docutils literal notranslate"><span class="pre">py_func</span></code> attribute of the <code class="docutils literal notranslate"><span class="pre">PyPrimFunc</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PyPrimFunc</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The simple wrapper of the Python function written by user.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">py_func</span><span class="p">,</span> <span class="n">prim_func_kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span> <span class="o">=</span> <span class="n">py_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prim_func_kwargs</span> <span class="o">=</span> <span class="n">prim_func_kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prim_func</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_param_anns</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="o">...</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    	<span class="o">...</span>
+</pre></div>
+</div>
+<p>At this time, the kernel function <code class="docutils literal notranslate"><span class="pre">func_add</span></code> we got is actually a <code class="docutils literal notranslate"><span class="pre">PyPrimFunc</span></code> object returned from
+<code class="docutils literal notranslate"><span class="pre">S.prim_func</span></code>.</p>
+</section>
+<section id="path-to-buildmanger">
+<h3>Path to BuildManger<a class="headerlink" href="#path-to-buildmanger" title="Permalink to this heading"></a></h3>
+<p>When we pass this kernel function to <code class="docutils literal notranslate"><span class="pre">BuildManeger</span></code>, <code class="docutils literal notranslate"><span class="pre">BuildManager</span></code> will take out <code class="docutils literal notranslate"><span class="pre">py_func</span></code> in
+<code class="docutils literal notranslate"><span class="pre">PyPrimFunc</span></code> and convert it into <code class="docutils literal notranslate"><span class="pre">prim_func</span></code> in the <code class="docutils literal notranslate"><span class="pre">lower</span></code> stage, and then perform a regular <a class="reference internal" href="../getting_started/build_and_run_workflow.html"><span class="doc std std-doc">build workflow</span></a>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse_to_prim_func</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse to TensorIR PrimFunc through TVM Script parser.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">PyPrimFunc</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;The function &quot;</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s1">.</span><span class="si">{</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1">&quot; must be decorated by &quot;S.prim_func&quot;.&#39;</span>
+        <span class="p">)</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">T</span><span class="o">.</span><span class="n">prim_func</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">py_func</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">prim_func_kwargs</span><span class="p">))</span>
+    <span class="n">func</span><span class="o">.</span><span class="n">prim_func</span> <span class="o">=</span> <span class="n">ret</span>
+    <span class="k">return</span> <span class="n">ret</span>
+</pre></div>
+</div>
+</section>
+<section id="path-to-pysim">
+<h3>Path to PySim<a class="headerlink" href="#path-to-pysim" title="Permalink to this heading"></a></h3>
+<p>When we call the kernel function directly to run on PySim, we will enter the <code class="docutils literal notranslate"><span class="pre">__call__</span></code> method of
+<code class="docutils literal notranslate"><span class="pre">PyPrimFunc</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+    <span class="o">...</span>
+    <span class="k">with</span> <span class="n">PySimInfo</span><span class="p">()</span> <span class="k">as</span> <span class="n">py_sim_info</span><span class="p">:</span>
+        <span class="o">...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">PyVar</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Here <code class="docutils literal notranslate"><span class="pre">self.py_func</span></code> will be executed. In this example, it is the kernel function <code class="docutils literal notranslate"><span class="pre">func_add</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">S</span><span class="o">.</span><span class="n">prim_func</span>
+<span class="k">def</span> <span class="nf">func_add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">),</span> <span class="n">b</span><span class="p">:</span> <span class="n">S</span><span class="o">.</span><span class="n">ptr</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;global&quot;</span><span class="p">)):</span>
+    <span class="n">va</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vload</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="n">vb</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">vadd</span><span class="p">(</span><span class="n">va</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">S</span><span class="o">.</span><span class="n">vstore</span><span class="p">(</span><span class="n">vb</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>When running the kernel function <code class="docutils literal notranslate"><span class="pre">func_add</span></code>, it is wrapped with the with statement and the class
+<code class="docutils literal notranslate"><span class="pre">PysimInfo</span></code> is used as the context manager.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">PySimInfo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Maintain all of the status information when simulate the TVM script in Python.&quot;&quot;&quot;</span>
+
+    <span class="n">current</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_multi_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_size</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thread_local_data</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">barrier</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Barrier</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur_shared_buffer</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_multi_thread</span> <span class="o">=</span> <span class="n">is_multi_thread</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_old_current</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_old_current</span><span class="p">,</span> <span class="n">PySimInfo</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="n">PySimInfo</span><span class="o">.</span><span class="n">current</span><span class="p">,</span> <span class="bp">self</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="n">PySimInfo</span><span class="o">.</span><span class="n">current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_old_current</span>
+</pre></div>
+</div>
+<p>When executing each interface after entering the <code class="docutils literal notranslate"><span class="pre">func_add</span></code> function, since <code class="docutils literal notranslate"><span class="pre">func_add</span></code> is in the
+context of <code class="docutils literal notranslate"><span class="pre">PySimInfo</span></code>, as mentioned earlier, the interface returns a <code class="docutils literal notranslate"><span class="pre">_wrapper</span></code> after being
+processed by <code class="docutils literal notranslate"><span class="pre">register_ir_api</span></code>. In <code class="docutils literal notranslate"><span class="pre">_wrapper</span></code>, it will be detected that the current context is under
+<code class="docutils literal notranslate"><span class="pre">PysimInfo</span></code>, and then the Python version implementation of the interface will be taken out from
+<code class="docutils literal notranslate"><span class="pre">_IR_API_NAME_2_IMPLEMENTS</span></code> to run and return the result.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">PySimInfo</span><span class="o">.</span><span class="n">current</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_IR_API_NAME_2_IMPLEMENTS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Execute the PySim version of the IR API.</span>
+    <span class="n">tld</span> <span class="o">=</span> <span class="n">PySimInfo</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">thread_local_data</span>
+    <span class="n">old_value</span><span class="p">,</span> <span class="n">tld</span><span class="o">.</span><span class="n">is_in_ir_api</span> <span class="o">=</span> <span class="n">tld</span><span class="o">.</span><span class="n">is_in_ir_api</span><span class="p">,</span> <span class="kc">True</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">_IR_API_NAME_2_IMPLEMENTS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">1</span><span class="p">](</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">tld</span><span class="o">.</span><span class="n">is_in_ir_api</span> <span class="o">=</span> <span class="n">old_value</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+<span class="k">return</span> <span class="n">_wrapper</span>
+</pre></div>
+</div>
+</section>
+<section id="multi-thread-to-simulate-all-circumstances">
+<h3>Multi-Thread to Simulate All Circumstances<a class="headerlink" href="#multi-thread-to-simulate-all-circumstances" title="Permalink to this heading"></a></h3>
+<p>Since the Zhouyi NPU architecture is multi-TEC parallel, PySim also supports multi-thread
+parallelism, and each thread simulates the execution of a TEC.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+	<span class="o">...</span>
+    <span class="k">with</span> <span class="n">PySimInfo</span><span class="p">(</span><span class="n">is_multi_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">py_sim_info</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span><span class="n">future</span><span class="p">,</span> <span class="n">thread_id</span><span class="p">):</span>
+            <span class="n">py_sim_info</span><span class="o">.</span><span class="n">thread_local_data</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">thread_id</span>
+            <span class="n">py_sim_info</span><span class="o">.</span><span class="n">thread_local_data</span><span class="o">.</span><span class="n">is_in_ir_api</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">PyVar</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="n">future</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">future</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">futures</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">py_sim_info</span><span class="o">.</span><span class="n">local_size</span><span class="p">):</span>
+            <span class="n">future</span> <span class="o">=</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">Future</span><span class="p">()</span>
+            <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_run</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;TEC</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">future</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">futures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="n">futures</span><span class="p">:</span>
+            <span class="c1"># The exceptions raised in the sub-thread will be re-raised</span>
+            <span class="c1"># here, so the main thread can catch and handle them.</span>
+            <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+	<span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="single-thread-loop-to-simulate-simple-circumstances-neednt-sync">
+<h3>Single-Thread Loop to Simulate Simple Circumstances (Needn’t Sync)<a class="headerlink" href="#single-thread-loop-to-simulate-simple-circumstances-neednt-sync" title="Permalink to this heading"></a></h3>
+<p>Of course, to facilitate debugging, we also support single-threaded operation. You only need to set
+an environment variable <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">AIPU_TVM_PYSIM_SINGLE_THREAD=TRUE</span></code>. After all, multi-threaded
+debugging is still a relatively complicated matter. If you find that it can be reproduced with a
+single thread, then you can debug the program in a single thread.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;AIPU_TVM_PYSIM_SINGLE_THREAD&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;TRUE&quot;</span><span class="p">:</span>
+    <span class="n">WARN</span><span class="p">(</span><span class="s2">&quot;PySim is running in single thread, some data race issues may can&#39;t be caught.&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">PySimInfo</span><span class="p">(</span><span class="n">is_multi_thread</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">py_sim_info</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">py_sim_info</span><span class="o">.</span><span class="n">local_size</span><span class="p">):</span>
+            <span class="n">py_sim_info</span><span class="o">.</span><span class="n">thread_local_data</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="n">py_sim_info</span><span class="o">.</span><span class="n">thread_local_data</span><span class="o">.</span><span class="n">is_in_ir_api</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">py_func</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">PyVar</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">args</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="compass_dsl.html" class="btn btn-neutral float-left" title="Compass DSL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="static_and_dynamic_kernel.html" class="btn btn-neutral float-right" title="Static and Dynamic Kernel" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>Copyright &#169; 2024 Arm Technology (China) Co., Ltd.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
