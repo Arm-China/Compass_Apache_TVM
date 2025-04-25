@@ -106,7 +106,7 @@ staging:
 	      -name "*.rst"  \
 	      -exec ln -s $(PWD)/{} $(STAGINGDIR)/{} \;
 
-	ln -s $(AIPUDOCDIR) $(STAGINGDIR)/dev/aipu
+	ln -s $(AIPUDOCDIR) $(STAGINGDIR)/aipu
 	ln -s $(PWD)/conf.py $(STAGINGDIR)/conf.py
 	ln -s $(PWD)/_static $(STAGINGDIR)/_static
 

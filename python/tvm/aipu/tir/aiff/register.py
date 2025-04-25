@@ -19,6 +19,26 @@ _camel_to_snake_pattern = re.compile(r"(?<!^)(?=[A-Z])")
 _UINT32_MAX = 2**32 - 1
 
 
+def _is_not_transposed_array(arr):
+    if isinstance(arr, (int, np.integer)):
+        return True
+
+    # Means it's an origin array.
+    if arr.base is None:
+        return True
+
+    # Means memory is contiguous which is reshape case.
+    if arr.flags.c_contiguous:
+        return True
+
+    # Means memory is not contiguous and strides is not equal which is transpose case.
+    if arr.base.strides != arr.strides:
+        return False
+
+    # Means strides is equal which is slice case.
+    return True
+
+
 class Register:
     """The base class of each register."""
 
@@ -46,6 +66,10 @@ class Register:
             assert (isinstance(value, (int, np.integer)) and value == 0) or (
                 isinstance(value, np.ndarray) and value.size != 0
             ), f'The field "{name}" expect a non-empty NumPy or 0, but got: "{repr(value)}".'
+
+            msg = f'The field "{name}" receives a transposed array which could change its memory '
+            msg += "layout, please use its copy instead."
+            assert _is_not_transposed_array(value), msg
         else:
             msg = f'The field "{name}" expect in range [0, {info.max_value}], but got: '
             msg += f'"{value}".'

@@ -12,10 +12,21 @@ from tvm import nd, DataType, target as tgt
 from ..._ffi.base import _LIB, check_call
 from ..logger import WARN
 from ..utils import sync_compass_output_dir, check_call_aipu_tool, control_option, get_rpc_session
+from ..runtime import AipuCompassBasicConfig, AipuCompassModuleNode
 from .analysis.extract_prim_func_info import ParamInfo
 from .aiff.descriptor import DescChainArray, ParamDescChain, ActDescChain
 from .compass_ir_generator import gen_compass_ir
 from .gbuilder_plugin_generator import gen_gb_plugin
+
+
+_COPMASS_IR_NAME = "compass_ir.txt"
+_COMPASS_WEIGHT_NAME = "compass_ir.bin"
+
+_ODB_CFG_NAME = "opencl_debug.cfg"
+_ODB_INIT_NAME = "command.odb"
+
+_AIPUODB_SCRIPT_NAME = "run_aipuodb.sh"
+_AIPURUN_SCRIPT_NAME = "run_aipurun.sh"
 
 
 def _unique_merge(np_arrs, name, extra_args):
@@ -36,12 +47,12 @@ def _is_python_program(program):
     return False
 
 
-def _get_opencl_debugger_cfg_str(dir_path, num_inputs):
+def _gen_odb_cfg(dir_path, num_inputs):
     input_str = "\n"
     for i in range(num_inputs):
         input_str += f"        INPUT_DATA_FILE{i}={dir_path}/input{i}.bin\n"
 
-    return textwrap.dedent(
+    cfg_str = textwrap.dedent(
         f"""\
         #-----------------------------------------------------------------
 
@@ -64,6 +75,35 @@ def _get_opencl_debugger_cfg_str(dir_path, num_inputs):
         #-----------------------------------------------------------------
         """
     )
+    open(f"{dir_path}/{_ODB_CFG_NAME}", "w", encoding="utf-8").write(cfg_str)
+
+
+def _gen_odb_init(dir_path, func_name):
+    file_str = "platform select aipu-simulator\n"
+    file_str += "tar cr aipu.bin\n"
+    file_str += f"settings set target.run-args {_ODB_CFG_NAME}\n"
+    file_str += f"b {func_name}\n"
+    file_str += "run\n"
+    open(f"{dir_path}/{_ODB_INIT_NAME}", "w", encoding="utf-8").write(file_str)
+
+
+def _gen_odb_run(dir_path, target):
+    file_str = "#!/bin/bash\n\n"
+    file_str += f"export SIM_NPU_ARCH={target}\n"
+    file_str += f"aipuodb -s {_ODB_INIT_NAME}\n"
+    file_path = f"{dir_path}/{_AIPUODB_SCRIPT_NAME}"
+    open(file_path, "w", encoding="utf-8").write(file_str)
+    os.chmod(file_path, 0o755)
+
+
+def _gen_aipurun(dir_path, num_inputs, target):
+    file_str = "#!/bin/bash\n\n"
+    inputs_str = ",".join(f"input{i}.bin" for i in range(num_inputs))
+    file_str += f"aipurun {_COPMASS_IR_NAME} -w {_COMPASS_WEIGHT_NAME} -i {inputs_str}"
+    file_str += f" --target {target}\n"
+    file_path = f"{dir_path}/{_AIPURUN_SCRIPT_NAME}"
+    open(file_path, "w", encoding="utf-8").write(file_str)
+    os.chmod(file_path, 0o755)
 
 
 class Executor:
@@ -92,6 +132,8 @@ class Executor:
         self._gbuilder_dir = f"{self._output_dir}/gbuilder"
         c_code_path = f"{self._gbuilder_dir}/op_lib/{self._func_name}.cl"
         self._c_code = open(c_code_path, encoding="utf-8").read()
+        self._op_lib_path = f"{self._gbuilder_dir}/op_lib/{self._func_name}.o"
+        self._op_lib = open(self._op_lib_path, "rb").read()
         self.mtriple = None
         self._rpc_sess = None
         self._cur_param_infos = None
@@ -177,6 +219,11 @@ class Executor:
                     isinstance(arg, DescChainArray) and len(arg) != 0
                 ), f'The {i + 1}-th arg expect a non-empty DescChainArray, but got: "{type(arg)}".'
 
+    def _check_op_lib(self):
+        if not os.path.exists(self._op_lib_path):
+            os.makedirs(os.path.dirname(self._op_lib_path), exist_ok=True)
+            open(self._op_lib_path, "wb").write(self._op_lib)
+
     def _get_param_info(self, x, args):
         for param_info, arg in zip(self._cur_param_infos, args):
             if x is arg:
@@ -245,6 +292,7 @@ class Executor:
         # program by GBuilder plugin.
         in_np_arrs = []
         out_np_arrs = []
+        const_np_arrs = []
         for param_info, arg in zip(self._cur_param_infos, args):
             if param_info.is_input_tensor:
                 in_np_arrs.append(arg)
@@ -253,25 +301,24 @@ class Executor:
                     self._origin_out_np_arrs.append(arg)
                     arg = arg.copy()
                 out_np_arrs.append(arg)
+            elif param_info.is_const_tensor:
+                const_np_arrs.append(arg)
 
         device = nd.cpu(0) if self.rpc_sess is None else self.rpc_sess.cpu(0)
         in_nd_arrs = tuple(nd.array(x, device) for x in in_np_arrs)
         out_nd_arrs = tuple(nd.array(x, device) for x in out_np_arrs)
+        const_np_arrs = tuple(nd.array(x, device) for x in const_np_arrs)
 
         # Record the output arguments for updating after executing.
         self._output_nd_arr2np_arr = dict(zip(out_nd_arrs, out_np_arrs))
         self._input_count = len(in_nd_arrs)
-        return in_nd_arrs, out_nd_arrs
+        return in_nd_arrs, out_nd_arrs, const_np_arrs
 
     def _build(self, args):
-        from tvm.relay.backend.contrib import (  # pylint: disable=import-outside-toplevel
-            aipu_compass,
-        )
-
         # 1. Generate the Compass IR.
         op_type = f"DSL_{self._func_name}"
-        ir_txt_path = f"{self._gbuilder_dir}/compass_ir.txt"
-        ir_bin_path = f"{self._gbuilder_dir}/compass_ir.bin"
+        ir_txt_path = f"{self._gbuilder_dir}/{_COPMASS_IR_NAME}"
+        ir_bin_path = f"{self._gbuilder_dir}/{_COMPASS_WEIGHT_NAME}"
         gen_compass_ir(self._cur_param_infos, args, op_type, ir_txt_path, ir_bin_path)
 
         # 2. Generate the GBuilder plugin.
@@ -302,8 +349,8 @@ class Executor:
         # 5. Create the runtime module for subsequent execution.
         # Update the "output_dir" of the singleton and set the function name to empty string, so
         # that the files generated during runtime can be placed to the right directory.
-        aipu_compass.AipuCompassBasicConfig.get().common["output_dir"] = self._output_dir
-        rt_mod = aipu_compass._ffi_api.AipuCompassModuleNode(aipu_bin, "", self._aipu_info.name, "")
+        AipuCompassBasicConfig.get().common["output_dir"] = self._output_dir
+        rt_mod = AipuCompassModuleNode(aipu_bin, "", self._aipu_info.name, "")
         # The Compass runtime module must to be wrapped by a LLVM module, otherwise it can't be
         # exported and used through TVM RPC.
         llvm_target_str = f"llvm -mtriple={self.mtriple}" if self.mtriple else "llvm"
@@ -355,17 +402,23 @@ class Executor:
         args = self._update_for_nullptr(args)
         self._check_param_arg_type(args)
         args = self._update_from_descs(args)
+        self._check_op_lib()
 
         # 2. Dump input tensors if needed.
-        in_nd_arrs, out_nd_arrs = self._get_nd_arrs(args)
+        in_nd_arrs, out_nd_arrs, const_nd_arrs = self._get_nd_arrs(args)
         if control_option.is_debug or control_option.is_emu:
             for i, nd_arr in enumerate(in_nd_arrs):
                 nd_arr.numpy().tofile(f"{self._gbuilder_dir}/input{i}.bin")
+            for i, nd_arr in enumerate(const_nd_arrs):
+                nd_arr.numpy().tofile(f"{self._gbuilder_dir}/weight{i}.bin")
+
+            _gen_aipurun(self._gbuilder_dir, len(in_nd_arrs), self._aipu_info.name)
 
         if control_option.is_debug:
             # Generate the configuration file used by OpenCL Debugger.
-            cfg_str = _get_opencl_debugger_cfg_str(self._gbuilder_dir, len(in_nd_arrs))
-            open(f"{self._gbuilder_dir}/opencl_debug.cfg", "w", encoding="utf-8").write(cfg_str)
+            _gen_odb_cfg(self._gbuilder_dir, len(in_nd_arrs))
+            _gen_odb_init(self._gbuilder_dir, self._func_name)
+            _gen_odb_run(self._gbuilder_dir, self._aipu_info.name)
 
         # 3. Get the executable packed function, the RPC and cache is handled by us.
         _, compass_set_outputs, _, compass_run, _ = self._get_packed_funcs(args)
@@ -516,7 +569,7 @@ class Executor:
         self._check_param_arg_type(args)
         args = self._update_from_descs(args)
 
-        in_nd_arrs, out_nd_arrs = self._get_nd_arrs(args)
+        in_nd_arrs, out_nd_arrs, _ = self._get_nd_arrs(args)
 
         # Get the executable packed function, the RPC and cache is handled by us.
         tmp = self._get_packed_funcs(args)

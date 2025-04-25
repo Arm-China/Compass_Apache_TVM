@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <tvm/driver/driver_api.h>
 #include <tvm/ir/function.h>
@@ -216,6 +219,11 @@ class ConstantFolder : public ExprMutator {
       return post_call;
     }
     auto op = GetRef<Op>(op_node);
+
+    // arm-china team: don't fold dequant(const) for supporting qnn model.
+    if (op->name == "relax.dequantize") {
+      return post_call;
+    }
 
     if (op.same_as(call_tir_op)) {
       return VisitCallTIR(post_call).value_or(post_call);

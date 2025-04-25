@@ -495,6 +495,9 @@ SET(CMAKE_VS_PLATFORM_NAME_DEFAULT "x64")
 # Set Windows Visual Studio default host (equivalent to -Thost=x64)
 SET(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE "x64")
 
+# Enable Qualcomm OpenCL extension support
+set(USE_OPENCL_EXTN_QCOM OFF)
+
 # Use 'mold' or 'lld' if found when invoking compiler to link artifact.
 set(USE_ALTERNATIVE_LINKER OFF)
 

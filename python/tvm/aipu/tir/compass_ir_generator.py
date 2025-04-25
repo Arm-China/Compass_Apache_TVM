@@ -5,6 +5,7 @@ import uuid
 import tvm
 from tvm import relay, nd
 from tvm.relay.op.contrib.aipu_compass import codegen_plugin_register
+from ..relax.codegen import CodeGenAipuCompass
 
 
 def _get_input_ttypes(param_infos, args):
@@ -35,8 +36,6 @@ def _get_attr_text(param_infos, args):
 
 def gen_compass_ir(param_infos, args, op_type, ir_txt_path, ir_bin_path):
     """Generate the Compass IR for the corresponding DSL program."""
-    from tvm.relay.backend.contrib import aipu_compass  # pylint: disable=import-outside-toplevel
-
     assert len(args) == len(param_infos), "Argument count must equal to parameter's."
     input_ttypes = _get_input_ttypes(param_infos, args)
     output_ttypes = _get_output_ttypes(param_infos, args)
@@ -69,4 +68,4 @@ def gen_compass_ir(param_infos, args, op_type, ir_txt_path, ir_bin_path):
         return op_type, call.args, _get_consts(param_infos, args), _get_attr_text(param_infos, args)
 
     # 4. Get the Compass IR from Relay IR and write them to disk.
-    aipu_compass.codegen.CodeGenAipuCompass().gen2file(ir_mod["main"], ir_txt_path, ir_bin_path)
+    CodeGenAipuCompass().gen2file(ir_mod["main"], ir_txt_path, ir_bin_path)

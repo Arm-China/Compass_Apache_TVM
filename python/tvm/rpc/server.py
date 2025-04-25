@@ -33,6 +33,7 @@ import ctypes
 import socket
 import select
 import struct
+import tarfile
 import logging
 import threading
 import multiprocessing
@@ -79,6 +80,16 @@ def _server_env(load_library, work_path=None):
     def load_module(file_name):
         """Load module from remote side."""
         path = temp.relpath(file_name)
+        if file_name.endswith(".compass.tar"):
+            cfg = tvm.get_global_func("aipu.runtime.AipuCompassBasicConfig_Global")()
+            output_dir = tvm.get_global_func("aipu.runtime.AipuCompassBasicConfig_GetCommon")(cfg)[
+                "output_dir"
+            ]
+            os.makedirs(output_dir, exist_ok=True)
+            with tarfile.open(path, "r") as tar:
+                tar.extractall(path=output_dir)
+            filename = [file for file in os.listdir(output_dir) if file.endswith(".so")][0]
+            path = os.path.join(output_dir, filename)
         try:
             m = _load_module(path)
         except Exception as e:
@@ -190,9 +201,17 @@ def _serving(sock, addr, opts, load_library):
         server_proc.join()
         os.system("rmmod aipu && insmod /home/tvm/lib/aipu.ko")
     elif server_proc.exitcode != 0:
-        raise RuntimeError(
+        if os.getenv("AIPU_TVM_RPC_SERVER_NOT_DOWN", "False") == "False":
+            raise RuntimeError(
+                f"Child process {server_proc.pid} exited unsuccessfully "
+                f"with error code {server_proc.exitcode}"
+            )
+
+        logger.info(f"service exited unsuccessfully with error code {server_proc.exitcode}")
+        _ffi_api.ReturnException(
+            sock.fileno(),
             f"Child process {server_proc.pid} exited unsuccessfully "
-            f"with error code {server_proc.exitcode}"
+            f"with error code {server_proc.exitcode}",
         )
 
     logger.info(f"finish serving {addr}")

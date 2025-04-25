@@ -65,7 +65,7 @@ There are some methods to create a flexible/multiple width vector as follows:
    ```
    va = S.vload(a) #i32x8
    vb = S.vload(b) #i32x8
-   vc = S.vconcat(a, b) #i32x16
+   vc = S.vconcat((a, b)) #i32x16
    ```
 
 4. Using S.cast.
@@ -117,7 +117,7 @@ va = va * scale + 3
 va0, va1 = S.vsplit(va)
 va0 = S.vreplic(va0, 3) # int8x32
 va1 = S.vreplic(va1, 4) # int8x32
-va = S.vconcat(va0, va1)    # int8x64
+va = S.vconcat((va0, va1))    # int8x64
 va = va / scale - 4
 S.vstore(va, c)
 ```

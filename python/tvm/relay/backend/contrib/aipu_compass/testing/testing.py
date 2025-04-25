@@ -11,8 +11,6 @@ import functools
 import traceback
 from typing import List
 import numpy as np
-import torch
-from torch.utils.data.dataloader import DataLoader
 from tvm import relay
 from tvm.ir import container
 from tvm.aipu.logger import timer
@@ -322,6 +320,9 @@ def calc_metric(dataset, data, label, metric, max_batch, executor, post_process=
     post_process    (function)          : deal with the output.
     :return: metric result.
     """
+    # pylint: disable=import-outside-toplevel
+    from torch.utils.data.dataloader import DataLoader
+    from torch import from_numpy
 
     def _to_input(data):
         data = data.numpy()
@@ -337,8 +338,8 @@ def calc_metric(dataset, data, label, metric, max_batch, executor, post_process=
             return res
         if not isinstance(data, np.ndarray):
             # Assume data is ndarray.
-            return torch.from_numpy(data.asnumpy())
-        return torch.from_numpy(data)
+            return from_numpy(data.asnumpy())
+        return from_numpy(data)
 
     data = os.path.abspath(os.path.expanduser(os.path.expandvars(data)))
     label = os.path.abspath(os.path.expanduser(os.path.expandvars(label)))
@@ -406,7 +407,9 @@ def write_result_to_file(result):
 
     output_dir = AipuCompassConfig.get().common["output_dir"]
     ir_path = os.path.join(output_dir, "partitioned_graph.txt")
-    subgraph_count, op_count = get_subgraph_and_op_count(ir_path)
+    runtime = next(iter(result.values()))["runtime"] if isinstance(result, dict) else result[0]
+
+    subgraph_count, op_count = get_subgraph_and_op_count(ir_path, ir_type=runtime)
     npu_subgraph = {
         "NpuSubgraphNumber": {
             "value": subgraph_count,

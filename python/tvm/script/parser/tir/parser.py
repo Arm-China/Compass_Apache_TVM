@@ -147,6 +147,9 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
     if isinstance(value, T.meta_var):
         return value.value
     elif isinstance(value, (list, tuple)):
+        if tvm.target.AipuInfo.current() is not None:
+            return value
+
         for i, v in enumerate(value):
             bind_assign_value(self, node, f"{var_name}_{i}", v)
         return value

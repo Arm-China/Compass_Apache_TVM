@@ -35,6 +35,14 @@ def is_pointer(x):
     return isinstance(x, tir.Call) and x.op == ir.Op.get("tir.pointer")
 
 
+def is_ret(x):
+    return isinstance(x, tir.Call) and x.op == ir.Op.get("tir.ret")
+
+
+def is_global_var(x):
+    return isinstance(x, tir.Call) and isinstance(x.op, ir.GlobalVar)
+
+
 class _NormalizeComparisons(tir.ExprMutator):
     """Normalize comparisons to less."""
 

@@ -9,6 +9,7 @@ from ..pysim import PyVar, PySimInfo
 
 PARAM_R_MARK = tir.StringImm("ParamR")
 VALID_PARTS = ("all", "low", "high", "even", "odd", "ll", "lh", "hl", "hh")
+VALID_ATTRS = {"no_zip": ("vcast",)}
 
 
 def is_hw_native_vdtype_or_mask_type(dtype):

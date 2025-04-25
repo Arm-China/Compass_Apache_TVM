@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=invalid-name,missing-function-docstring
 """Dot product related intrinsics."""
+#
+# This file has been modified by Arm China team.
+#
 from tvm.script import tir as T
 from .. import TensorIntrin
 
@@ -23,6 +26,9 @@ from .. import TensorIntrin
 def get_dp4a_intrin(dtype_a, dtype_b, dtype_c):
     if dtype_c == "uint32":
         assert dtype_a == dtype_b == "uint8"
+        t_zero = T.uint32(0)
+    else:
+        t_zero = T.int32(0)
     vec_type_a = "int8x4" if dtype_a == "int8" else "uint8x4"
     vec_type_b = "int8x4" if dtype_b == "int8" else "uint8x4"
 
@@ -54,7 +60,7 @@ def get_dp4a_intrin(dtype_a, dtype_b, dtype_c):
                 "__dp4a",
                 A.vload([0], vec_type_a),
                 B.vload([0], vec_type_b),
-                T.uint32(0) if dtype_c == "uint32" else T.int32(0),
+                t_zero,
                 dtype=dtype_c,
             )
 

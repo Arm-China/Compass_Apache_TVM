@@ -102,19 +102,20 @@ def _change_for_args_if_needed(call, associated_dtype_of_call):
 class _Analyzer(tir.StmtExprVisitor):
     def __init__(self):
         super().__init__()
-        self._mask2associated_dtype = {}
+        self.mask2associated_dtype = {}
         self._mask2dependencies = None
+        self.mask_used_in_subfunc = {}  # key: mask, value: (gvar of subfunc, arg index)
 
     def _check_add(self, mask, associated_dtype):
-        if mask in self._mask2associated_dtype:
+        if mask in self.mask2associated_dtype:
             # Only bits and lanes are needed, so ignore the type code in the comparison.
-            assert self._mask2associated_dtype[mask].with_int() == associated_dtype.with_int(), (
+            assert self.mask2associated_dtype[mask].with_int() == associated_dtype.with_int(), (
                 "The different indirect usages of the below mask node should have the same data "
-                f'type, but got: ("{self._mask2associated_dtype[mask]}", "{associated_dtype}")!\n'
+                f'type, but got: ("{self.mask2associated_dtype[mask]}", "{associated_dtype}")!\n'
                 f"{mask}\n"
             )
             return
-        self._mask2associated_dtype[mask] = associated_dtype
+        self.mask2associated_dtype[mask] = associated_dtype
 
     def _get_associated_dtype(self, call):
         indices = _get_mask_dtype_arg_indices(call.args[0].value)
@@ -129,8 +130,8 @@ class _Analyzer(tir.StmtExprVisitor):
                 return _change_for_call_if_needed(call, dtype)
             # This argument also is a mask variable, the associated data type of it may already be
             # recorded or propagated.
-            if arg in self._mask2associated_dtype:
-                return _change_for_call_if_needed(call, self._mask2associated_dtype[arg])
+            if arg in self.mask2associated_dtype:
+                return _change_for_call_if_needed(call, self.mask2associated_dtype[arg])
 
         return None
 
@@ -138,8 +139,8 @@ class _Analyzer(tir.StmtExprVisitor):
         # Record the associated data type of the mask variables when they are assigned, so the
         # information can be propagated to the arguments of the mask operation functions, e.g.,
         # "vand".
-        if _is_mask(value) and value in self._mask2associated_dtype:
-            self._check_add(var, self._mask2associated_dtype[value])
+        if _is_mask(value) and value in self.mask2associated_dtype:
+            self._check_add(var, self.mask2associated_dtype[value])
 
     def visit_let_stmt(self, let_stmt):
         self.visit_expr(let_stmt.value)
@@ -162,6 +163,11 @@ class _Analyzer(tir.StmtExprVisitor):
         if call.op == ir.Op.get("tir.reassign"):
             self._try_update_by_mask_var_assign(*call.args)
             return
+
+        if isinstance(call.op, ir.GlobalVar):
+            for i, arg in enumerate(call.args):
+                if _is_mask(arg):
+                    self.mask_used_in_subfunc[arg] = (call.op, i)
 
         if call.op != ir.Op.get("tir.call_extern"):
             return
@@ -187,13 +193,13 @@ class _Analyzer(tir.StmtExprVisitor):
     def analyze(self, func):
         self._mask2dependencies = _MaskDependenceAnalyzer().analyze(func)
         self.visit(func.body)
-        return self._mask2associated_dtype
 
 
-def get_mask_associated_dtype(func):
-    """Get the associated data type of all mask nodes.
+def get_mask_associated_dtype(mod):
+    """Get the associated data type of all mask nodes for all functions in module.
 
-    The return value is a map where key is the mask node and the value is its associated data type,
+    The return value is a map where key is the global var in module and the value is a map for each
+    corresponding function, where key is the mask node and the value is its associated data type,
     the associated data type maybe is its user's data type, e.g., "tir.const_pred" node in "vadd",
     maybe is the creator's data type of the argument that determine the lanes of the mask argument,
     e.g., "tir.const_pred" node in "vand".
@@ -211,4 +217,32 @@ def get_mask_associated_dtype(func):
          i.e., defining a bool array through "S.alloc" isn't allowed, need to be guaranteed by
          script APIs.
     """
-    return _Analyzer().analyze(func)
+    ret = {}
+    gvar2analyzer = {}
+
+    # 1. Analyze each func to get all mask dtype map except masks used in subfuntions.
+    for gvar, func in mod.functions.items():
+        analyzer = _Analyzer()
+        analyzer.analyze(func)
+        gvar2analyzer[gvar] = analyzer
+
+    def _recursive_update_dtype(mask, cur_analyzer, subfunc_gvar, index):
+        """Update mask dtype recursively which used in subfunctions."""
+        sub_analyzer = gvar2analyzer[subfunc_gvar]
+        param = mod[subfunc_gvar].params[index]
+        if param in sub_analyzer.mask2associated_dtype:
+            asso_dtype = sub_analyzer.mask2associated_dtype[param]
+        else:
+            assert param in sub_analyzer.mask_used_in_subfunc
+            subfunc_gvar, param_id = sub_analyzer.mask_used_in_subfunc[param]
+            asso_dtype = _recursive_update_dtype(param, sub_analyzer, subfunc_gvar, param_id)
+        cur_analyzer._recursive_propagate(asso_dtype, [mask])
+        return asso_dtype
+
+    # 2. Get mask dtype map used in subfuntions.
+    for gvar, analyzer in gvar2analyzer.items():
+        for mask, (subfunc_gvar, param_id) in analyzer.mask_used_in_subfunc.items():
+            if mask not in analyzer.mask2associated_dtype:
+                _recursive_update_dtype(mask, analyzer, subfunc_gvar, param_id)
+        ret[gvar] = analyzer.mask2associated_dtype
+    return ret

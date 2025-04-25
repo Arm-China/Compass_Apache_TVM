@@ -21,6 +21,10 @@
  * \file canonical_simplify.cc
  * \brief Canonical form based simplification.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
+
 #include <tvm/arith/analyzer.h>
 #include <tvm/tir/analysis.h>
 #include <tvm/tir/op.h>
@@ -1438,6 +1442,9 @@ PrimExpr CanonicalSimplifier::Impl::VisitExpr_(const LTNode* op) {
 }
 
 PrimExpr CanonicalSimplifier::operator()(const PrimExpr& expr) {
+  if (!this->convert_div_to_mul) {
+    impl_->SetEnabledExtensions(tvm::arith::RewriteSimplifier::kNone);
+  }
   return impl_->CanonicalSimplify(expr);
 }
 

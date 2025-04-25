@@ -20,6 +20,10 @@
 /*!
  * \file tvm/arith/analyzer.cc
  */
+/*
+ * This file has been modified by Arm China team.
+ */
+
 #include <tvm/arith/analyzer.h>
 #include <tvm/runtime/registry.h>
 #include <tvm/tir/expr.h>
@@ -249,6 +253,7 @@ bool Analyzer::CanProve(const PrimExpr& expr, ProofStrength strength) {
 
 PrimExpr Analyzer::Simplify(const PrimExpr& expr, int steps) {
   PrimExpr res = expr;
+  this->canonical_simplify.convert_div_to_mul = this->convert_div_to_mul;
 
   // Always starts with a canonical simplification, as some structural property
   // of an expression might be destroyed by rewrite simplification.

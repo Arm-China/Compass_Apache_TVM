@@ -35,3 +35,5 @@ from .exchange_constant_to_right import ExchangeConstantToRight
 from .combine_instructions import CombineInstructions
 from .isa_aware_rewrite import IsaAwareRewrite
 from .merge_for_where import MergeForWhere
+from .lower_tag import LowerTag
+from .handle_sub_func_return_fwv import HandleSubFuncReturnFWV

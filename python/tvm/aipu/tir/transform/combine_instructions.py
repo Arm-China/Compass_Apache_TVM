@@ -2,6 +2,7 @@
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Replaces a sequence of simple instructions with an equivalent optimized instruction."""
 from tvm import ir, tir, DataType
+from ...utils import hw_native_vdtype
 from ... import script as S
 from .utils import is_builtin, is_all_true_pred, is_const_pred, is_low_true_pred
 
@@ -56,21 +57,21 @@ class _Mutator(tir.StmtExprMutator):
             #     (i32x8, i32x8) -> u16x16.
             if (from_dtype.bits, to_dtype.bits) in ((16, 8), (32, 16)):
                 assert input_cnt == 2, msg
-                return S.vconcat(vnsrs[0], vnsrs[1], "even")
+                return S.vconcat((vnsrs[0], vnsrs[1]), "even")
 
             # 1.2 From 32-bit to 8-bit.
             assert (from_dtype.bits, to_dtype.bits) == (32, 8), msg
-            low_16x16 = S.vconcat(vnsrs[0], vnsrs[1], "even")
+            low_16x16 = S.vconcat((vnsrs[0], vnsrs[1]), "even")
 
             if input_cnt == 2:  # e.g., (i32x8, i32x8) -> i8x32.
                 useless = low_16x16
-                return S.vconcat(low_16x16, useless, "even")
+                return S.vconcat((low_16x16, useless), "even")
             if input_cnt == 3:  # e.g., (i32x8, i32x8, i32x8) -> i8x32.
                 useless = vnsrs[2]
-                return S.vconcat(low_16x16, S.vconcat(vnsrs[2], useless, "even"), "even")
+                return S.vconcat((low_16x16, S.vconcat((vnsrs[2], useless), "even")), "even")
 
             assert input_cnt == 4, msg  # e.g., (i32x8, i32x8, i32x8, i32x8) -> i8x32.
-            return S.vconcat(low_16x16, S.vconcat(vnsrs[2], vnsrs[3], "even"), "even")
+            return S.vconcat((low_16x16, S.vconcat((vnsrs[2], vnsrs[3]), "even")), "even")
 
         # 2. Cast to narrower bits without merge, e.g., i32 -> i8, i16 -> u8.
         msg = f'Unsupported cast from "{from_dtype}" to "{to_dtype}" with part "{part}".'
@@ -78,13 +79,14 @@ class _Mutator(tir.StmtExprMutator):
         # 2.1 From 16-bit to 8-bit or 32-bit to 16-bit, e.g., i16x16 -> i8x32, i32x8 -> u16x16.
         if (from_dtype.bits, to_dtype.bits) in ((16, 8), (32, 16)):
             useless = vnsrs[0]
-            return S.vconcat(vnsrs[0], useless, "even")
+            return S.vconcat((vnsrs[0], useless), "even")
 
         # 2.2 From 32-bit to 8-bit, e.g., i32x8 -> i8x32, u32x8 -> i8x32.
         assert (from_dtype.bits, to_dtype.bits) == (32, 8), msg
         return S.vcompt(vnsrs[0], "8TFFF")
 
     def _try_pattern_vmull_vmulh(self, vmul):
+        # S.cast(x, vdtype) * S.cast(y, vdtype) -> S.vmull/h(x, y)
         if vmul.args[0].value != "vmul":
             return None
 
@@ -135,6 +137,137 @@ class _Mutator(tir.StmtExprMutator):
         # successfully, e.g. boolx8 -> boolx16.
         return vmull_or_vmulh(x, y, mask, out_sign=out_sign, r=r)
 
+    def _try_pattern_vmull_vmulh_vbcast(self, vmul):
+        # S.cast(x, vdtype) * S.vbcast(S.cast(y, dtype)) -> S.vmull/h(x, y)
+        if vmul.args[0].value != "vmul":
+            return None
+
+        _, r, vcast_x, vbcast_y, mul_mask = vmul.args
+        if is_builtin(vcast_x, "__vbcast") and is_builtin(vbcast_y, "vcast"):
+            vbcast_y, vcast_x = vcast_x, vbcast_y
+        elif is_builtin(vcast_x, "vcast") and is_builtin(vbcast_y, "__vbcast"):
+            pass
+        else:
+            return None
+
+        if len(vcast_x.args) != 4:
+            return None  # Indicate it will cast to narrower bits with merge.
+
+        _, part_x, saturate, x = vcast_x.args
+        _, _, y, bcast_mask = vbcast_y.args
+        if not isinstance(y, tir.Cast):
+            return None
+        y = y.value
+        vmul_dtype = DataType(vmul.dtype)
+        x_dtype, y_dtype = DataType(x.dtype), DataType(y.dtype)
+
+        lanes = hw_native_vdtype(y.dtype).lanes
+        new_mask = _try_expand_mask(bcast_mask, lanes, part_x)
+        if new_mask is None:
+            return None
+
+        if not (vmul_dtype.is_integer and x_dtype.is_integer and y_dtype.is_integer):
+            return None
+
+        # From here, both input and return data type must be integer.
+        if saturate:
+            return None
+
+        if not (x_dtype.bits == y_dtype.bits and x_dtype.bits < vmul_dtype.bits):
+            return None
+
+        if part_x in ("even", "odd"):
+            return None
+
+        # If it can get here, it means that this pattern has been matched.
+        new_vbcast = S.vbcast(y, new_mask)
+        new_cast = S.cast(new_vbcast, vbcast_y.dtype, part=part_x)
+        out_sign = "s" if DataType(vmul.dtype).is_int else "u"
+        new_vmul = S.vmul(vcast_x, new_cast, mul_mask, out_sign, r)
+        return self._try_pattern_vmull_vmulh(new_vmul)
+
+    def _try_pattern_vbclr(self, vand):
+        # S.vand(x, S.vinv(y)) -> __vbclr(x, y)
+        if vand.args[0].value != "vand":
+            return None
+
+        _, r, x, vinv, mask = vand.args
+        if not is_builtin(x, "vinv") and not is_builtin(vinv, "vinv"):
+            return None
+        if is_builtin(x, "vinv") and not is_builtin(vinv, "vinv"):
+            x, vinv = vinv, x
+        y, vinv_mask = vinv.args[2:]
+
+        if any(isinstance(m, tir.expr.Var) for m in (mask, vinv_mask)):
+            return None
+
+        # Values in vinv_mask should be true where correspond position in vand_mask value is true.
+        if not all(bool(y) for x, y in zip(mask.args, vinv_mask.args) if bool(x)):
+            return None
+
+        vbclr = lambda x: tir.call_extern(vand.dtype, "__vbclr", *x)
+        # pgentype
+        if DataType(vand.dtype).is_bool:
+            return vbclr([x, y, mask])
+        # gentype with mask all true
+        if is_all_true_pred(mask):
+            return vbclr([x, y])
+        # gentype with mask
+        return vbclr([r, x, y, mask])
+
+    def _try_pattern_vbset(self, vor):
+        # S.vor(x, S.vinv(y)) -> __vbset(x, y)
+        if vor.args[0].value != "vor":
+            return None
+
+        _, r, x, vinv, mask = vor.args
+        if not is_builtin(x, "vinv") and not is_builtin(vinv, "vinv"):
+            return None
+        if is_builtin(x, "vinv") and not is_builtin(vinv, "vinv"):
+            x, vinv = vinv, x
+        y, vinv_mask = vinv.args[2:]
+
+        if any(isinstance(m, tir.expr.Var) for m in (mask, vinv_mask)):
+            return None
+
+        # Values in vinv_mask should be true where correspond position in vor_mask value is true.
+        if not all(bool(y) for x, y in zip(mask.args, vinv_mask.args) if bool(x)):
+            return None
+
+        vbset = lambda x: tir.call_extern(vor.dtype, "__vbset", *x)
+        # pgentype
+        if DataType(vor.dtype).is_bool:
+            return vbset([x, y, mask])
+        # gentype with mask all true
+        if is_all_true_pred(mask):
+            return vbset([x, y])
+        # gentype with mask
+        return vbset([r, x, y, mask])
+
+    def _try_pattern_vnand_vnor(self, vinv):
+        # S.vinv(S.vand(mask_x, mask_y, vand_mask), mask) -> vnand(mask_x, mask_y, mask)
+        # S.vinv(S.vor(mask_x, mask_y, vor_mask), mask) -> vnor(mask_x, mask_y, mask)
+        if vinv.args[0].value != "vinv":
+            return None
+
+        vand_or_vor, mask = vinv.args[2:]
+        if not is_builtin(vand_or_vor, "vand") and not is_builtin(vand_or_vor, "vor"):
+            return None
+
+        mask_x, mask_y, vand_or_vor_mask = vand_or_vor.args[2:]
+        if not DataType(mask_x.dtype).is_bool:
+            return None
+
+        if any(isinstance(m, tir.expr.Var) for m in (mask, vand_or_vor_mask)):
+            return None
+
+        # Values in vand/vor_mask should be true where correspond position in mask value is true.
+        if not all(bool(y) for x, y in zip(mask.args, vand_or_vor_mask.args) if bool(x)):
+            return None
+
+        func_name = "__vnand" if vand_or_vor.args[0] == "vand" else "__vnor"
+        return tir.call_extern(vinv.dtype, func_name, mask_x, mask_y, mask)
+
     def visit_call(self, call):
         ret = super().visit_call(call)
 
@@ -146,6 +279,22 @@ class _Mutator(tir.StmtExprMutator):
             return self.visit(combine_ret)
 
         combine_ret = self._try_pattern_vmull_vmulh(ret)
+        if combine_ret is not None:
+            return self.visit(combine_ret)
+
+        combine_ret = self._try_pattern_vmull_vmulh_vbcast(ret)
+        if combine_ret is not None:
+            return self.visit(combine_ret)
+
+        combine_ret = self._try_pattern_vbclr(ret)
+        if combine_ret is not None:
+            return self.visit(combine_ret)
+
+        combine_ret = self._try_pattern_vbset(ret)
+        if combine_ret is not None:
+            return self.visit(combine_ret)
+
+        combine_ret = self._try_pattern_vnand_vnor(ret)
         if combine_ret is not None:
             return self.visit(combine_ret)
 

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=invalid-name,unused-argument
+#
+# This file has been modified by Arm China team.
+#
 """Default legalization function for neural network operators."""
 import logging
 import math
@@ -226,6 +229,14 @@ def _nn_pad(bb: BlockBuilder, call: Call) -> Expr:
     pad_widths = call.attrs.pad_width
     pad_before = pad_widths[::2]
     pad_after = pad_widths[1::2]
+    if call.attrs.pad_mode == "reflect":
+        return bb.call_te(
+            topi.nn.mirror_pad,
+            call.args[0],
+            pad_before=pad_before,
+            pad_after=pad_after,
+            mode="REFLECT",
+        )
     return bb.call_te(
         topi.nn.pad,
         call.args[0],

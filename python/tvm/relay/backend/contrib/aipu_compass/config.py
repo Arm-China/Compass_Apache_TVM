@@ -11,31 +11,6 @@ from tvm.aipu.logger import WARN
 from . import _ffi_api
 
 
-@tvm.register_object("aipu_compass.AipuCompassBasicConfig")
-class AipuCompassBasicConfig(tvm.Object):
-    """The basic AIPU Compass configuration."""
-
-    @staticmethod
-    def get():
-        """The static function that is used to get the global
-        Zhouyi NPU Compass basic configuration singleton.
-
-        Returns
-        -------
-        result : AipuCompassBasicConfig
-            The global Zhouyi NPU Compass basic configuration singleton.
-        """
-        return _ffi_api.AipuCompassBasicConfig_Global()
-
-    @property
-    def common(self):
-        return _ffi_api.AipuCompassBasicConfig_GetCommon(self)
-
-    @property
-    def runtime(self):
-        return _ffi_api.AipuCompassBasicConfig_GetRuntime(self)
-
-
 # The type key string here must be identical with the value of C++ variable
 # "AipuCompassConfigObj::_type_key".
 @tvm.register_object("aipu_compass.AipuCompassConfig")

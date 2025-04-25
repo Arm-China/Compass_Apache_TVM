@@ -572,16 +572,6 @@ def _py_vstore_scatter(value, ptr, indices, mask=None):
             scalar_ptr[indices[i]] = value[i]
 
 
-_scope2dma_addr_base = {
-    "global": 0,
-    "global.1": 1,
-    "global.2": 2,
-    "global.3": 3,
-    "lsram": 4,
-    "shared": 8,
-}
-
-
 @register_ir_api
 def dma_copy(dst, src, width, src_stride=None, times=1, dst_stride=None):
     """Copy the specified number of elements from the source address to the destination address
@@ -642,7 +632,7 @@ def dma_copy(dst, src, width, src_stride=None, times=1, dst_stride=None):
 
     src_scope, dst_scope = src.scope, dst.scope
     msg = f'Currently does not support copy data from scope "{src_scope}" to scope "{dst_scope}".'
-    assert not any(x in ("local", "constant") for x in (src_scope, dst_scope)), msg
+    assert src_scope != "constant" and dst_scope != "constant", msg
     msg = f'Does not support copy data from scope "{src_scope}" to scope "{dst_scope}".'
     assert not all(x in ("lsram", "shared") for x in (src_scope, dst_scope)), msg
 
@@ -785,7 +775,7 @@ def async_dma_copy(dst, src, width, src_stride=None, times=1, dst_stride=None, e
 
     src_scope, dst_scope = src.scope, dst.scope
     msg = f'Currently does not support copy data from scope "{src_scope}" to scope "{dst_scope}".'
-    assert not any(x in ("local", "constant") for x in (src_scope, dst_scope)), msg
+    assert src_scope != "constant" and dst_scope != "constant", msg
     msg = f'Does not support copy data from scope "{src_scope}" to scope "{dst_scope}".'
     assert not all(x in ("lsram", "shared") for x in (src_scope, dst_scope)), msg
 

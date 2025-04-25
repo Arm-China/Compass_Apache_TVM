@@ -211,7 +211,7 @@ def cast_helper(from_dtype_str, to_dtype_str, x):
     to_dtype = DataType(to_dtype_str)
 
     if from_dtype.is_float and to_dtype.is_integer:
-        x = np.round(x)
+        x = np.round(x) if isinstance(x, np.ndarray) else x
         x = np.where(np.isnan(x), 0, x)
         # Here will promote to "float64" automatically, so it's safe.
         x = np.clip(x, *get_range("int32"))
@@ -222,6 +222,8 @@ def get_gt_out_vmull_vmulh(a, b, out_dtype):
     a = cast_helper(a.dtype, out_dtype, a)
     b = cast_helper(b.dtype, out_dtype, b)
 
+    # Deal with b is scalar.
+    b = np.broadcast_to(b, a.shape)
     ret = a * b
     ret[72:] = np.where(a[72:] > b[72:], ret[72:], a[72:])
     return ret
@@ -284,6 +286,267 @@ def test_opt_combine_vmull_vmulh(a_dtype, b_dtype, out_dtype):
     testing.assert_allclose(aipu_out[mask], gt_out[mask])
 
 
+def gen_combine_vmull_vmulh_vbcast(a_dtype, b_dtype, out_dtype):
+    lanes0 = 11
+    lanes1 = 29
+    lanes2 = 32
+    lanes3 = 35
+
+    @S.prim_func
+    def combine_vmull_vmulh_vbcast(
+        inp0: S.ptr(a_dtype, "global"), inp1: S.ptr(b_dtype, "global"), out: S.ptr(out_dtype, "global")
+    ):
+        if S.get_local_id() != 0:
+            return
+
+        scalar_b = inp1[0]
+
+        cur_inp0, cur_out = inp0, out
+        # 1. lanes=11
+        va0 = S.vload(cur_inp0, lanes=lanes0)
+        vo0 = S.cast(va0, out_dtype) * S.cast(scalar_b, out_dtype)
+        S.vstore(vo0, cur_out)
+
+        cur_inp0, cur_out = cur_inp0 + lanes0, cur_out + lanes0
+        # 2. lanes=29
+        va1 = S.vload(cur_inp0, lanes=lanes1)
+        vo1 = S.vmul(S.cast(va1, out_dtype), S.cast(scalar_b, out_dtype), S.tail_mask(8, lanes1))
+        S.vstore(vo1, cur_out)
+
+        cur_inp0, cur_out = cur_inp0 + lanes1, cur_out + lanes1
+        # 3. lanes=32
+        va2 = S.vload(cur_inp0, lanes=lanes2)
+        mask2 = S.cast(va2, out_dtype) > S.cast(scalar_b, out_dtype)
+        vo2 = S.vmul(S.cast(va2, out_dtype), S.cast(scalar_b, out_dtype), mask2)
+        S.vstore(vo2, cur_out)
+
+        cur_inp0, cur_out = cur_inp0 + lanes2, cur_out + lanes2
+        # 3. lanes=35
+        va3 = S.vload(cur_inp0, lanes=lanes3)
+        mask3 = S.cast(va3, out_dtype) > S.cast(scalar_b, out_dtype)
+        vo3 = S.vmul(S.cast(va3, out_dtype), S.cast(scalar_b, out_dtype), mask3, r=S.cast(va3, out_dtype))
+        S.vstore(vo3, cur_out)
+
+    return combine_vmull_vmulh_vbcast
+
+
+@pytest.mark.parametrize(
+    "a_dtype, b_dtype, out_dtype",
+    (
+        ("int8", "int8", "int16"),
+        ("int8", "int8", "uint16"),
+        ("int8", "uint8", "int16"),
+        ("int8", "int8", "int32"),
+        ("uint8", "int8", "uint32"),
+        ("int16", "int16", "int32"),
+        ("int16", "int16", "uint32"),
+        ("uint16", "int16", "uint32"),
+        # Below are cases that can't trigger this optimization.
+        ("int8", "int16", "uint16"),
+        ("uint16", "int8", "int32"),
+        ("uint16", "int16", "uint16"),
+        ("int32", "uint32", "uint16"),
+        ("int32", "int8", "int16"),
+        ("int16", "float16", "int32"),
+        ("float16", "int32", "float32"),
+        ("float16", "float16", "float32"),
+    ),
+)
+def test_opt_combine_vmull_vmulh_vbcast(a_dtype, b_dtype, out_dtype):
+    n = 11 + 29 + 32 + 35
+    a = rand(n, a_dtype)
+    b = np.full(n, rand(1, b_dtype))
+    mask_head = np.array([True] * 11 + ([True] * 8 + [False] * 21))
+    mask_body = cast_helper(a_dtype, out_dtype, a)[40:72] > cast_helper(b_dtype, out_dtype, b)[40:72]
+    mask_tail = np.array([True] * 35)
+    mask = np.hstack((mask_head, mask_body, mask_tail))
+    gt_out = get_gt_out_vmull_vmulh(a, b[0], out_dtype)
+
+    py_func = gen_combine_vmull_vmulh_vbcast(a_dtype, b_dtype, out_dtype)
+    ex = aipu.tir.BuildManager(disabled_pass=["tir.CommonSubexprElimTIR"]).build(py_func)
+
+    expects = (
+        r"= ((?!(__vexte|__vmul)).)*__vmulh",
+        r"= __vsel((?!(__vexte|__vmul)).)*__vmulh",
+    )
+
+    a_dtype, b_dtype, out_dtype = DataType(a_dtype), DataType(b_dtype), DataType(out_dtype)
+    for expect in expects:
+        matches = re.search(expect, ex.c_code, re.MULTILINE)
+        if (
+            (a_dtype.is_integer and b_dtype.is_integer and out_dtype.is_integer)
+            and a_dtype.bits == b_dtype.bits
+            and a_dtype.bits < out_dtype.bits
+        ):
+            assert matches is not None, f"\nExpect snippet:\n{expect}\n\nAIPU C code:\n{ex.c_code}\n"
+        else:
+            assert matches is None, f"\nUnexpect snippet:\n{expect}\n\nAIPU C code:\n{ex.c_code}\n"
+
+    aipu_out = np.empty(n, dtype=str(out_dtype))
+    ex(a, b, aipu_out)
+    testing.assert_allclose(aipu_out[mask], gt_out[mask])
+
+
+def gen_combine_vbclr(dtype, mask, is_ab_mask):
+    @S.prim_func
+    def combine_vbclr_func(inp0: S.ptr(dtype, "global"), inp1: S.ptr(dtype, "global"), out: S.ptr(dtype, "global")):
+        va = S.vload(inp0)
+        vb = S.vload(inp1)
+        if is_ab_mask:
+            mask_a = va > 0
+            mask_b = vb > 0
+            mask_out = S.vand(mask_a, S.vinv(mask_b), mask)
+            vout = S.vsel(va, vb, mask_out)
+            S.vstore(vout, out)
+        else:
+            vout = S.vand(va, S.vinv(vb), mask)
+            S.vstore(vout, out)
+
+    return combine_vbclr_func
+
+
+@pytest.mark.parametrize("dtype", ("int8", "uint8", "int16", "uint16", "int32", "uint32"))
+@pytest.mark.parametrize("is_all_true_mask", (True, False))
+@pytest.mark.parametrize("is_ab_mask", (True, False))
+def test_combine_vbclr(dtype, is_all_true_mask, is_ab_mask):
+    vdtype = hw_native_vdtype(dtype)
+    pytest.mark.skipif(vdtype.is_uint and is_ab_mask)
+    n = vdtype.lanes
+    x = rand(n, dtype)
+    y = rand(n, dtype)
+    mask = [True] * n if is_all_true_mask else rand(n, "bool")
+    if is_ab_mask:
+        mask_out = np.where(mask, (x > 0) & (~(y > 0)), False)
+        gt_out = np.where(mask_out, x, y)
+    else:
+        gt_out = np.where(mask, x & (~y), 0)
+
+    py_func = gen_combine_vbclr(dtype, mask, is_ab_mask)
+    bm = aipu.tir.BuildManager()
+    ex = bm.build(py_func)
+
+    expect = "vbclr"
+    unexpects = ["vand", "vinv"]
+    c_code = ex.c_code
+    msg = f"\nExpect snippet:\n{expect}\nUnexpect snippet:\n{unexpects}\n\nAIPU C code:\n{c_code}\n"
+    assert expect in c_code and all(x not in c_code for x in unexpects), msg
+
+    aipu_out = np.empty(n, dtype)
+    ex(x, y, aipu_out)
+    testing.assert_allclose(aipu_out[mask], gt_out[mask])
+
+
+def gen_combine_vbset(dtype, mask, is_ab_mask):
+    @S.prim_func
+    def combine_vbset_func(inp0: S.ptr(dtype, "global"), inp1: S.ptr(dtype, "global"), out: S.ptr(dtype, "global")):
+        va = S.vload(inp0)
+        vb = S.vload(inp1)
+        if is_ab_mask:
+            mask_a = va > 0
+            mask_b = vb > 0
+            mask_out = S.vor(mask_a, S.vinv(mask_b), mask)
+            vout = S.vsel(va, vb, mask_out)
+            S.vstore(vout, out)
+        else:
+            vout = S.vor(va, S.vinv(vb), mask)
+            S.vstore(vout, out)
+
+    return combine_vbset_func
+
+
+@pytest.mark.parametrize("dtype", ("int8", "uint8", "int16", "uint16", "int32", "uint32"))
+@pytest.mark.parametrize("is_all_true_mask", (True, False))
+@pytest.mark.parametrize("is_ab_mask", (True, False))
+def test_combine_vbset(dtype, is_all_true_mask, is_ab_mask):
+    vdtype = hw_native_vdtype(dtype)
+    pytest.mark.skipif(vdtype.is_uint and is_ab_mask)
+    n = vdtype.lanes
+    x = rand(n, dtype)
+    y = rand(n, dtype)
+    mask = [True] * n if is_all_true_mask else rand(n, "bool")
+    if is_ab_mask:
+        mask_out = np.where(mask, (x > 0) | (~(y > 0)), False)
+        gt_out = np.where(mask_out, x, y)
+    else:
+        gt_out = np.where(mask, x | (~y), 0)
+
+    py_func = gen_combine_vbset(dtype, mask, is_ab_mask)
+    bm = aipu.tir.BuildManager()
+    ex = bm.build(py_func)
+
+    expect = "vbset"
+    unexpects = ["vor", "vinv"]
+    c_code = ex.c_code
+    msg = f"\nExpect snippet:\n{expect}\nUnexpect snippet:\n{unexpects}\n\nAIPU C code:\n{c_code}\n"
+    assert expect in c_code and all(x not in c_code for x in unexpects), msg
+
+    aipu_out = np.empty(n, dtype)
+    ex(x, y, aipu_out)
+    testing.assert_allclose(aipu_out[mask], gt_out[mask])
+
+
+def gen_combine_vnand_vor(func_name, vdtype, mask_vand_vor, mask_vinv):
+    sdot_vand_or_vor = S.vand if func_name == "vnand" else S.vor
+
+    @S.prim_func
+    def combine_func(inp0: S.ptr(vdtype, "global"), inp1: S.ptr(vdtype, "global"), out: S.ptr(vdtype, "global")):
+        va = S.vload(inp0)
+        vb = S.vload(inp1)
+        mask_a = va > 0
+        mask_b = vb > 0
+        mask_out = S.vinv(sdot_vand_or_vor(mask_a, mask_b, mask_vand_vor), mask_vinv)
+        vout = S.vsel(va, vb, mask_out)
+        S.vstore(vout, out)
+
+    return combine_func
+
+
+def get_vnand_vnor_gt(func_name, x, y, mask_vand_vor, mask_vinv):
+    mask_a = x > 0
+    mask_b = y > 0
+    mask_out = mask_a & mask_b if func_name == "vnand" else mask_a | mask_b
+    mask_out0 = np.where(mask_vand_vor, mask_out, False)
+    mask_out1 = np.where(mask_vinv, ~mask_out0, False)
+    return np.where(mask_out1, x, y)
+
+
+@pytest.mark.parametrize("func_name", ("vnand", "vnor"))
+@pytest.mark.parametrize(
+    "is_combine, is_mask_var",
+    (
+        (True, False),
+        (False, True),
+        (False, False),
+    ),
+)
+def test_combine_vnand_vnor(func_name, is_combine, is_mask_var):
+    dtype = "int32"
+    vdtype = hw_native_vdtype(dtype)
+    n = vdtype.lanes
+    x = rand(n, dtype)
+    y = rand(n, dtype)
+    mask = [True] * n
+    if is_combine:
+        mask_vand_vor = [True] * n
+    else:
+        mask_vand_vor = x > 0 if is_mask_var else [False] * n
+
+    gt_out = get_vnand_vnor_gt(func_name, x, y, mask_vand_vor, mask)
+
+    py_func = gen_combine_vnand_vor(func_name, vdtype, mask_vand_vor, mask)
+    bm = aipu.tir.BuildManager()
+    ex = bm.build(py_func)
+
+    expects = (func_name,) if is_combine else ("vinv", f"v{func_name[2:]}")
+    c_code = ex.c_code
+    msg = f"\nExpect snippet:\n{expects}\n\nAIPU C code:\n{c_code}\n"
+    assert all(x in c_code for x in expects), msg
+
+    aipu_out = np.empty(n, dtype)
+    ex(x, y, aipu_out)
+    testing.assert_allclose(aipu_out, gt_out)
+
+
 if __name__ == "__main__":
     test_opt_combine_vnsr("uint16", "int8", True, True)
     test_opt_combine_vnsr_with_merge("int32", "int8", True, True)
@@ -291,3 +554,8 @@ if __name__ == "__main__":
     test_opt_combine_vmull_vmulh("int8", "uint8", "int16")
     test_opt_combine_vmull_vmulh("uint16", "int16", "uint32")
     test_opt_combine_vmull_vmulh("int8", "uint8", "int32")
+    test_opt_combine_vmull_vmulh_vbcast("int16", "float16", "int32")
+    test_combine_vbclr("int32", False, True)
+    test_combine_vbset("int32", False, False)
+    test_combine_vnand_vnor("vnand", True, False)
+    test_combine_vnand_vnor("vnor", False, True)

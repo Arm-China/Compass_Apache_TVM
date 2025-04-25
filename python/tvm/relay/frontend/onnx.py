@@ -2565,7 +2565,9 @@ class Cast(OnnxOpConverter):
             except ImportError as e:
                 raise ImportError(f"Unable to import onnx.mapping which is required {e}")
 
-        return AttrCvt(op_name="cast", transforms={"to": "dtype"})(inputs, attr)
+        return AttrCvt(op_name="cast", ignores=["saturate"], transforms={"to": "dtype"})(
+            inputs, attr
+        )
 
 
 class CastLike(OnnxOpConverter):

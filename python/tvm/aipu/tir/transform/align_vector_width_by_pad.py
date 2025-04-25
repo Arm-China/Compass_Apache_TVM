@@ -17,11 +17,11 @@ _ERR_IN_SPLIT_MSG = 'Error in "AlignVectorWidthBySplit".'
 
 
 class _Mutator(tir.StmtExprMutator):
-    def __init__(self, aipu_info, mask2associated_dtype):
+    def __init__(self, aipu_info, mask2associated_dtype, var_substitute_map):
         super().__init__()
         self._aipu_info = aipu_info
         self._mask2associated_dtype = mask2associated_dtype
-        self._var_substitute_map = {}
+        self._var_substitute_map = var_substitute_map
 
     def visit_var(self, var):
         return self._var_substitute_map.get(var, var)
@@ -180,11 +180,25 @@ class _Mutator(tir.StmtExprMutator):
 
         return tir.Call(ret.dtype, ret.op, new_args, ret.span)
 
+    def _mutate_vector_literal(self, call):
+        ret = super().visit_call(call)
+
+        dtype = DataType(ret.dtype)
+        hw_lanes = self._get_hw_lanes(dtype)
+        if dtype.lanes == hw_lanes:
+            return ret
+
+        assert dtype.lanes < hw_lanes, _ERR_IN_SPLIT_MSG
+        new_args = list(ret.args) + [0] * (hw_lanes - dtype.lanes)
+        return tir.Call(dtype.with_lanes(hw_lanes), ret.op, new_args, ret.span)
+
     def visit_call(self, call):
         if call.op == ir.Op.get("tir.const_pred"):
             return self._mutate_const_pred(call)
         if call.op == ir.Op.get("tir.low_true_pred"):
             return self._mutate_low_true_pred(call)
+        if call.op == ir.Op.get("tir.vector_literal"):
+            return self._mutate_vector_literal(call)
 
         if call.op != ir.Op.get("tir.call_extern"):
             return super().visit_call(call)
@@ -222,7 +236,24 @@ class _Mutator(tir.StmtExprMutator):
         return tir.LetStmt(new_var, new_value, new_body, let_stmt.span)
 
 
-@tir.transform.prim_func_pass(opt_level=0)
+def _pad_params(func, aipu_info, mask_asso_dtype):
+    new_params = list(func.params)
+    var_substitute_map = {}
+    need_pad_param_ids = func.attrs.get("need_pad_param_ids", [])
+    for i, param in enumerate(func.params):
+        if param.dtype != "handle":
+            dtype = DataType(param.dtype)
+            asso_bits = mask_asso_dtype[param].bits if dtype.is_bool else dtype.bits
+            hw_lanes = aipu_info.vector_width // asso_bits
+            assert dtype.lanes <= hw_lanes, _ERR_IN_SPLIT_MSG
+            var_constructor = tir.SizeVar if isinstance(param, tir.SizeVar) else tir.Var
+            if 1 < dtype.lanes < hw_lanes or i in need_pad_param_ids:
+                new_params[i] = var_constructor(param.name, dtype.with_lanes(hw_lanes))
+                var_substitute_map[param] = new_params[i]
+    return new_params, var_substitute_map
+
+
+@ir.transform.module_pass(opt_level=0)
 class AlignVectorWidthByPad:
     """Align the width of all narrower vector nodes with the hardware vector width by pad.
 
@@ -234,9 +265,26 @@ class AlignVectorWidthByPad:
     def __init__(self, aipu_info):
         self._aipu_info = aipu_info
 
-    def transform_function(self, func, ir_mod, pass_ctx):  # pylint: disable=unused-argument
+    def transform_function(self, func, mask_asso_dtype):
         """Traverse the given PrimFunc, transform it and return the result."""
-        new_body = _Mutator(self._aipu_info, get_mask_associated_dtype(func)).visit(func.body)
-        new_func = func.with_body(new_body, span=func.span)
+        new_params, var_substitute_map = _pad_params(func, self._aipu_info, mask_asso_dtype)
+        new_body = _Mutator(self._aipu_info, mask_asso_dtype, var_substitute_map).visit(func.body)
+        new_func = tir.PrimFunc(
+            new_params,
+            new_body,
+            func.ret_type,
+            func.buffer_map,
+            func.attrs,
+            func.span,
+        )
+        if "need_pad_param_ids" in func.attrs.keys():
+            new_func = new_func.without_attr("need_pad_param_ids")
         ensure_well_formed(new_func)
         return new_func
+
+    def transform_module(self, mod, ctx):  # pylint: disable=unused-argument
+        var2mask_asso_dtype = get_mask_associated_dtype(mod)
+        for var, func in mod.functions.items():
+            new_func = self.transform_function(func, var2mask_asso_dtype[var])
+            mod.update_func(var, new_func)
+        return mod

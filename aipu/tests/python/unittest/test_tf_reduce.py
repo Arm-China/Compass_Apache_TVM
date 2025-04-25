@@ -1,33 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 import pytest
-import tensorflow as tf
 from tvm.relay.backend.contrib.aipu_compass import testing as aipu_testing
-
-
-def reduce(inp, method, axis, keepdims):
-    if method == "All":
-        inp = tf.cast(inp, tf.bool)
-        return tf.reduce_all(inp, axis=axis, keepdims=keepdims)
-    elif method == "Any":
-        inp = tf.cast(inp, tf.bool)
-        return tf.reduce_any(inp, axis=axis, keepdims=keepdims)
-    elif method == "Sum":
-        return tf.reduce_sum(inp, axis=axis, keepdims=keepdims)
-    elif method == "Mean":
-        return tf.reduce_mean(inp, axis=axis, keepdims=keepdims)
-    elif method == "Min":
-        return tf.reduce_min(inp, axis=axis, keepdims=keepdims)
-    elif method == "Max":
-        return tf.reduce_max(inp, axis=axis, keepdims=keepdims)
-    elif method == "Prod":
-        return tf.reduce_prod(inp, axis=axis, keepdims=keepdims)
-    elif method == "Variance":
-        return tf.math.reduce_variance(inp, axis=axis, keepdims=keepdims)
-    elif method == "LogSumExp":
-        return tf.math.reduce_logsumexp(inp, axis=axis, keepdims=keepdims)
-    else:
-        raise NotImplementedError(f"{method} not implemented yet.")
 
 
 def reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v):
@@ -51,20 +25,42 @@ def reduce_test_flow(method_v, input_shapes, axis_v, keepdims_v):
 
     model_name = aipu_testing.gen_model_name(op_type, dim_info, axis_v, keepdims_v, "float32")
 
-    g = tf.Graph()
-    with g.as_default():
-        inputs = aipu_testing.get_input_tensor_of_tf(input_shapes)
-        inp = inputs[0]
-        out = reduce(inp, method_v, axis_v, keepdims_v)
-
     model_info = {
         "model_name": model_name,
         "op_type": op_type,
         "input_shapes": input_shapes,
-        "inputs": inputs,
-        "outputs": [out],
-        "in_graph": g,
     }
+
+    if not aipu_testing.is_model_file_exists(op_type, "tf", model_name):
+        import tensorflow as tf  # pylint: disable=import-outside-toplevel
+
+        g = tf.Graph()
+        with g.as_default():
+            inputs = aipu_testing.get_input_tensor_of_tf(input_shapes)
+            inp = inputs[0]
+            if method_v == "All":
+                inp = tf.cast(inp, tf.bool)
+                out = tf.reduce_all(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "Any":
+                inp = tf.cast(inp, tf.bool)
+                out = tf.reduce_any(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "Sum":
+                out = tf.reduce_sum(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "Mean":
+                out = tf.reduce_mean(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "Min":
+                out = tf.reduce_min(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "Max":
+                out = tf.reduce_max(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "Prod":
+                out = tf.reduce_prod(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "Variance":
+                out = tf.math.reduce_variance(inp, axis=axis_v, keepdims=keepdims_v)
+            elif method_v == "LogSumExp":
+                out = tf.math.reduce_logsumexp(inp, axis=axis_v, keepdims=keepdims_v)
+        model_info["inputs"] = inputs
+        model_info["outputs"] = [out]
+        model_info["in_graph"] = g
 
     cfg_file = aipu_testing.get_model_cfg_path(model_info, "tf")
     input_data = aipu_testing.get_op_input(model_name, input_shapes, op_framework="tf")

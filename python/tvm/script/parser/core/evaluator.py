@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Uni
 import numpy as np
 
 from tvm import error, target as tgt
-from tvm.tir import Pointer
+from tvm.tir import Pointer, if_then_else
 from . import dispatch, doc
 from .error import ParserError
 
@@ -297,6 +297,8 @@ class ExprEvaluator:
                 value = self._eval_bin_op(fields)
             elif isinstance(node, doc.Slice):
                 value = self._eval_slice(fields)
+            elif isinstance(node, doc.IfExp):
+                value = self._eval_ifexp(fields)
             else:
                 value = self._eval_expr(node.__class__(**fields))
         except error.DiagnosticError:
@@ -445,6 +447,25 @@ class ExprEvaluator:
         step = self._eval_expr(step) if step is not None else None
 
         return slice(lower, upper, step)
+
+    def _eval_ifexp(self, fields: Dict[str, Any]) -> slice:
+        """The doc AST ifexp node evaluating method.
+
+        Parameters
+        ----------
+        fields : Dict[str, Any]
+            The dictionary of ifexp information,
+            e.g., test, body, orelse.
+
+        Returns
+        -------
+        res : Call
+            The evaluation result.
+        """
+        test = self._eval_expr(fields["test"])
+        body = self._eval_expr(fields["body"])
+        orelse = self._eval_expr(fields["orelse"])
+        return if_then_else(test, body, orelse)
 
     def _pre_eval_expr(self, v):
         if tgt.AipuInfo.current() is None:

@@ -21,9 +21,9 @@ def gen_vnsrsr_func(dtype, out_dtype, hw_lanes, to_h):
     lanes2 = 3 * hw_lanes
     lanes3 = 4 * hw_lanes
     if hw_lanes == 8 and not to_h:
-        f_concat = lambda x: S.vconcat(S.vconcat(x, x, "even"), S.vconcat(x, x, "even"), "even")
+        f_concat = lambda x: S.vconcat((S.vconcat((x, x), "even"), S.vconcat((x, x), "even")), "even")
     else:
-        f_concat = lambda x: S.vconcat(x, x, "even")
+        f_concat = lambda x: S.vconcat((x, x), "even")
 
     @S.prim_func
     def vnsrsr_func(a: S.ptr(dtype, "global"), b: S.ptr(dtype, "global"), out: S.ptr(out_dtype, "global")):

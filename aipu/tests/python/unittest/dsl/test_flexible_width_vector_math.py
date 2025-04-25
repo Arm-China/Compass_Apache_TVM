@@ -11,7 +11,7 @@ name2sdot_unary_table = {
     "tanh": S.tanh,
     "log": S.log,
     "exp": S.exp,
-    "rint": S.vrint,
+    "rint": S.rint,
     "abs": S.vabs,
     "sin": S.sin,
     "cos": S.cos,

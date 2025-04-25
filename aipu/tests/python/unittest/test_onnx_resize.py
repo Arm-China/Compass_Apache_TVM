@@ -52,7 +52,7 @@ def test_resize(input_shapes, mode, coordinate_transformation_mode, scales, opse
     input_shapes = copy.deepcopy(input_shapes)
 
     # inputs: roi
-    default_values.append(np.array([], dtype=np.float))
+    default_values.append(np.array([], dtype=float))
     input_shapes.append([0])
 
     # inputs: scales
@@ -62,7 +62,7 @@ def test_resize(input_shapes, mode, coordinate_transformation_mode, scales, opse
         scales_shape = [int(len(scales))] if len(scales) > 0 else "_"
         input_shapes.append(scales_shape)
     else:
-        default_values.append(np.array([], dtype=np.float))
+        default_values.append(np.array([], dtype=float))
         input_shapes.append([0])
 
     inputs_info = {"shapes": input_shapes, "default_value": default_values}

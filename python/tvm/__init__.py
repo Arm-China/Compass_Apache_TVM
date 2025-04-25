@@ -19,6 +19,7 @@
 #
 # This file has been modified by Arm China team.
 #
+import importlib
 import multiprocessing
 import sys
 import os
@@ -83,7 +84,13 @@ from .contrib import rocm as _rocm, nvcc as _nvcc, sdaccel as _sdaccel
 # Do not import them if TVM is built with runtime only
 if not _RUNTIME_ONLY:
     from . import relay
-    from . import relax
+
+
+def __getattr__(name):
+    if name == "relax" and not _RUNTIME_ONLY:
+        return importlib.import_module("." + name, __name__)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 if not _RUNTIME_ONLY and support.libinfo().get("USE_MICRO", "OFF") == "ON":
     from . import micro

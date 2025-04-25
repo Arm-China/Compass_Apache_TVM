@@ -482,9 +482,22 @@ def reassign(var, value):
 
 def _vector_element_check(var, idx):
     from tvm.aipu.utils import is_hw_native_vdtype  # pylint: disable=import-outside-toplevel
+    from tvm.aipu.utils import HW_NATIVE_MASK_TYPES  # pylint: disable=import-outside-toplevel
 
-    msg = "Only support get or set element from a hardware native vector variable."
-    assert is_hw_native_vdtype(var.dtype), msg
+    if DataType(var.dtype).is_bool:
+        msg = "Only support get or set element from a hardware native mask variable."
+        assert var.dtype in HW_NATIVE_MASK_TYPES, msg
+
+    if isinstance(idx, int):
+        msg = "Only support get or set element from a multiple width vector variable "
+        msg += 'if "idx" is immediate value.'
+        dtype = DataType(var.dtype)
+        assert dtype.is_vector and dtype.total_bits % (8 if dtype.is_bool else 256) == 0, msg
+    else:
+        msg = "Only support get or set element from a hardware native vector variable "
+        msg += 'if "idx" is not immediate value.'
+        assert is_hw_native_vdtype(var.dtype), msg
+
     assert isinstance(idx, int) or (
         isinstance(idx, PrimExpr) and DataType(idx.dtype).is_integer_scalar
     ), "The index value must be a scalar integer."
@@ -3806,6 +3819,18 @@ def get_vscale_expr(dtype: Union[str, tvm.DataType], min_size: int = 128) -> Pri
     if isinstance(dtype, str):
         dtype = tvm.DataType(dtype)
     return min_size // dtype.bits * vscale()
+
+
+def ignore_loop_partition(predicate) -> PrimExpr:
+    """
+    Annotate a predicate not be considered as target condition of loop partition.
+
+    Parameters
+    ----------
+    predicate : PrimExpr
+        The annotated predicate expression.
+    """
+    return call_intrin("bool", "tir.ignore_loop_partition", predicate)
 
 
 # pylint: disable=unnecessary-lambda

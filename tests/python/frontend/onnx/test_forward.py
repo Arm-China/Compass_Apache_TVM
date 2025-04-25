@@ -5921,7 +5921,10 @@ def _load_proto(proto_filename, target_list, model_type_proto):
         elif model_type_proto.HasField("tensor_type"):
             tensor = onnx.TensorProto()
             tensor.ParseFromString(protobuf_content)
-            target_list.append(numpy_helper.to_array(tensor))
+            if is_version_greater_than("1.16.2"):
+                target_list.append(numpy_helper._to_array(tensor))
+            else:
+                target_list.append(numpy_helper.to_array(tensor))
         elif model_type_proto.HasField("optional_type"):
             optional = onnx.OptionalProto()
             optional.ParseFromString(protobuf_content)

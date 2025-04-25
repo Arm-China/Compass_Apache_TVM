@@ -6,10 +6,6 @@ import os
 import re
 import configparser
 import numpy as np
-import onnxruntime
-import onnx
-import torch
-import paddle
 import tvm
 from tvm.contrib.download import download_testdata
 from tvm.relay.testing.darknet import LAYERTYPE
@@ -30,6 +26,8 @@ def _print_framework_version(model_type):
     if model_type.lower() in ["tf", "tflite"]:
         framework_version = tf.__version__
     elif model_type.lower() == "onnx":
+        import onnx
+
         framework_version = onnx.__version__
     elif model_type.lower() == "caffe":
         # Suprress Caffe verbose prints
@@ -40,8 +38,12 @@ def _print_framework_version(model_type):
     elif model_type.lower() == "darknet":
         framework_version = "2.0"
     elif model_type.lower() == "torch":
+        import torch
+
         framework_version = torch.__version__
     elif model_type.lower() == "paddle":
+        import paddle
+
         framework_version = paddle.__version__
     elif model_type.lower() == "relay":
         framework_version = tvm.__version__
@@ -275,6 +277,8 @@ class ONNXModel(Model):
 
         # Load ONNX model
         assert os.path.isfile(self.model_path), f"{self.model_path} is not exists."
+        import onnxruntime
+
         sess = onnxruntime.InferenceSession(self.model_path)
 
         # Get io info
@@ -305,7 +309,7 @@ class ONNXModel(Model):
                 output_dict.update({self.output_tensor_names[i]: _out})
         else:
             for i, out in enumerate(outputs):
-                _out = out.astype(np.float)
+                _out = out.astype(float)
                 output_dict.update({self.output_tensor_names[i]: _out})
 
         output_flatten = {}
@@ -482,6 +486,8 @@ class TorchModel(Model):
     """The implentation of PyTorch framework forward flow."""
 
     def run(self, input_data):
+        import torch
+
         input_data = convert_to_list(input_data)
         input_data = [torch.from_numpy(inp) for inp in input_data]
         output_dict = {}
@@ -499,6 +505,8 @@ class PaddleModel(Model):
     """The implentation of Paddle framework forward flow."""
 
     def run(self, input_data):
+        import paddle
+
         input_data = convert_to_list(input_data)
         input_data = [paddle.to_tensor(inp) for inp in input_data]
 

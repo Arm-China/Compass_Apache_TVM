@@ -20,6 +20,9 @@ BatchNorm without given mean and variance given testcases
 This is a test script to test fused_batch_norm operators
 in TensorFlow frontend when mean and variance are not given.
 """
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 import tvm.testing
 import numpy as np
@@ -31,7 +34,11 @@ try:
 except ImportError:
     import tensorflow as tf
 from tvm import relay
-from tensorflow.python.framework import graph_util
+
+try:
+    from tensorflow.python.framework.graph_util import convert_variables_to_constants
+except ImportError:  # compatible with tf 2.13.1
+    from tensorflow.compat.v1.graph_util import convert_variables_to_constants
 
 
 def verify_fused_batch_norm(shape):
@@ -58,7 +65,7 @@ def verify_fused_batch_norm(shape):
     with tf.Session(graph=out.graph) as sess:
         sess.run([tf.global_variables_initializer()])
         tf_out = sess.run(out, feed_dict={input_tensor: data})
-        constant_graph = graph_util.convert_variables_to_constants(sess, sess.graph_def, ["output"])
+        constant_graph = convert_variables_to_constants(sess, sess.graph_def, ["output"])
 
     for device in ["llvm"]:
         dev = tvm.device(device, 0)

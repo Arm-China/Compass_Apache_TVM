@@ -3,9 +3,21 @@
 import re
 import numpy as np
 import pytest
+import logging
+from contextlib import contextmanager
 from tvm import aipu
 from tvm.aipu import script as S
 from tvm.aipu.tir import Aiff
+
+
+@contextmanager
+def _logger_propagate():
+    logger = logging.getLogger("AIPU")
+    try:
+        logger.propagate = True
+        yield
+    finally:
+        logger.propagate = False
 
 
 @S.prim_func
@@ -236,20 +248,54 @@ def test_as_ptr_invalid_dtype(capfd):
     assert matches is not None, f"\nExpect snippet:\n{expect}\n\nStandard Error:\n{stderr}\n"
 
 
-def test_sub_func_invalid_param_num(capfd):
+@pytest.mark.parametrize(
+    "fail_type", ("unexpected_arg", "missing_arg", "multiple_vals", "redundant_arg0", "redundant_arg1")
+)
+def test_sub_func_invalid_param(fail_type, capfd):
+    @S.prim_func
+    def get_val(v0: S.i8, v1: S.i32 = 20, v2: S.fp16 = 30, v3: S.fp32 = 40) -> S.i32:
+        return v0 + v1 + v2 + v3
+
+    @S.prim_func
+    def func_unexpected_arg(placeholder: S.ptr("i32", "global"), out: S.ptr("i32", "global")):
+        out[0] = get_val(11, v10=22)
+
+    @S.prim_func  # Check empty args
+    def func_missing_arg(placeholder: S.ptr("i32", "global"), out: S.ptr("i32", "global")):
+        out[0] = get_val(v1=22, v2=33)
+
+    @S.prim_func
+    def func_multiple_vals(placeholder: S.ptr("i32", "global"), out: S.ptr("i32", "global")):
+        out[0] = get_val(11, 22, v1=33)  # pylint: disable=redundant-keyword-arg
+
+    @S.prim_func
+    def func_redundant_arg0(placeholder: S.ptr("i32", "global"), out: S.ptr("i32", "global")):
+        out[0] = get_val(11, 22, 33, v1=22, v2=33)  # pylint: disable=redundant-keyword-arg
+
+    @S.prim_func
+    def func_redundant_arg1(a: S.ptr("i32x8", "global"), out: S.ptr("i32x8", "global")):
+        sub_func(1, a[1], a, a[2])  # pylint: disable=too-many-function-args
+        out[0] = a[0]
+
+    py_func = locals()[f"func_{fail_type}"]
     with pytest.raises(RuntimeError):
-
-        @S.prim_func
-        def fail_func(a: S.ptr("i32x8", "global"), out: S.ptr("i32x8", "global")):
-            sub_func(1, a[1], a, a[2])  # pylint: disable=too-many-function-args
-            out[0] = a[0]
-
-        aipu.tir.BuildManager().build(fail_func)
+        aipu.tir.BuildManager().build(py_func)
 
     if capfd is None:
         return
     _, stderr = capfd.readouterr()
-    expect = 'The function "sub_func" expect 3 args, but got: "4".'
+
+    expect = ""
+    if fail_type == "unexpected_arg":
+        expect = 'error: The function "get_val" got unexpect keyword args: "v10".'
+    if fail_type == "missing_arg":
+        expect = 'The function "get_val" missing "1" args: "v0".'
+    if fail_type == "multiple_vals":
+        expect = 'The function "get_val" got multiple values for args: "v1".'
+    if fail_type == "redundant_arg0":
+        expect = 'The function "get_val" expect 1 to 4 args, but got: "5".'
+    if fail_type == "redundant_arg1":
+        expect = 'The function "sub_func" expect 3 args, but got: "4".'
     assert expect in stderr, f"\nExpect snippet:\n{expect}\n\nStandard Error:\n{stderr}\n"
 
 
@@ -284,9 +330,10 @@ def test_mismatch_entry_ptr_dtype(caplog):
     def fail_func(a: S.ptr("fp32", "global"), b: S.ptr("int32", "global")):
         b[0] = 1
 
-    ex = aipu.tir.BuildManager().build(fail_func)
-    fail_func(a, b)
-    ex(a, b)
+    with _logger_propagate():
+        ex = aipu.tir.BuildManager().build(fail_func)
+        fail_func(a, b)
+        ex(a, b)
 
     if caplog is None:
         return
@@ -433,6 +480,19 @@ def test_aiff_register_property():
     assert expect in exc_msg, f"\nExpect snippet:\n{expect}\n\nException Message:\n{exc_msg}\n"
 
 
+def test_aiff_transposed_array_in_desc():
+    with pytest.raises(AssertionError) as exc_info:
+        aiff = Aiff()
+        inp = np.transpose(np.zeros((4, 32), "float16"))
+        aiff.ptp.oact_fp_param_addr = inp.reshape(-1)
+        aiff.ptp.iact_addr = inp
+
+    exc_msg = str(exc_info.value)
+    expect = 'The field "iact_addr" receives a transposed array which could change its memory '
+    expect += "layout, please use its copy instead."
+    assert expect in exc_msg, f"\nExpect snippet:\n{expect}\n\nException Message:\n{exc_msg}\n"
+
+
 if __name__ == "__main__":
     test_sub_func_vector_to_scalar(None)
     test_sub_func_scalar_to_vector(None)
@@ -447,7 +507,7 @@ if __name__ == "__main__":
     test_assert_neither_flexible_nor_multiple_width_vector_error(None)
     test_ptr_invalid_dtype()
     test_as_ptr_invalid_dtype(None)
-    test_sub_func_invalid_param_num(None)
+    test_sub_func_invalid_param(None)
     test_entry_func_invalid_param_num()
     test_mismatch_entry_ptr_dtype(None)
     test_mismatch_return_pointer(None)
@@ -457,3 +517,4 @@ if __name__ == "__main__":
     test_aiff_desc_dtype()
     test_sub_func_aiff_desc_dtype()
     test_aiff_register_property()
+    test_aiff_transposed_array_in_desc()

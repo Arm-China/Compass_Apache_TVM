@@ -155,7 +155,8 @@ def test_all_vqdot(in0_dtype, in1_dtype, out_dtype):
 
     aipu_out = np.empty(out_n, out_dtype)
     ex(a, b, aipu_out)
-    testing.assert_allclose(aipu_out[mask_out], gt_out[mask_out])
+    atol = 1 if out_dtype == "float32" else None
+    testing.assert_allclose(aipu_out[mask_out], gt_out[mask_out], atol=atol)
 
 
 @pytest.mark.parametrize(

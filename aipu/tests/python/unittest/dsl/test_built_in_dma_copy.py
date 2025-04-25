@@ -377,6 +377,49 @@ def test_unit_case9():
     testing.assert_allclose(aipu_out, gt_out)
 
 
+def gen_func_case10(width, stride, times, out_n):
+    @S.prim_func
+    def func_dma_copy(a: S.ptr(dtype, "global"), b: S.ptr(dtype, "global"), c: S.ptr(dtype, "global")):
+        tid = S.get_local_id()
+        if tid == 0:
+            a_private = S.alloc_buffer(dtype=dtype, shape=(out_n), scope="private")
+            S.dma_copy(a_private, a, width, src_stride=stride, times=times)
+            S.dma_copy(b, a_private, width, times=times, dst_stride=stride)
+            S.dma_copy(c, b, width, src_stride=stride, times=times)
+
+    return func_dma_copy
+
+
+# INT2EXT(global ddr <-> private ddr):
+#   dst_stride > _DMA_MAX_STRIDE
+#   src_stride > _DMA_MAX_STRIDE
+#   32 <= width < _DMA_MAX_WIDTH
+def test_unit_case10():
+    width = 32
+    times = 4
+    stride = _DMA_MAX_STRIDE + 10
+    n = stride * times
+    out_n = width * times
+    a = rand(n, dtype)
+    b = rand(n, dtype)
+    gt_out = []
+    for i in range(times):
+        gt_out.append(a[i * stride : i * stride + width])
+    gt_out = np.concatenate(gt_out)
+
+    bm = aipu.tir.BuildManager()
+    prim_func = gen_func_case10(width, stride, times, out_n)
+    ex = bm.build(prim_func)
+
+    py_out = np.empty(out_n, dtype=dtype)
+    prim_func(a, b, py_out)
+    testing.assert_allclose(py_out, gt_out)
+
+    aipu_out = np.empty(out_n, dtype=dtype)
+    ex(a, b, aipu_out)
+    testing.assert_allclose(aipu_out, gt_out)
+
+
 if __name__ == "__main__":
     test_unit_case0()
     test_unit_case1()
@@ -388,3 +431,4 @@ if __name__ == "__main__":
     test_unit_case7()
     test_unit_case8()
     test_unit_case9()
+    test_unit_case10()

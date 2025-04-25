@@ -51,30 +51,30 @@ class _Mutator(tir.StmtExprMutator):
         if from_dtype in ("int16x16", "uint16x16"):
             assert to_dtype in ("int8x32", "uint8x32") and input_cnt == 2, msg
             inputs = tuple(_reinterpret_or_nsr(x, to_dtype, saturate) for x in inputs)
-            return S.vconcat(inputs[0], inputs[1], "even")
+            return S.vconcat((inputs[0], inputs[1]), "even")
 
         # 2. From 32-bit integer.
         if from_dtype in ("int32x8", "uint32x8"):
             # 2.1 To 8-bit integer, e.g., (i32x8, i32x8, i32x8, i32x8) -> i8x32.
             if to_dtype in ("int8x32", "uint8x32"):
                 inputs = tuple(_reinterpret_or_nsr(x, to_dtype, saturate) for x in inputs)
-                low_16x16 = S.vconcat(inputs[0], inputs[1], "even")
+                low_16x16 = S.vconcat((inputs[0], inputs[1]), "even")
 
                 if input_cnt == 2:
                     useless = low_16x16
-                    return S.vconcat(low_16x16, useless, "even")
+                    return S.vconcat((low_16x16, useless), "even")
                 if input_cnt == 3:
                     useless = inputs[2]
-                    return S.vconcat(low_16x16, S.vconcat(inputs[2], useless, "even"), "even")
+                    return S.vconcat((low_16x16, S.vconcat((inputs[2], useless), "even")), "even")
 
                 assert input_cnt == 4, msg
-                return S.vconcat(low_16x16, S.vconcat(inputs[2], inputs[3], "even"), "even")
+                return S.vconcat((low_16x16, S.vconcat((inputs[2], inputs[3]), "even")), "even")
 
             # 2.2 To 16-bit integer, e.g., (i32x8, i32x8) -> u16x16, (u32x8, u32x8) -> i16x16.
             if to_dtype in ("int16x16", "uint16x16"):
                 assert input_cnt == 2, msg
                 inputs = tuple(_reinterpret_or_nsr(x, to_dtype, saturate) for x in inputs)
-                return S.vconcat(inputs[0], inputs[1], "even")
+                return S.vconcat((inputs[0], inputs[1]), "even")
 
             # 2.3 To 16-bit float, e.g., (i32x8, i32x8) -> fp16x16
             assert to_dtype == "float16x16" and from_dtype == "int32x8" and input_cnt == 2, msg
@@ -123,9 +123,9 @@ class _Mutator(tir.StmtExprMutator):
 
             useless = x
             if part == "even":
-                return S.vxtl(S.vconcat(x, useless, "even"))
+                return S.vxtl(S.vconcat((x, useless), "even"))
             assert part == "odd", msg
-            return S.vxtl(S.vconcat(x, useless, "odd"))
+            return S.vxtl(S.vconcat((x, useless), "odd"))
 
         # 3. To different sign 16-bit integer, e.g., i8x32 -> u16x16.
         if to_dtype == diff_sign_16bit_dtype:
@@ -170,7 +170,7 @@ class _Mutator(tir.StmtExprMutator):
         if to_dtype in ("int8x32", "uint8x32"):
             assert part == "all", msg
             useless = x_8x32 = _reinterpret_or_nsr(x, to_dtype, saturate)
-            return S.vconcat(x_8x32, useless, "even")
+            return S.vconcat((x_8x32, useless), "even")
 
         # 2. To different sign 16-bit integer, e.g., i16x16 -> u16x16.
         if to_dtype in ("int16x16", "uint16x16"):
@@ -188,9 +188,9 @@ class _Mutator(tir.StmtExprMutator):
 
             useless = x
             if part == "even":
-                return S.vxtl(S.vconcat(x, useless, "even"))
+                return S.vxtl(S.vconcat((x, useless), "even"))
             assert part == "odd", msg
-            return S.vxtl(S.vconcat(x, useless, "odd"))
+            return S.vxtl(S.vconcat((x, useless), "odd"))
 
         # 4. To different sign 32-bit integer, e.g., i16x16 -> u32x8.
         if to_dtype == diff_sign_32bit_dtype:
@@ -222,7 +222,7 @@ class _Mutator(tir.StmtExprMutator):
         if to_dtype in ("int16x16", "uint16x16"):
             assert part == "all", msg
             useless = x_16x16 = _reinterpret_or_nsr(x, to_dtype, saturate)
-            return S.vconcat(x_16x16, useless, "even")
+            return S.vconcat((x_16x16, useless), "even")
 
         # 3. To different sign 32-bit integer, e.g., i32x8 -> u32x8.
         if to_dtype in ("int32x8", "uint32x8"):

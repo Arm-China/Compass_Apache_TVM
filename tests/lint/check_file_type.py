@@ -53,6 +53,8 @@ ALLOW_EXTENSION = {
     "bat",
     # relay text format
     "rly",
+    # relax text format
+    "rlx",
     # configurations
     "mk",
     "in",

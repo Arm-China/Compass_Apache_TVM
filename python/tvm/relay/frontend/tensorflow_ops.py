@@ -2693,8 +2693,8 @@ def _topk():
             )
         return AttrCvt(
             op_name="topk",
-            ignores=["sorted"],
-            extras={"k": k, "is_ascend": False, "dtype": "int32"},
+            ignores=["sorted", "Tk", "index_type"],
+            extras={"k": k, "is_ascend": False, "dtype": attr["index_type"].name},
         )([inputs[0]], attr)
 
     return _impl

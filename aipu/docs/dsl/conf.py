@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath("../../../python/"))
 project = "Compass DSL"
 author = "Arm China TVM team"
 copyright = "2024 Arm Technology (China) Co., Ltd"  # pylint: disable=redefined-builtin
-version = "1.2"
+version = "1.3"
 release = version
 
 # -- General configuration ---------------------------------------------------

@@ -60,6 +60,10 @@ def add(a: S.i32, b: S.i32) -> S.i32:
 - `-> S.i32` is the return type. If omitted, the return type is void.
 - `return` outputs a value from the subfunction. If omitted, the subfunction returns `None`.
 
+```{note}
+For the definition of subfunctions, if no `S.prim_func` decorated, it's not a prim func but a pure Python function. This situation belongs to [interact with python](../how_to_guides/how_to_interact_with_python.md).
+```
+
 ### Calling Subfunctions
 
 To use a subfunction, you call it by its name and pass the required arguments:

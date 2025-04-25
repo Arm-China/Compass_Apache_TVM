@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 """AOT with C Runtime Tests"""
 
 import os
@@ -911,7 +914,11 @@ def test_output_tensor_names():
         return tflite_model
 
     tflite_graph = create_tflite_graph_two_outs()
-    tflite_model = tflite.Model.Model.GetRootAsModel(tflite_graph, 0)
+    try:
+        tflite_model = tflite.Model.Model.GetRootAsModel(tflite_graph, 0)
+    except AttributeError:
+        # Compatible with tflite 2.10.0
+        tflite_model = tflite.Model.GetRootAsModel(tflite_graph, 0)
     mod, params = relay.frontend.from_tflite(
         tflite_model,
         shape_dict={"input": ifm_shape},

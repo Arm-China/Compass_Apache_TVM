@@ -5,11 +5,11 @@ import os
 import numpy as np
 import tvm
 from tvm import relay
-from .engine import PurePythonForwardEngine, FunctionData
-from ..aipu_builder import OptForward
-from ..codegen import CodeGenAipuCompass
-from ..config import AipuCompassFunctionConfig
+from tvm.aipu.relax.codegen import CodeGenAipuCompass
 from .. import utils
+from ..aipu_builder import OptForward
+from ..config import AipuCompassFunctionConfig
+from .engine import PurePythonForwardEngine, FunctionData
 
 
 class _FunctionData(FunctionData):

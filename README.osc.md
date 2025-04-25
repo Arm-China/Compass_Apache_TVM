@@ -9,6 +9,14 @@
 
 Zhouyi Compass 与 Apache TVM 集成，用于神经网络（NN）模型的快速支持和异构执行。借助 Apache TVM 的强大 Parser，即使 Zhouyi Compass 的 NN 编译器不支持特定框架格式的模型，也可以快速支持您的 NN 模型。
 
+## Compass DSL
+
+除了图级别的工作外，Compass DSL 是我们基于 TVM Script 的算子级别工作。它是一种面向人工智能（AI）领域，专用于张量计算的 Python 编程语言。
+
+Compass DSL 专为周易 NPU 硬件系列设计的用户友好的编程语言。其核心目标在于缩小深度学习框架中的高级算子与周易 NPU 底层算子实现之间的差距。利用 Compass DSL，开发者能够用 Python 编写代码，充分且高效地挖掘周易 NPU 硬件的潜力。
+
+有关 Compass DSL 的更多信息，请参阅 [Compass DSL 文档](https://arm-china.github.io/Compass_Apache_TVM)。
+
 ## 图切分与异构执行
 
 模型图切分方案基于 Apache TVM Bring Your Own Codegen（BYOC）框架。它对周易 NPU 支持的 NN 算子进行拆分，形成 NPU 子图。剩下的算子形成特定设备支持的子图。

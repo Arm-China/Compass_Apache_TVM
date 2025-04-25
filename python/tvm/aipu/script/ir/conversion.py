@@ -437,7 +437,11 @@ def _gen_dtype_builder_impl(dtype):
         return cast(init_value, dtype)
 
     _wrapper.__name__ = dtype
-    _wrapper.type_ann_func = getattr(T, dtype)
+    try:
+        _wrapper.type_ann_func = getattr(T, dtype)
+    except AttributeError:
+        _wrapper.type_ann_func = lambda: tir.Var(dtype, dtype)
+
     return _wrapper
 
 

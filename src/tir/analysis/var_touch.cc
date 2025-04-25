@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 /*!
  * \file var_touch.cc
@@ -43,6 +46,14 @@ class VarTouchVisitor : public StmtExprVisitor {
   }
 
   void VisitExpr_(const VarNode* op) final { Handle(op); }
+
+  void VisitStmt_(const ForNode* op) final {
+    auto annotations = op->annotations;
+    if (annotations.count("step")) {
+      Handle(Downcast<Var>(annotations["step"]).get());
+    }
+    StmtVisitor::VisitStmt_(op);
+  }
 
   void VisitStmt_(const BufferStoreNode* op) final {
     Handle(op->buffer->data.get());

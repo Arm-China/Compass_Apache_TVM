@@ -42,6 +42,7 @@ Welcome to Compass DSL documentation!
    how_to_guides/how_to_use_macros
    how_to_guides/how_to_use_inline_assembly
    how_to_guides/how_to_use_aiff
+   how_to_guides/how_to_interact_with_python
 
 .. toctree::
    :maxdepth: 1

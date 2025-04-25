@@ -489,7 +489,9 @@ if (USE_CUDA AND USE_NVSHMEM)
   if (NOT NVSHMEM_FOUND)
     message(FATAL_ERROR "Cannot find NVSHMEM, USE_NVSHMEM=" ${USE_NVSHMEM})
   endif()
-  tvm_file_glob(GLOB RUNTIME_NVSHMEM_SRCS src/runtime/contrib/nvshmem/*.cc)
+  set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  tvm_file_glob(GLOB RUNTIME_NVSHMEM_SRCS src/runtime/contrib/nvshmem/*.cc src/runtime/contrib/nvshmem/*.cu)
   list(APPEND RUNTIME_SRCS ${RUNTIME_NVSHMEM_SRCS})
 endif()
 
@@ -575,7 +577,6 @@ else()
 endif()
 
 # Module rules
-include(cmake/modules/VTA.cmake)
 include(cmake/modules/StandaloneCrt.cmake)
 include(cmake/modules/CUDA.cmake)
 include(cmake/modules/Hexagon.cmake) # This must come before logging.cmake

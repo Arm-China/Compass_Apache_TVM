@@ -10,7 +10,15 @@ namespace tvm {
 namespace runtime {
 
 void AipuDriver::ConfigGlobal(bool is_profile) { return; }
-void AipuDriver::ConfigEnvItems() { return; }
+void AipuDriver::ConfigEnvItems(const std::string& aipu_bin, const std::string& extra_path) {
+  aipu_load_graph_cfg_t load_graph_cfg = {0};
+  const char* dir_path = extra_path.size() == 0 ? work_dir_.c_str() : extra_path.c_str();
+  load_graph_cfg.extra_weight_path = dir_path;
+  status_ =
+      aipu_load_graph_helper(ctx_, aipu_bin.c_str(), aipu_bin.size(), &graph_id_, &load_graph_cfg);
+  AIPU_DRIVER_HANDLE_ERROR(status_);
+  return;
+}
 void AipuDriver::ConfigGraphItems() { return; }
 
 void AipuDriver::ConfigJobItems() {

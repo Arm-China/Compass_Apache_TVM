@@ -170,6 +170,37 @@ def test_mask_as_sub_func_arg():
     testing.assert_allclose(aipu_out, gt_out)
 
 
+@S.prim_func
+def for_with_step(a: S.ptr("int8", "global"), out: S.ptr("int8", "global")):
+    cnt = 0
+    for i in range(0, 32, 2):
+        out[cnt] = a[i]
+        cnt += 1
+
+    for i in range(1, 32, 2):
+        out[cnt] = a[i]
+        cnt += 1
+
+
+def test_for_with_step():
+    dtype, n = "int8", 32
+    a = rand(n, dtype)
+    gt_out = np.empty(n, dtype)
+    gt_out[: n // 2] = a[::2]
+    gt_out[n // 2 :] = a[1::2]
+
+    bm = aipu.tir.BuildManager()
+    ex = bm.build(for_with_step)
+
+    py_out = np.empty(n, dtype)
+    for_with_step(a, py_out)
+    testing.assert_allclose(py_out, gt_out)
+
+    aipu_out = np.empty(n, dtype)
+    ex.run(a, aipu_out)
+    testing.assert_allclose(aipu_out, gt_out)
+
+
 if __name__ == "__main__":
     test_explicit_tec_parallel()
     test_implicit_tec_parallel()
@@ -177,3 +208,4 @@ if __name__ == "__main__":
     test_implicit_type_convertion()
     test_if_int_stmt()
     test_mask_as_sub_func_arg()
+    test_for_with_step()

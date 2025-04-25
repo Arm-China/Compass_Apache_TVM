@@ -81,6 +81,9 @@ class PyVar:
         # Call from the DSL program directly instead of the PySim version of IR
         # APIs, so the result need to be a PyVar instance.
         assert idx >= 0, "The index must >= 0 when access element of vector variable."
+
+        if self.dtype.is_bool:  # Scalar bool needn't to be represented by PyVar.
+            return bool(ret)
         return PyVar(ret, self.dtype.with_lanes(1))
 
     def __setitem__(self, idx, value):
@@ -204,7 +207,13 @@ def _gen_shift_method(np_func):
         lhs, rhs = _shift_op_match_types(self, other)
 
         # Align with AIPU, for the scalar situation, the shift value need to be modulo 32.
-        rhs = (rhs % 32) if self.dtype.is_scalar and rhs.ndim == 0 else rhs
+        func = (
+            lambda x: np.array(x % 32, dtype=x.dtype) if self.dtype.is_scalar and x.ndim == 0 else x
+        )
+        if np_func.__name__ in ("__rlshift__", "__rrshift__"):
+            lhs = func(lhs)
+        else:
+            rhs = func(rhs)
         return PyVar(np_func(lhs, rhs))
 
     return _method
@@ -575,6 +584,7 @@ class PyPrimFunc:
         self.aipu_info = None
         self.output_dir = None
         self._param_anns = []
+        self._param_names = []
         self._return_ann = None
 
         for name, ann in py_func.__annotations__.items():
@@ -590,6 +600,7 @@ class PyPrimFunc:
                 self._return_ann = ann
             else:
                 self._param_anns.append(ann)
+                self._param_names.append(name)
 
     def _convert_sub_func_arg(self, idx, arg):
         param = self._param_anns[idx]
@@ -684,10 +695,60 @@ class PyPrimFunc:
 
         return ret
 
-    def __call__(self, *args):
+    def _append_kwargs_to_args(self, args, kwargs):
+        func_name = self.__name__
+        defaults = self.py_func.__defaults__ or []
+        default_names = self._param_names[len(self._param_anns) - len(defaults) :]
+        dft_dict = dict(zip(default_names, defaults))
+
+        # Check args number.
+        arg_cnt, kwarg_cnt = len(args), len(kwargs)
+        param_cnt, default_cnt = len(self._param_names), len(dft_dict)
+        arg_kwarg_cnt = arg_cnt + kwarg_cnt
+        start = param_cnt - default_cnt
+        if not (start <= arg_kwarg_cnt <= param_cnt):
+            start = param_cnt - default_cnt
+            expect = f"{start} to {param_cnt}" if start != param_cnt else f"{param_cnt}"
+            msg = f'The function "{func_name}" expect {expect} args,'
+            msg += f' but got: "{arg_kwarg_cnt}".'
+            raise TypeError(msg)
+
+        # Check kwargs are valid.
+        for karg in kwargs.keys():
+            msg = f'The function "{func_name}" got unexpect keyword args: "{karg}".'
+            assert karg in self._param_names, msg
+
+        # Check overlapping for args and kwargs.
+        arg_dict = dict(zip(self._param_names, args))
+        keys_intersect = ", ".join(arg_dict.keys() & kwargs.keys())
+        if len(keys_intersect) > 0:
+            msg = f'The function "{func_name}" got multiple values for args: "{keys_intersect}".'
+            raise TypeError(msg)
+
+        # Construct result starting from default.
+        dft_dict.update(arg_dict)
+        dft_dict.update(kwargs)
+
+        # Check args number.
+        arg_cnt = len(dft_dict)
+        if arg_cnt < param_cnt:
+            msg = f'The function "{func_name}" missing "{param_cnt - arg_cnt}"'
+            msg += f' args: "{",".join(self._param_names - dft_dict.keys())}".'
+            raise TypeError(msg)
+        if arg_cnt > param_cnt:
+            expect = f"{start} to {param_cnt}" if start != param_cnt else f"{param_cnt}"
+            msg = f'The function "{func_name}" expect {expect} args, but got: "{arg_cnt}".'
+            raise TypeError(msg)
+
+        # Extract args based on the params order defined in the function.
+        return tuple(dft_dict[k] for k in self._param_names)
+
+    def __call__(self, *args, **kwargs):
         if script.ir_builder.IRBuilder.is_in_scope():
             # It is evaluating by the TVM script parser when parsing other functions who has called
             # this function, so just need to return a call node to this function or a pointer.
+            args = self._append_kwargs_to_args(args, kwargs)
+
             ret_ann = self._return_ann
             call_dtype = "void"
             if isinstance(ret_ann, tir.Var):
@@ -702,7 +763,13 @@ class PyPrimFunc:
             return call
 
         if PySimInfo.current is not None:  # Indicate the current instance isn't a entry function.
-            return self.py_func(*[self._convert_sub_func_arg(i, x) for i, x in enumerate(args)])
+            args = [self._convert_sub_func_arg(i, x) for i, x in enumerate(args)]
+            if len(kwargs) > 0:
+                kwargs = {
+                    k: self._convert_sub_func_arg(self._param_names.index(k), v)
+                    for k, v in kwargs.items()
+                }
+            return self.py_func(*args, **kwargs)
 
         # Indicate the current instance is an entry function, so need to check and setup the
         # simulation environment.

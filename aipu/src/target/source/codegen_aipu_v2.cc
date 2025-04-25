@@ -350,11 +350,11 @@ void CodeGenAipuV2::VisitExpr_(const CallNode* op, std::ostream& os) {
     os << "]";
   } else if (op->op.same_as(Op::Get("tir.vector_set_element"))) {
     ICHECK_EQ(op->args.size(), 3U);
-    auto var = Downcast<Var>(op->args[0]);
+    PrimExpr var_or_buffer_load = op->args[0];
     PrimExpr idx = op->args[1];
     PrimExpr value = op->args[2];
 
-    this->PrintExpr(var, os);
+    this->PrintExpr(var_or_buffer_load, os);
     os << "[";
     this->PrintExpr(idx, os);
     os << "] = ";
@@ -694,7 +694,8 @@ void CodeGenAipuV2::VisitExpr_(const CallNode* op, std::ostream& os) {
 
       static const std::map<std::string, std::string> scope2dma_addr_base{
           {"global", "kGlobal"},    {"global.1", "kGlobal1"}, {"global.2", "kGlobal2"},
-          {"global.3", "kGlobal3"}, {"lsram", "kLsram"},      {"shared", "kShared"}};
+          {"global.3", "kGlobal3"}, {"lsram", "kLsram"},      {"shared", "kShared"},
+          {"local", "kGlobal"}};
 
       // Generate function calling
       auto dst = Downcast<Call>(op->args[1]);
@@ -753,6 +754,11 @@ void CodeGenAipuV2::VisitExpr_(const CallNode* op, std::ostream& os) {
     }
   } else if (op->op.same_as(builtin::Break())) {
     os << "break";
+  } else if (op->op.same_as(builtin::if_then_else())) {
+    std::string cond = PrintExpr(op->args[0]);
+    std::string true_val = PrintExpr(op->args[1]);
+    std::string false_val = PrintExpr(op->args[2]);
+    os << "(" << cond << " ? " << true_val << " : " << false_val << ")";
   } else if (op->op.same_as(Op::Get("tir.precodegen"))) {
     ICHECK_EQ(op->args.size(), 1U);
     os << Downcast<StringImm>(op->args[0])->value;
@@ -949,6 +955,11 @@ void CodeGenAipuV2::VisitStmt_(const AllocateNode* op) {
 void CodeGenAipuV2::VisitStmt_(const ForNode* op) {
   std::string min = PrintExpr(op->min);
   std::string max = PrintExpr(op->extent);
+  auto annotations = op->annotations;
+  std::string step = "1";
+  if (annotations.count("step")) {
+    step = PrintExpr(Downcast<PrimExpr>(annotations["step"]));
+  }
   if (!is_zero(op->min)) {
     max = min + "+" + max;
   }
@@ -957,7 +968,8 @@ void CodeGenAipuV2::VisitStmt_(const ForNode* op) {
   std::string vid = AllocVarID(op->loop_var.get());
   stream << "for (";
   PrintType(op->loop_var.dtype(), stream);
-  stream << ' ' << vid << " = " << min << "; " << vid << " < " << max << "; ++" << vid << ") {\n";
+  stream << ' ' << vid << " = " << min << "; " << vid << " < " << max << "; " << vid
+         << " += " << step << ") {\n";
   int for_scope = BeginScope();
   PrintStmt(op->body);
   this->EndScope(for_scope);

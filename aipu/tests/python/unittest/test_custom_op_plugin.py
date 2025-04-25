@@ -4,7 +4,7 @@ import textwrap
 from tvm import ir, relay
 from tvm.relay.op import op
 from tvm.relay.backend.contrib.aipu_compass import AipuCompass
-from tvm.relay.backend.contrib.aipu_compass.codegen import CodeGenAipuCompass
+from tvm.aipu.relax.codegen import CodeGenAipuCompass
 from tvm.relay.op.contrib.aipu_compass import codegen_plugin_register, parser_plugin_register
 
 

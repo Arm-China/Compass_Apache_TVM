@@ -99,7 +99,11 @@ def _deserialize_register_config(aipu_info, desc, begin_idx, end_idx):
         count = (desc[cur_idx] & 0x003F_FFFF) >> 16  # Occupy 5 bits [21:16].
 
         for i in range(count):
-            ret.get_register(begin_addr + i).all_fields = desc[cur_idx + 1 + i]
+            reg = ret.get_register(begin_addr + i)
+            msg = f"The register with address '{begin_addr + i}' could not found"
+            msg += f" in the AIFF function units for target '{aipu_info.name}'."
+            assert reg is not None, msg
+            reg.all_fields = desc[cur_idx + 1 + i]
 
         cur_idx += align8(count + 1)  # 256-bit aligned, so round up to multiple of 8.
 

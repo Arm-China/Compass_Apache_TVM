@@ -14,7 +14,8 @@ _default_funcs = ("__vbcast", "vclt", "vcgt", "vcle", "vcge", "vceq", "vcneq", "
 _default_funcs += ("vadd", "vsub", "vmul", "__vdiv", "vexp", "vtanh", "vlog", "__vrint", "vabs")
 _default_funcs += ("__vsel", "vpow", "__vfma", "vsin", "vcos", "vrsqrt", "vsqrt", "vfloor", "vceil")
 _default_funcs += ("vsl", "vsr", "vror", "__vcls", "__vclz", "__vmod", "vand", "vor", "vinv")
-_default_funcs += ("__vbrevs", "__vpcnt", "__vmax", "__vmin", "__vclass", "vnsr")
+_default_funcs += ("__vbrevs", "__vpcnt", "__vmax", "__vmin", "__vclass", "vnsr", "__vdpa")
+_default_funcs += ("__vqdpa", "__vdot", "__vqdot")
 
 
 def _move_pointer_in_scalar_unit(ptr, offset):
@@ -49,11 +50,11 @@ def _vstore(value, ptr, stride=1, mask=None):
 
 
 class _Mutator(tir.StmtExprMutator):
-    def __init__(self, aipu_info, mask2associated_dtype):
+    def __init__(self, aipu_info, mask2associated_dtype, var_substitute_map):
         super().__init__()
         self._aipu_info = aipu_info
         self._mask2associated_dtype = mask2associated_dtype
-        self._var_substitute_map = {}
+        self._var_substitute_map = var_substitute_map
         self._var2buffer = {}
 
     def visit_var(self, var):
@@ -73,10 +74,9 @@ class _Mutator(tir.StmtExprMutator):
     def _mutate_args(self, args, part_cnt=1):
         ret_args = tuple(self.visit_expr(x) for x in args)
 
-        part_cnts = {len(x) for x in ret_args if isinstance(x, tuple)}
-        part_cnts = {part_cnt} if len(part_cnts) == 0 else part_cnts
+        part_cnts = {len(x) for x in ret_args if isinstance(x, tuple)} or {part_cnt}
         assert len(part_cnts) == 1, "The split part count of all arguments must be same."
-        part_cnt = list(part_cnts)[0]
+        part_cnt = part_cnts.pop()
 
         ret_args = tuple(x if isinstance(x, tuple) else (x,) * part_cnt for x in ret_args)
         return tuple(list(x) for x in zip(*ret_args))
@@ -188,7 +188,8 @@ class _Mutator(tir.StmtExprMutator):
 
         # Need split to multiple parts according to the hardware vector width.
         _, part, saturate, x = call.args
-        assert part == "all", 'Error in script API "S.cast".'
+        no_zip = part == "all_with_no_zip"
+        assert part.value[:3] == "all", 'Error in script API "S.cast".'
         from_bits, to_bits = DataType(x.dtype).bits, to_dtype.bits
 
         ret = []
@@ -204,6 +205,7 @@ class _Mutator(tir.StmtExprMutator):
         # 2. Cast to wider bits, e.g., i8x55 -> i32x55, fp16x23 -> fp32x23.
         if from_bits < to_bits:
             part_strs = ("ll", "lh", "hl", "hh") if to_bits // from_bits == 4 else ("low", "high")
+            part_strs = ("even", "odd") if no_zip else part_strs
 
             for part_arg in part_args:
                 cur_x = part_arg[3]
@@ -266,11 +268,60 @@ class _Mutator(tir.StmtExprMutator):
         # For "low" and "high", only the feature Multiple Width Vector is supported.
         return tuple(ret[:part_cnt_by_arg] if part == "low" else ret[part_cnt_by_arg:])
 
+    def _mutate_vrevs(self, call):
+        part_args = self._mutate_args(call.args)
+
+        dtype = DataType(call.dtype)
+        hw_lanes = self._get_hw_lanes(self._get_associated_dtype(call) if dtype.is_bool else dtype)
+
+        if len(part_args) == 1:
+            return self._create_new_call_if_needed(call, part_args[0])
+
+        hw_dtype = dtype.with_lanes(hw_lanes)
+        return tuple([tir.Call(hw_dtype, call.op, x, call.span) for x in part_args[::-1]])
+
+    def _mutate_vsldl(self, call):
+        shift_imm = call.args[-1].value
+        part_args = self._mutate_args(call.args)
+        dtype = DataType(call.dtype)
+        hw_lanes = self._get_hw_lanes(dtype)
+        num_multiples = len(part_args)
+
+        if num_multiples == 1:
+            return self._create_new_call_if_needed(call, part_args[0])
+
+        shift_range_idx = shift_imm // hw_lanes
+        new_shift_imm = shift_imm % hw_lanes
+
+        args_concat = []
+        for i in range(num_multiples):
+            args_concat.append(part_args[i][1])
+        for i in range(num_multiples):
+            args_concat.append(part_args[i][2])
+
+        if new_shift_imm == 0:
+            return tuple(args_concat[shift_range_idx : len(args_concat) // 2 + shift_range_idx])
+
+        ret = []
+        for i in range(num_multiples):
+            ret_dtype = part_args[i][1].dtype
+            new_args = list(part_args[i])
+            new_args[1] = args_concat[shift_range_idx + i]
+            new_args[2] = args_concat[shift_range_idx + i + 1]
+            new_args[3] = new_shift_imm
+            ret.append(tir.Call(ret_dtype, call.op, new_args, call.span))
+        return tuple(ret)
+
     def _mutate_vconcat(self, call):
         ret_args = tuple(self.visit_expr(x) for x in call.args)
         part = ret_args[-1]
 
-        if all(not isinstance(x, tuple) for x in ret_args) and part != "all":
+        # Skip if: 2 inputs operand with hw dtype, and part is "lheo".
+        if (
+            len(call.args) == 4
+            and all(not isinstance(x, tuple) for x in ret_args)
+            and part != "all"
+        ):
             return self._create_new_call_if_needed(call, ret_args)
 
         # Need split to multiple parts according to the hardware vector width.
@@ -279,34 +330,51 @@ class _Mutator(tir.StmtExprMutator):
         if part == "all":
             return operands
 
-        # From here, the count of operands must be 2, it is guaranteed by parser.
-        x, y = ret_args[1:-1]
-        part_cnt = len(x)
+        # From here, the count of operands must >= 2, it is guaranteed by parser.
+        count = len(operands)
+        inps = tuple(x if isinstance(x, tuple) else (x,) for x in ret_args[1:-1])
+        part_cnt = len(inps[0])
         if part in ("even", "odd"):
-            return tuple(S.vconcat(*operands[2 * i : 2 * i + 2], part) for i in range(part_cnt))
+            if count % 2 == 1:
+                useless = operands[-1]
+                operands += (useless,)
+                count += 1
+            return tuple(S.vconcat(operands[2 * i : 2 * i + 2], part) for i in range(count // 2))
 
         # 1. The vector width is an even multiple, e.g., i32x16.
         half_part_cnt = part_cnt // 2
         if part_cnt % 2 == 0:
-            if part == "low":
-                return x[:half_part_cnt] + y[:half_part_cnt]
-            return x[half_part_cnt:] + y[half_part_cnt:]
+            ret = []
+            for x in inps:
+                ret += x[:half_part_cnt] if part == "low" else x[half_part_cnt:]
+            return tuple(ret)
 
         # 2. The vector width is an odd multiple, e.g., i32x24.
         middle_part_idx = part_cnt // 2
-        half_lanes = DataType(x[0].dtype).lanes // 2
+        half_lanes = DataType(inps[0][0].dtype).lanes // 2
+        ret = []
+        # 2.1 part is "low":
         if part == "low":
-            ret = list(x[:middle_part_idx]) + [S.vconcat(x[middle_part_idx], y[0], part="low")]
-
-            for i in range(middle_part_idx):
-                ret.append(S.vsldl(y[i], y[i + 1], half_lanes))
+            for i, x in enumerate(inps):
+                if i % 2 == 0:
+                    ret += list(x[:middle_part_idx])
+                    # When index is the last one, concat with a useless element, here use the same.
+                    next_one = x[middle_part_idx] if i == len(inps) - 1 else inps[i + 1][0]
+                    ret.append(S.vconcat((x[middle_part_idx], next_one), "low"))
+                else:
+                    for j in range(middle_part_idx):
+                        ret.append(S.vsldl(x[j], x[j + 1], half_lanes))
             return tuple(ret)
 
-        ret = []
-        for i in range(middle_part_idx, part_cnt - 1):
-            ret.append(S.vsldl(x[i], x[i + 1], half_lanes))
-
-        ret += [S.vconcat(x[-1], y[middle_part_idx], part="high")] + list(y[middle_part_idx + 1 :])
+        # 2.2 part is "high":
+        for i, x in enumerate(inps):
+            if i % 2 == 0:
+                for j in range(middle_part_idx, part_cnt - 1):
+                    ret.append(S.vsldl(x[j], x[j + 1], half_lanes))
+                next_one = x[-1] if i == len(inps) - 1 else inps[i + 1][middle_part_idx]
+                ret.append(S.vconcat((x[-1], next_one), "high"))
+            else:
+                ret += list(x[middle_part_idx + 1 :])
         return tuple(ret)
 
     def _mutate_vsplit(self, call):
@@ -344,6 +412,21 @@ class _Mutator(tir.StmtExprMutator):
         part_args[0][2] = self._var2buffer[call.args[2]].data
         return tir.Call(call.dtype, call.op, part_args[0], call.span)
 
+    def _mutate_vrpadd(self, call):
+        part_args = self._mutate_args(call.args)
+        dtype = DataType(call.dtype)
+        part_cnt = len(part_args)
+        hw_lanes = _ceil_to_multiple_of_8(dtype.lanes / part_cnt)
+
+        if part_cnt == 1:
+            return self._create_new_call_if_needed(call, part_args[0])
+
+        hw_dtype = dtype.with_lanes(hw_lanes)
+        ret0 = tir.Call(hw_dtype, call.op, part_args[0], call.span)
+        for i in range(1, part_cnt):
+            ret0 += tir.Call(hw_dtype, call.op, part_args[i], call.span)
+        return tuple([ret0] + [tir.const(0, hw_dtype)] * (part_cnt - 1))
+
     def _mutate_horizontal_op(self, call):
         ret_args = tuple(self.visit_expr(x) for x in call.args)
 
@@ -364,6 +447,23 @@ class _Mutator(tir.StmtExprMutator):
             ret.append(tir.Call(dtype.with_lanes(hw_lanes), call.op, new_args, call.span))
 
         return tuple(ret)
+
+    def _mutate_vector_set_get_element(self, call):
+        part_args = self._mutate_args(call.args)
+
+        if len(part_args) == 1:
+            return self._create_new_call_if_needed(call, part_args[0])
+
+        dtype = DataType(call.args[0].dtype)
+        hw_lanes = self._get_hw_lanes(dtype)
+        idx = int(call.args[1])
+
+        selected_vector_idx = idx // hw_lanes
+        new_idx = idx % hw_lanes
+
+        new_args = list(part_args[selected_vector_idx])
+        new_args[1] = new_idx
+        return tir.Call(call.dtype, call.op, new_args, call.span)
 
     def _mutate_default(self, call):
         part_args = self._mutate_args(call.args)
@@ -506,6 +606,54 @@ class _Mutator(tir.StmtExprMutator):
         tir_func = tir.all if call.args[0].value == "vall" else tir.any
         return tir_func(*[tir.Call(call.dtype, call.op, x, call.span) for x in part_args])
 
+    def _mutate_vreplic(self, call):
+        part_args = self._mutate_args(call.args)
+        part_cnt = len(part_args)
+
+        if part_cnt == 1:
+            return self._create_new_call_if_needed(call, part_args[0])
+
+        dtype = DataType(call.dtype)
+        hw_lanes = _ceil_to_multiple_of_8(dtype.lanes / part_cnt)
+        index = int(call.args[2])
+        part_idx = index // hw_lanes
+        index_offset = index - part_idx * hw_lanes
+
+        part_args[part_idx][2] = index_offset
+        ret = [tir.Call(dtype.with_lanes(hw_lanes), call.op, part_args[part_idx], call.span)]
+        return tuple(ret * part_cnt)
+
+    def _mutate_global_var(self, call):
+        new_args = []
+        for x in call.args:
+            new_arg = self.visit_expr(x)
+            new_arg = list(new_arg) if isinstance(new_arg, tuple) else [new_arg]
+            new_args += new_arg
+
+        if new_args == list(call.args):
+            return call
+
+        return tir.Call(call.dtype, call.op, new_args, call.span)
+
+    def _mutate_vector_literal(self, call):
+        dtype = DataType(call.dtype)
+        hw_lanes = self._get_hw_lanes(dtype)
+
+        if dtype.lanes <= hw_lanes:
+            return super().visit_call(call)
+
+        # Need split to multiple parts according to the hardware vector width.
+        part_cnt = math.ceil(dtype.lanes / hw_lanes)
+        part_args = self._mutate_args(call.args)[0]
+
+        ret = []
+        for i in range(part_cnt):
+            cur_lanes = min(dtype.lanes - i * hw_lanes, hw_lanes)
+            args = part_args[i * hw_lanes : i * hw_lanes + cur_lanes]
+            ret.append(tir.Call(dtype.with_lanes(cur_lanes), call.op, args, call.span))
+
+        return tuple(ret)
+
     def visit_call(self, call):
         if call.op == ir.Op.get("tir.const_pred"):
             return self._mutate_const_pred(call)
@@ -517,6 +665,12 @@ class _Mutator(tir.StmtExprMutator):
             return self._mutate_pointer(call)
         if call.op == ir.Op.get("tir.reinterpret"):
             return self._mutate_default(call)
+        if call.op == ir.Op.get("tir.vector_literal"):
+            return self._mutate_vector_literal(call)
+        if isinstance(call.op, ir.GlobalVar):
+            return self._mutate_global_var(call)
+        if call.op in [ir.Op.get("tir.vector_set_element"), ir.Op.get("tir.vector_get_element")]:
+            return self._mutate_vector_set_get_element(call)
 
         if call.op != ir.Op.get("tir.call_extern"):
             return super().visit_call(call)
@@ -534,21 +688,55 @@ class _Mutator(tir.StmtExprMutator):
             return self._mutate_vcast(call)
         if func_name == "vzip":
             return self._mutate_vzip(call)
+        if func_name == "vrevs":
+            return self._mutate_vrevs(call)
+        if func_name == "__vsldl":
+            return self._mutate_vsldl(call)
         if func_name == "vconcat":
             return self._mutate_vconcat(call)
         if func_name == "vsplit":
             return self._mutate_vsplit(call)
+        if func_name == "__vrpadd":
+            return self._mutate_vrpadd(call)
         if func_name in ("__vaddh", "__vsubh", "__vmaxh", "__vminh"):
             return self._mutate_horizontal_op(call)
         if func_name in ("vall", "vany"):
             return self._mutate_vall_vany(call)
+        if func_name == "__vreplic":
+            return self._mutate_vreplic(call)
         if func_name in _default_funcs:
             return self._mutate_default(call)
 
         return super().visit_call(call)
 
 
-@tir.transform.prim_func_pass(opt_level=0)
+def _split_param(params, aipu_info, mask_asso_dtype):
+    new_params = []
+    var_substitute_map = {}
+    pad_param_ids = []
+    for param in params:
+        if param.dtype != "handle":
+            dtype = DataType(param.dtype)
+            asso_bits = mask_asso_dtype[param].bits if dtype.is_bool else dtype.bits
+            hw_lanes = aipu_info.vector_width // asso_bits
+            if dtype.lanes > hw_lanes:
+                part_cnt = math.ceil(dtype.lanes / hw_lanes)
+                var_constructor = tir.SizeVar if isinstance(param, tir.SizeVar) else tir.Var
+                for i in range(part_cnt):
+                    cur_lanes = min(dtype.lanes - i * hw_lanes, hw_lanes)
+                    cur_dtype = dtype.with_lanes(cur_lanes)
+                    new_params.append(var_constructor(f"{param.name}_{i}", cur_dtype))
+                    if cur_lanes < hw_lanes:
+                        pad_param_ids.append(len(new_params) - 1)
+                var_substitute_map[param] = tuple(new_params[-part_cnt:])
+            else:
+                new_params.append(param)
+        else:
+            new_params.append(param)
+    return new_params, var_substitute_map, pad_param_ids
+
+
+@ir.transform.module_pass(opt_level=0)
 class AlignVectorWidthBySplit:
     """Align the width of all wider vector nodes with the hardware vector width by split.
 
@@ -560,7 +748,30 @@ class AlignVectorWidthBySplit:
     def __init__(self, aipu_info):
         self._aipu_info = aipu_info
 
-    def transform_function(self, func, ir_mod, pass_ctx):  # pylint: disable=unused-argument
+    def transform_function(self, func, mask_asso_dtype):
         """Traverse the given PrimFunc, transform it and return the result."""
-        new_body = _Mutator(self._aipu_info, get_mask_associated_dtype(func)).visit(func.body)
-        return func.with_body(new_body, span=func.span)
+        new_params, var_substitute_map, pad_param_ids = _split_param(
+            func.params, self._aipu_info, mask_asso_dtype
+        )
+        new_body = _Mutator(self._aipu_info, mask_asso_dtype, var_substitute_map).visit(func.body)
+        if new_params == list(func.params):
+            return func.with_body(new_body, span=func.span)
+        new_func = tir.PrimFunc(
+            new_params,
+            new_body,
+            func.ret_type,
+            func.buffer_map,
+            func.attrs,
+            func.span,
+        )
+        if len(pad_param_ids) != 0:
+            new_func = new_func.with_attr("need_pad_param_ids", pad_param_ids)
+        return new_func
+
+    def transform_module(self, mod, ctx):  # pylint: disable=unused-argument
+        """try transform module"""
+        var2mask_asso_dtype = get_mask_associated_dtype(mod)
+        for var, func in mod.functions.items():
+            new_func = self.transform_function(func, var2mask_asso_dtype[var])
+            mod.update_func(var, new_func)
+        return mod

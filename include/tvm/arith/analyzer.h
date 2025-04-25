@@ -437,6 +437,9 @@ class CanonicalSimplifier {
    */
   TVM_DLL void Update(const Var& var, const PrimExpr& new_expr, bool allow_override = false);
 
+  /*! \brief Whether convert float division with immediate value to multiplication. */
+  bool convert_div_to_mul{true};
+
  private:
   friend class Analyzer;
   friend class ConstraintContext;
@@ -648,6 +651,8 @@ class TVM_DLL Analyzer {
   ModularSetAnalyzer modular_set;
   /*! \brief sub-analyzer rewrite simplify */
   RewriteSimplifier rewrite_simplify;
+  /*! \brief Whether convert float division with immediate value to multiplication. */
+  bool convert_div_to_mul{true};
   /*! \brief sub-analyzer canonical simplify */
   CanonicalSimplifier canonical_simplify;
   /*! \brief sub-analyzer: int set */

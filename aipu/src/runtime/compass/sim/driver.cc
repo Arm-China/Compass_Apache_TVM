@@ -10,6 +10,8 @@
 namespace tvm {
 namespace runtime {
 
+static std::mutex inst_lock;
+
 static inline std::string GetSimulatorPath(const Map<String, String>& rt_cfg, std::string target) {
   auto itr = rt_cfg.find("simulator");
   if (itr != rt_cfg.end()) return (*itr).second;
@@ -46,10 +48,31 @@ void AipuDriver::ConfigGlobal(bool is_profile) {
   return;
 }
 
-void AipuDriver::ConfigEnvItems() {
+void AipuDriver::ConfigEnvItems(const std::string& aipu_bin, const std::string& extra_path) {
+  // Pysim sometimes calls executor in multiple threads.
+  // Simulator could crash when run in multiple threads.
+  // Add this lock to ensure init in single thread.
+  std::lock_guard<std::mutex> lock(inst_lock);
+
+  // For X2 the output directory of driver will be created inside "aipu_config_global" or
+  // "aipu_load_graph_helper", and it will use the current directory, so change the current
+  // directory to the working directory temporarily.
+  std::string old_cur_dir = GetCwd();
+  ChDir(work_dir_);
+
   // Only set the environment variable if it doesn't exist.
   if (umd_dtcm_sz_ != "") setenv("UMD_DTCM_SZ", umd_dtcm_sz_.c_str(), 0);
   if (!(StrStartsWith(target_, "X1_") || StrStartsWith(target_, "Z2_"))) ConfigGlobal(false);
+
+  aipu_load_graph_cfg_t load_graph_cfg = {0};
+  const char* dir_path = extra_path.size() == 0 ? "." : extra_path.c_str();
+  load_graph_cfg.extra_weight_path = dir_path;
+  status_ =
+      aipu_load_graph_helper(ctx_, aipu_bin.c_str(), aipu_bin.size(), &graph_id_, &load_graph_cfg);
+  AIPU_DRIVER_HANDLE_ERROR(status_);
+
+  ChDir(old_cur_dir);
+
   return;
 }
 

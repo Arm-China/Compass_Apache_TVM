@@ -17,6 +17,7 @@ if(NOT ${USE_AIPU} MATCHES ${IS_FALSE_PATTERN})
     aipu/src/relay/analysis/*.cc
     aipu/src/relay/backend/compass/*.cc
     aipu/src/relay/op/*.cc
+    aipu/src/relax/transforms/*.cc
   )
   list(APPEND COMPILER_SRCS ${COMPILER_AIPU_SRCS})
 

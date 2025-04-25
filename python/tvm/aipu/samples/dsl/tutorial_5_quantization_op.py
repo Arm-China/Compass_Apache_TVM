@@ -34,21 +34,26 @@ def gen_eltwise_add(dtype):
             # Calculate the zero point and scale for first input. The zero point and scale of input0 are
             # derived from the quantization stage. Here calculation follows the requirements and order
             # of the quantization stage to ensure accuracy is not lost.
-            # Addition uses saturate version to avoid overflow. Due to zero point is a signed value, so
-            # specifying sign of output is "s".
+            # The addition here does not use saturation operation. This is because the value contained
+            # in the 32-bit type "a32" is 8-bit, and the zero point "zp_i0" is 8-bit. The final result
+            # will not exceed 9 bits.
             # Considering result of addition is signed value, thus, sign of output for multiplication is
             # "s".
-            a32_add = S.vadd(a32, zp_i0, saturate=True, out_sign="s")
+            a32_add = a32 + zp_i0
             a32_mul = S.vmul(a32_add, scale_i0, out_sign="s")
 
             # Compute: (b + zp_i1) * scale_i1.
             # ==================================================
             # Calculate the zero point and scale for second input.
-            b32_add = S.vadd(b32, zp_i1, saturate=True, out_sign="s")
+            b32_add = b32 + zp_i1
             b32_mul = S.vmul(b32_add, scale_i1, out_sign="s")
 
             # Element-wise with method=ADD.
-            tmp_w_add = S.vadd(a32_mul, b32_mul, saturate=True)
+            # ==================================================
+            # The addition here does not use saturation operation. This is because the value contained
+            # in the 32-bit variable "a32_mul" is at most 25 bits. The sum of two values, each not exceeding
+            # 25 bits, will not exceed 26 bits.
+            tmp_w_add = a32_mul + b32_mul
 
             # Multiply with uint8 output scale.
             tmp_w_mul = S.vmul(tmp_w_add, scale_o, out_sign="s")

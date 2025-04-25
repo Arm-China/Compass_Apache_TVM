@@ -31,6 +31,8 @@ class AipuCompassModuleNode : public ModuleNode {
   std::string target;
   // The size of the Data Tightly Coupled Memory, used by AIPU simulator.
   std::string umd_dtcm_sz;
+  // extra weights path
+  std::string extra_weight_path;
 
   // Internal supporting.
   // Override methods that inherited from ModuleNode.
@@ -64,8 +66,7 @@ class AipuCompassModuleNode : public ModuleNode {
 
 void AipuCompassModuleNode::Init() {
   std::string work_dir = AipuCompassBasicConfig::Global().GetRuntimeWorkDir(func_name);
-
-  aipu_driver_.Init(aipu_bin, work_dir, target, umd_dtcm_sz, func_name);
+  aipu_driver_.Init(aipu_bin, work_dir, target, umd_dtcm_sz, func_name, extra_weight_path);
 
   in_params_ = aipu_driver_.GetParamInfo(true);
   out_params_ = aipu_driver_.GetParamInfo(false);
@@ -74,7 +75,7 @@ void AipuCompassModuleNode::Init() {
   return;
 }
 
-const char* AipuCompassModuleNode::type_key() const { return "aipu_compass.AipuCompassModuleNode"; }
+const char* AipuCompassModuleNode::type_key() const { return "aipu.runtime.AipuCompassModuleNode"; }
 
 void AipuCompassModuleNode::SaveToBinary(dmlc::Stream* stream) {
   stream->Write(aipu_bin);
@@ -279,13 +280,20 @@ PackedFunc AipuCompassModuleNode::GetFunction(const String& name,
       aipu_driver_.Run();
       GetOutputs(out_args);
     });
+  } else if (name == "get_func_name") {
+    return PackedFunc(
+        [sptr_to_self, this](TVMArgs args, TVMRetValue* rv) { *rv = this->func_name; });
   } else if (name == "compass_dynamic_run") {
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
       // Check information of arguments match those of parameters.
       const size_t& in_cnt = in_params_.size();
-      ICHECK_EQ((in_cnt), args.size()) << "Arguments count mismatched.";
+      Array<NDArray> inputs = args[0];
+      ICHECK_EQ((in_cnt), inputs.size()) << "Arguments count mismatched.";
       // Split the input and output arguments away.
-      std::vector<DLTensor*> in_args = Convert2DLTensor(args, 0, in_cnt);
+      std::vector<DLTensor*> in_args;
+      in_args.resize(in_cnt);
+      std::transform(inputs.begin(), inputs.end(), in_args.begin(),
+                     [](NDArray arr) { return const_cast<DLTensor*>(arr.operator->()); });
       // std::vector<DLTensor*> out_args = Convert2DLTensor(args, in_cnt, out_cnt);
       // Only check datatype, not check size
       for (size_t i = 0; i < in_cnt; ++i) {
@@ -327,26 +335,32 @@ static Module LoadFromBinary(void* stream) {
 
   if ((strm->Read(&(obj->aipu_bin)) == false) || (strm->Read(&(obj->func_name)) == false) ||
       (strm->Read(&(obj->target)) == false) || (strm->Read(&(obj->umd_dtcm_sz)) == false)) {
-    LOG(FATAL) << "Load aipu_compass.AipuCompassModuleNode from binary failed!";
+    LOG(FATAL) << "Load aipu.runtime.AipuCompassModuleNode from binary failed!";
   }
   obj->Init();
   return Module(obj);
 }
 
-TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassModuleNode")
-    .set_body_typed([](NDArray aipu_bin, std::string func_name, std::string target,
-                       std::string umd_dtcm_sz) {
+TVM_REGISTER_GLOBAL("aipu.runtime.AipuCompassModuleNode")
+    .set_body([](TVMArgs args, TVMRetValue* rv) {
+      if (args.size() < 4 || args.size() > 5) {
+        LOG(FATAL) << "AipuCompassModuleNode accept 4-5 parameters";
+      }
       ObjectPtr<AipuCompassModuleNode> obj = make_object<AipuCompassModuleNode>();
-      const DLTensor* dl_tensor = aipu_bin.operator->();
+      auto* dl_tensor = args[0].operator DLTensor*();
       obj->aipu_bin.assign(static_cast<const char*>(dl_tensor->data), GetDataSize(*dl_tensor));
-      obj->func_name = func_name;
-      obj->target = target;
-      obj->umd_dtcm_sz = umd_dtcm_sz;
+      obj->func_name = args[1].operator std::string();
+      obj->target = args[2].operator std::string();
+      obj->umd_dtcm_sz = args[3].operator std::string();
+
+      if (args.size() > 4) {
+        obj->extra_weight_path = args[4].operator std::string();
+      }
       obj->Init();
-      return Module(obj);
+      *rv = Module(obj);
     });
 
-TVM_REGISTER_GLOBAL("runtime.module.loadbinary_aipu_compass.AipuCompassModuleNode")
+TVM_REGISTER_GLOBAL("runtime.module.loadbinary_aipu.runtime.AipuCompassModuleNode")
     .set_body_typed(LoadFromBinary);
 
 class AipuBmModuleNode : public ModuleNode {
@@ -509,8 +523,9 @@ PackedFunc AipuCompassBinaryNode::GetFunction(const String& name,
   if (name == "get_compass_module") {
     return PackedFunc([sptr_to_self, this](TVMArgs args, TVMRetValue* rv) {
       // create compass module and initlize
-      static auto compass_fn = Registry::Get("aipu_compass.AipuCompassModuleNode");
-      *rv = std::move((*compass_fn)(aipu_bin, func_name, target, umd_dtcm_sz));
+      static auto compass_fn = Registry::Get("aipu.runtime.AipuCompassModuleNode");
+      std::string extra_weight_path = args[0].operator std::string();
+      *rv = std::move((*compass_fn)(aipu_bin, func_name, target, umd_dtcm_sz, extra_weight_path));
     });
   }
   return nullptr;

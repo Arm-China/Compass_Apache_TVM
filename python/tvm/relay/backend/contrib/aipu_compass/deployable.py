@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Code to handle the work when deploying a TVM compiled NN model."""
+import tarfile
+import re
+import os
+from pathlib import Path
 from .config import AipuCompassConfig
 from .execution_engine import ExecutionEngine
 
@@ -85,4 +89,44 @@ class Deployable:
             compiled_model = AipuCompassConfig.get().deploy_file
             self.export(compiled_model, **kwargs)
 
+            def collect_all_compass(module, ret):
+                for mod in module.imported_modules:
+                    collect_all_compass(mod, ret)
+                if module.type_key == "aipu.runtime.AipuCompassModuleNode":
+                    ret.append(module)
+
+            all_compass = []
+            collect_all_compass(self._compiled_model.module, all_compass)
+            pattern = re.compile(r"^extra_weight_(\d+)\.bin$")
+
+            def check_extra_weight(path):
+                return any([pattern.match(file) for file in os.listdir(path)])
+
+            has_extra_weight = False
+
+            def get_work_dir(mod):
+                cfg = AipuCompassConfig.get()
+                output_dir = cfg.common["output_dir"]
+                func_name = mod.get_function("get_func_name")()
+                return os.path.join(output_dir, func_name, "runtime")
+
+            for mod in all_compass:
+                workdir = get_work_dir(mod)
+                if check_extra_weight(workdir):
+                    has_extra_weight = True
+                    break
+            if has_extra_weight:
+                origin_model = compiled_model
+                compiled_model = compiled_model + ".compass.tar"
+                with tarfile.open(compiled_model, "w") as tar:
+                    for mod in all_compass:
+                        func_name = mod.get_function("get_func_name")()
+                        workdir = get_work_dir(mod)
+                        if check_extra_weight(workdir):
+                            for file in os.listdir(workdir):
+                                if pattern.match(file):
+                                    link_target = os.readlink(Path(workdir) / file)
+                                    tar.add(link_target, arcname=Path(func_name) / "runtime" / file)
+                    path = Path(origin_model)
+                    tar.add(path, arcname=path.name)
         return ExecutionEngine(compiled_model, rpc_sess, devices, with_profile)

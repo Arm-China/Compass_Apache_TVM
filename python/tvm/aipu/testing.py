@@ -5,7 +5,6 @@ import os
 import sys
 from contextlib import contextmanager
 import numpy as np
-from AIPUBuilder.executor import GtForward
 from .. import testing
 from .utils import check_call_aipu_tool
 
@@ -75,6 +74,8 @@ def run_op_case(work_dir, case_file_path, target):
     target : str
 
     """
+    from AIPUBuilder.executor import GtForward  # pylint: disable=import-outside-toplevel
+
     files = os.listdir(case_file_path)
     for file_str in ("graph.def", "weight.bin", "input0.bin"):
         assert file_str in files, f"Not found {file_str} in {case_file_path}."

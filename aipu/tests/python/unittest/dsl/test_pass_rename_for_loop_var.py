@@ -25,7 +25,7 @@ def test_duplicate_rename():
     bm = aipu.tir.BuildManager()
     ex = bm.build(duplicate_rename)
 
-    expect = "for (int i_1 = 0; i_1 < n; ++i_1)"
+    expect = "for (int i_1 = 0; i_1 < n; i_1 += 1)"
     assert expect in ex.c_code, f"\nExpect snippet:\n{expect}\n\nAIPU C code:\n{ex.c_code}\n"
 
 
@@ -50,7 +50,7 @@ def test_seq_rename():
     bm = aipu.tir.BuildManager()
     ex = bm.build(seq_rename)
 
-    for expect in ("for (int i = 0; i < (n >> 5); ++i)", "for (int i_1 = 0; i_1 < n; ++i_1)"):
+    for expect in ("for (int i = 0; i < (n >> 5); i += 1)", "for (int i_1 = 0; i_1 < n; i_1 += 1)"):
         assert expect in ex.c_code, f"\nExpect snippet:\n{expect}\n\nAIPU C code:\n{ex.c_code}\n"
 
 

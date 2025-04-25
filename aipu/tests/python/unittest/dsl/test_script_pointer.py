@@ -267,6 +267,9 @@ def test_return_ptr():
 
 @S.prim_func
 def pointer_reinterpret_integer_func(inp: S.ptr("u32", "global"), out: S.ptr("u32", "global")):
+    if S.get_local_id() != 0:
+        return
+
     out[0:8] = inp[0:8]
     out_u32 = S.reinterpret(out, "uint32")
     out_u32_offset_3 = out_u32 + 3 * 4

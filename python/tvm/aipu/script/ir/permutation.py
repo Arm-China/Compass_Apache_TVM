@@ -3,7 +3,7 @@
 """The permutation part of IR APIs."""
 import numpy as np
 from tvm import tir, DataType
-from ...utils import hw_native_vdtype
+from ...utils import hw_native_vdtype, is_hw_native_vdtype
 from ..pysim import PyVar
 from .base import register_ir_api, canonicalize_mask
 from .utils import PARAM_R_MARK, broadcast_scalar, assert_vdtype_match, within_range
@@ -13,8 +13,8 @@ from .utils import assert_neither_flexible_nor_multiple_width_vector
 
 
 @register_ir_api
-def vconcat(x, y, part="all"):
-    """Concats ``x``, ``y`` with elements according to the value of parameter ``part``.
+def vconcat(inps, part="all"):
+    """Concats ``inps`` with elements according to the value of parameter ``part``.
 
     - The feature Multiple Width Vector is supported.
 
@@ -22,26 +22,30 @@ def vconcat(x, y, part="all"):
 
            x(i32x8): x0  x1  x2  x3  x4  x5  x6  x7
            y(i32x8): y0  y1  y2  y3  y4  y5  y6  y7
+           z(i32x8): z0  z1  z2  z3  z4  z5  z6  z7
 
 
-        out = S.vconcat(x, y)
+        out = S.vconcat((x, y))
         out(i32x16): x0  x1  x2  x3  x4  x5  x6  x7  y0  y1  y2  y3  y4  y5  y6  y7
 
-         out = S.vconcat(x, y, "low")
-         out(i32x8): x0  x1  x2  x3  y0  y1  y2  y3
+        out = S.vconcat((x, y, z))
+        out(i32x24): x0  x1  x2  x3  x4  x5  x6  x7  y0  ...  y7  z0  ...  z7
 
-         out = S.vconcat(x, y, "high")
-         out(i32x8): x4  x5  x6  x7  y4  y5  y6  y7
+        out = S.vconcat((x, y), "low")
+        out(i32x8): x0  x1  x2  x3  y0  y1  y2  y3
 
-         out = S.vconcat(x, y, "even")
-         out(i32x8): x0  x2  x4  x6  y0  y2  y4  y6
+        out = S.vconcat((x, y), "high")
+        out(i32x8): x4  x5  x6  x7  y4  y5  y6  y7
 
-         out = S.vconcat(x, y, "odd")
-         out(i32x8): x1  x3  x5  x7  y1  y3  y5  y7
+        out = S.vconcat((x, y), "even")
+        out(i32x8): x0  x2  x4  x6  y0  y2  y4  y6
+
+        out = S.vconcat((x, y), "odd")
+        out(i32x8): x1  x3  x5  x7  y1  y3  y5  y7
 
     Parameters
     ----------
-    x, y : Union[PrimExpr, int, float]
+    inps : Union[List[PrimExpr, int, float], Tuple[PrimExpr, int, float]]
         The operands.
 
     part : str
@@ -63,41 +67,47 @@ def vconcat(x, y, part="all"):
     --------
     .. code-block:: python
 
-        vc = S.vconcat(va, vb, "low")
-        vc = S.vconcat(va, 3, "high")
+        vc = S.vconcat((va, vb), "low")
+        vc = S.vconcat((va, 3), "high")
 
     See Also
     --------
     - Zhouyi Compass OpenCL Programming Guide: __vextl, __vexth, __vexte, __vexto.
     """
-    x, y = broadcast_scalar(x, y)
-    assert_vdtype_match(x, y)
+    msg = f'The arg "inps" expect one of (tuple, list) and len(inps) > 1, but got: "{inps}".'
+    assert isinstance(inps, (tuple, list)) and len(inps) > 1, msg
+    inps = broadcast_scalar(*inps)
+    assert_vdtype_match(*inps)
     msg = f'The arg "part" expect one of {VALID_PARTS[:5]}, but got: "{part}".'
     assert part in VALID_PARTS[:5], msg
 
-    x_vdtype = DataType(x.dtype)
+    x_vdtype = DataType(inps[0].dtype)
     assert_not_flexible_width_vector(x_vdtype)
-    ret_vdtype = x_vdtype.with_lanes(x_vdtype.lanes * 2) if part == "all" else x_vdtype
-    return tir.call_extern(ret_vdtype, "vconcat", x, y, part)
+    ret_lanes = x_vdtype.lanes * len(inps)
+    ret_lanes = ret_lanes if part == "all" else ret_lanes // 2
+    ret_vdtype = x_vdtype.with_lanes(ret_lanes)
+    return tir.call_extern(ret_vdtype, "vconcat", *inps, part)
 
 
 @register_ir_api
-def _py_vconcat(x, y, part="all"):
-    x, y = broadcast_scalar(x, y)
-    half_lanes = x.dtype.lanes // 2
-    ret_vdtype = x.dtype
+def _py_vconcat(inps, part="all"):
+    inps = broadcast_scalar(*inps)
+    x_dtype = inps[0].dtype
+    half_lanes = x_dtype.lanes // 2
+    ret_lanes = x_dtype.lanes * len(inps)
+    ret_lanes = ret_lanes if part == "all" else ret_lanes // 2
+    ret_vdtype = x_dtype.with_lanes(ret_lanes)
 
     if part == "low":
-        ret = np.concatenate((x[:half_lanes], y[:half_lanes]))
+        ret = np.concatenate([x[:half_lanes] for x in inps])
     elif part == "high":
-        ret = np.concatenate((x[half_lanes:], y[half_lanes:]))
+        ret = np.concatenate([x[half_lanes:] for x in inps])
     elif part == "even":
-        ret = np.concatenate((x[::2], y[::2]))
+        ret = np.concatenate([x[::2] for x in inps])
     elif part == "odd":
-        ret = np.concatenate((x[1::2], y[1::2]))
+        ret = np.concatenate([x[1::2] for x in inps])
     else:
-        ret_vdtype = x.dtype.with_lanes(x.dtype.lanes * 2)
-        ret = np.concatenate((x, y))
+        ret = np.concatenate(inps)
 
     return PyVar(ret, ret_vdtype)
 
@@ -398,6 +408,7 @@ def vrevs(x):
     """Reverses the order of all elements in ``x``.
 
     - The mask situation where ``x`` is a mask is also supported.
+    - The feature Multiple Width Vector is supported.
 
     .. code-block::
 
@@ -432,7 +443,7 @@ def vrevs(x):
     - Zhouyi Compass OpenCL Programming Guide: __vrevs, __vprevs
     """
     assert is_vector_or_mask(x), "The 1st arg expect a vector or a mask."
-    assert_neither_flexible_nor_multiple_width_vector(x.dtype)
+    assert_not_flexible_width_vector(x.dtype)
     return tir.call_extern(x.dtype, "vrevs", x)
 
 
@@ -509,6 +520,8 @@ def vshfl(x, shift):
     """Performs a rotate shift by element from high to low direction in vector ``x``, with the
     shift number of the value of ``shift``.
 
+    - The feature Multiple Width Vector is supported.
+
     .. code-block::
 
             # shift direction:   <----
@@ -547,8 +560,13 @@ def vshfl(x, shift):
     - Zhouyi Compass OpenCL Programming Guide: __vshfl
     """
     assert is_vector(x), "The 1st arg expect a vector."
-    assert_neither_flexible_nor_multiple_width_vector(x.dtype)
-    assert is_integer_scalar(shift), 'The arg "shift" expect a integer scalar.'
+    assert is_integer_scalar(shift), 'The arg "shift" expects an integer scalar.'
+    if isinstance(shift, int):
+        assert_not_flexible_width_vector(x.dtype)
+        if not is_hw_native_vdtype(x.dtype):
+            return vsldl(x, x, shift)
+    else:
+        assert_neither_flexible_nor_multiple_width_vector(x.dtype)
     return tir.call_extern(x.dtype, "__vshfl", x, shift)
 
 
@@ -556,7 +574,7 @@ def vshfl(x, shift):
 def _py_vshfl(x, shift):
     lanes = x.dtype.lanes
     assert 0 <= shift < lanes, f'The arg "shift" expect in range [0, {lanes}), but got: "{shift}".'
-    return PyVar(np.concatenate([x, x[:shift]])[shift:], x.dtype)
+    return PyVar(np.concatenate([x[shift:], x[:shift]]), x.dtype)
 
 
 @register_ir_api
@@ -648,6 +666,8 @@ def vsldl(x, y, shift):
     """Shift left a unsigned immediate value shift for ``x``, and pads the shift remained space
     with ``y``.
 
+    - The feature Multiple Width Vector is supported.
+
     .. code-block::
 
             # shift direction:   <----
@@ -690,7 +710,7 @@ def vsldl(x, y, shift):
     x, y = broadcast_scalar(x, y)
     assert_vdtype_match(x, y)
     x_vdtype = DataType(x.dtype)
-    assert_neither_flexible_nor_multiple_width_vector(x_vdtype)
+    assert_not_flexible_width_vector(x_vdtype)
 
     assert isinstance(shift, int), 'The arg "shift" expect a constant integer scalar.'
     msg = f'The arg "shift" expect in range [0, {x_vdtype.lanes}), but got: "{shift}".'
@@ -762,7 +782,7 @@ def vtbl(table, indices):
     assert_neither_flexible_nor_multiple_width_vector(table_vdtype)
     indices_vdtype = DataType(indices.dtype)
 
-    assert indices_vdtype.is_integer, 'The arg "indices" expect a integer vector.'
+    assert indices_vdtype.is_integer, 'The arg "indices" expects an integer vector.'
     msg = f'The bits mismatch: "table": "{table_vdtype}" vs. "indices": "{indices_vdtype}".'
     assert table_vdtype.bits == indices_vdtype.bits, msg
     return tir.call_extern(table_vdtype, "vtbl", *table, indices)
@@ -782,6 +802,8 @@ def _py_vtbl(table, indices):
 def vreplic(x, index=0):
     """Uses the scalar ``index`` to choose one element from ``x``, then replicates all elements of
     result vector by this element.
+
+    - The feature Multiple Width Vector is supported.
 
     .. code-block::
 
@@ -821,8 +843,11 @@ def vreplic(x, index=0):
     - Zhouyi Compass OpenCL Programming Guide: __vreplic
     """
     assert is_vector(x), "The 1st arg expect a vector."
-    assert_neither_flexible_nor_multiple_width_vector(x.dtype)
-    assert is_integer_scalar(index), 'The arg "index" expect a integer scalar.'
+    assert_not_flexible_width_vector(x.dtype)
+    if is_hw_native_vdtype(x.dtype):
+        assert is_integer_scalar(index), 'The arg "index" expects an integer scalar.'
+    else:
+        assert isinstance(index, int), 'The arg "index" expects an integer constant value.'
     return tir.call_extern(x.dtype, "__vreplic", x, index)
 
 

@@ -151,7 +151,7 @@ So the function looks like this:
     x_clipped = S.clip(x, min_val=S.fp16(-lut_edge), max_val=S.fp16(lut_edge))
     x_fp32 = S.cast(x_clipped, "fp32")
     x_idx = (x_fp32 + lut_edge) * lut_inverse_delta
-    x_idxr = S.vrint(x_idx - 0.5)
+    x_idxr = S.rint(x_idx - 0.5)
     x_idx_u16 = S.cast(x_idxr, "u16")
     ...
 ```
@@ -195,7 +195,7 @@ def compute(
     x_clipped = S.clip(x, min_val=S.fp16(-lut_edge), max_val=S.fp16(lut_edge))
     x_fp32 = S.cast(x_clipped, "fp32")
     x_idx = (x_fp32 + lut_edge) * lut_inverse_delta
-    x_idxr = S.vrint(x_idx - 0.5)
+    x_idxr = S.rint(x_idx - 0.5)
     x_idx_u16 = S.cast(x_idxr, "u16")
     mask_idx_ge_lutlen_m2 = x_idx_u16 >= S.u16x16(lut_len - 2)
 

@@ -12,7 +12,7 @@ The Apache TVM parser supports extensive Machine Learning (ML) frameworks, inclu
 
 The Apache TVM provides the solution for graph partition and heterogeneous execution, through the Zhouyi Compass integration with the Apache TVM. The NN operators supported by Zhouyi NPU are split to Zhouyi NPU sub graph automatically, and you can continue to place the remaining NN operators to other devices (for example, CPU and GPU). After building the Apache TVM, the runtime will execute the NN model heterogeneously and automatically. So, your NN model can be supported even though some of its NN operators are not supported by the Zhouyi Compass.
 
-This source package is developed based on the Apache TVM whose commit id is *22a9d388d441dbfd917d032564e2a1bccacd5f8c* and also includes some necessary cherry picks.
+This source package is developed based on the Apache TVM whose commit id is *513c2be0c3b853a3b77de729f0ea75d448ee3c37* and also includes some necessary cherry picks.
 
 ## Structure
 The directory structure of the source code is the same as the Apache TVM, and the code of Arm China team is added in the following directory.

@@ -72,6 +72,27 @@ class _Mutator(tir.StmtExprMutator):
 
         return call
 
+    def visit_for(self, for_op):
+        ret = super().visit_for(for_op)
+
+        annotations = ret.annotations
+        if "step" in annotations:
+            new_annotations = annotations
+            new_step = self.visit(annotations["step"])
+            new_annotations["step"] = new_step
+            return tir.For(
+                ret.loop_var,
+                ret.min,
+                ret.extent,
+                ret.kind,
+                ret.body,
+                ret.thread_binding,
+                new_annotations,
+                ret.span,
+            )
+
+        return ret
+
     def visit_call(self, call):
         ret = super().visit_call(call)
 

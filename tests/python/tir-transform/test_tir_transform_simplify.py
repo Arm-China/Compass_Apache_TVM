@@ -14,6 +14,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
+import pytest
 import tvm
 import tvm.testing
 
@@ -1796,6 +1800,23 @@ class TestNestedIfElimination(BaseBeforeAfter):
     def expected(a: T.Buffer((2, 8), "int32"), b: T.Buffer((2, 8), "int32")):
         for i0, j0 in T.grid(2, 8):
             b[i0, j0] = T.if_then_else(i0 == 1 and 6 <= j0, 0, T.max(0, a[i0, j0]))
+
+
+@tvm.script.ir_module
+class FloatDivMod:
+    @T.prim_func
+    def before(A: T.Buffer((1,), "float32")):
+        A[0] = A[0] / 10
+
+
+@pytest.mark.parametrize("is_convert", (True, False))
+def test_convert_float_div_with_imm_to_mul(is_convert):
+    mod = FloatDivMod
+    with tvm.transform.PassContext(
+        config={"tir.Simplify": {"convert_float_div_with_imm_to_mul": is_convert}}
+    ):
+        mod = tvm.tir.transform.Simplify()(mod)
+    assert isinstance(mod["before"].body.value, tvm.tir.Mul if is_convert else tvm.tir.Div)
 
 
 if __name__ == "__main__":

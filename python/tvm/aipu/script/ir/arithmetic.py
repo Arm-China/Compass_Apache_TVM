@@ -3,12 +3,13 @@
 """The arithmetic part of IR APIs."""
 import numpy as np
 from tvm import tir, DataType, get_range
-from ...utils import hw_native_vdtype, double_elem_width, half_elem_width
-from ..pysim import PyVar, binary_op_match_types
+from ...utils import double_elem_width, half_elem_width, hw_native_vdtype
+from ..pysim import PyVar, binary_op_match_types, pysim_run_sim
 from .base import register_ir_api, canonicalize_mask
 from .utils import PARAM_R_MARK, broadcast_scalar, assert_vdtype_match, change_sign_if_needed
 from .utils import is_scalar, is_vector, canonicalize_r, assert_not_flexible_width_vector
 from .utils import assert_neither_flexible_nor_multiple_width_vector, is_scalar_const, can_safe_cast
+from .utils import get_dtype
 
 
 @register_ir_api
@@ -809,6 +810,7 @@ def vdot(x, y, mask=None):
     elements of ``y``. The elements of result vector will be saturated.
 
     - The inactive elements of result vector are undefined.
+    - The feature Multiple Width Vector is supported.
 
     .. code-block::
 
@@ -864,7 +866,7 @@ def vdot(x, y, mask=None):
     assert_vdtype_match(x, y, ignore_sign=True)
 
     x_vdtype, y_vdtype = DataType(x.dtype), DataType(y.dtype)
-    assert_neither_flexible_nor_multiple_width_vector(x_vdtype)
+    assert_not_flexible_width_vector(x_vdtype)
     msg = "Only supports 8-bit or 16-bit integer instruction."
     assert x_vdtype.is_integer and x_vdtype.bits in (8, 16), msg
 
@@ -900,6 +902,7 @@ def vqdot(x, y, mask=None):
     elements of ``y``. The elements of result vector will be saturated.
 
     - The inactive elements of result vector are undefined.
+    - The feature Multiple Width Vector is supported.
 
     .. code-block::
 
@@ -963,7 +966,7 @@ def vqdot(x, y, mask=None):
     assert_vdtype_match(x, y, ignore_sign=True)
 
     x_vdtype, y_vdtype = DataType(x.dtype), DataType(y.dtype)
-    assert_neither_flexible_nor_multiple_width_vector(x_vdtype)
+    assert_not_flexible_width_vector(x_vdtype)
     msg = "Only supports 8-bit integer instruction or 16-bit floating instruction."
     assert (x_vdtype.is_integer and x_vdtype.bits == 8) or x_vdtype.is_float16, msg
 
@@ -1005,6 +1008,8 @@ def _py_vqdot(x, y, mask=None):
 @register_ir_api
 def vdpa(acc, x, y, mask=None):
     """Performs an accumulate add operation with every two adjacent elements of inputs.
+
+    - The feature Multiple Width Vector is supported.
 
     .. code-block::
 
@@ -1067,7 +1072,7 @@ def vdpa(acc, x, y, mask=None):
     x, y = broadcast_scalar(x, y)
     acc_vdtype, x_vdtype = DataType(acc.dtype), DataType(x.dtype)
     assert_vdtype_match(x, y, ignore_sign=True)
-    assert_neither_flexible_nor_multiple_width_vector(x_vdtype)
+    assert_not_flexible_width_vector(x_vdtype)
 
     acc_lanes, acc_bits = acc_vdtype.lanes, acc_vdtype.bits
     x_lanes, x_bits = x_vdtype.lanes, x_vdtype.bits
@@ -1086,19 +1091,23 @@ def _py_vdpa(acc, x, y, mask=None):
     x, y = broadcast_scalar(x, y)
     x_lanes = x.dtype.lanes
 
-    x = x.astype(acc.dtype.element_of)
-    y = y.astype(acc.dtype.element_of)
+    x = x.astype("int64")
+    y = y.astype("int64")
+    acc_value = acc.astype("int64")
     mask = canonicalize_mask(mask, x_lanes)
 
     for i in range(x_lanes):
         if mask[i]:
-            acc[i // 2] += x[i] * y[i]
-    return acc
+            acc_value[i // 2] += x[i] * y[i]
+    acc_value = np.clip(acc_value, *get_range(acc.dtype.element_of))
+    return PyVar(acc_value, acc.dtype)
 
 
 @register_ir_api
 def vqdpa(acc, x, y, mask=None):
     """Performs an accumulate add operation with every four adjacent elements of inputs.
+
+    - The feature Multiple Width Vector is supported.
 
     .. code-block::
 
@@ -1170,7 +1179,7 @@ def vqdpa(acc, x, y, mask=None):
     x, y = broadcast_scalar(x, y)
     acc_vdtype, x_vdtype = DataType(acc.dtype), DataType(x.dtype)
     assert_vdtype_match(x, y, ignore_sign=True)
-    assert_neither_flexible_nor_multiple_width_vector(x_vdtype)
+    assert_not_flexible_width_vector(x_vdtype)
 
     acc_lanes, acc_bits = acc_vdtype.lanes, acc_vdtype.bits
     x_lanes, x_bits = x_vdtype.lanes, x_vdtype.bits
@@ -1195,19 +1204,24 @@ def _py_vqdpa(acc, x, y, mask=None):
     x, y = broadcast_scalar(x, y)
     x_lanes = x.dtype.lanes
 
-    x = x.astype(acc.dtype.element_of)
-    y = y.astype(acc.dtype.element_of)
     mask = canonicalize_mask(mask, x_lanes)
 
     if acc.dtype.is_integer:
+        x = x.astype("int64")
+        y = y.astype("int64")
+        acc_value = acc.astype("int64")
         for i in range(x_lanes):
             if mask[i]:
-                acc[i // 4] += x[i] * y[i]
+                acc_value[i // 4] += x[i] * y[i]
     else:  # float
+        x = x.astype("float64")
+        y = y.astype("float64")
+        acc_value = acc.astype("float64")
         for i in range(x_lanes):
             if mask[i]:
-                acc[(i // 4) * 2] += x[i] * y[i]
-    return acc
+                acc_value[(i // 4) * 2] += x[i] * y[i]
+    acc_value = np.clip(acc_value, *get_range(acc.dtype.element_of))
+    return PyVar(acc_value, acc.dtype)
 
 
 @register_ir_api
@@ -1215,6 +1229,7 @@ def vrpadd(x, mask=None):
     """Computes the reduction addition of all active elements of ``x``, and places the result as the
     lowest elements of result vector.
 
+    - The feature Multiple Width Vector is supported.
     - The remaining upper elements of result vector are undefined.
 
     .. code-block::
@@ -1255,8 +1270,8 @@ def vrpadd(x, mask=None):
     - Zhouyi Compass OpenCL Programming Guide: __vrpadd
     """
     vdtype = DataType(x.dtype)
-    assert_neither_flexible_nor_multiple_width_vector(vdtype)
-    ret_vdtype = hw_native_vdtype("float32") if vdtype.is_float16 else vdtype
+    assert_not_flexible_width_vector(vdtype)
+    ret_vdtype = f"float32x{vdtype.lanes//2}" if vdtype.is_float16 else vdtype
     mask = canonicalize_mask(mask, vdtype.lanes)
     return tir.call_extern(ret_vdtype, "__vrpadd", PARAM_R_MARK, x, mask)
 
@@ -1264,15 +1279,18 @@ def vrpadd(x, mask=None):
 @register_ir_api
 def _py_vrpadd(x, mask=None):
     mask = canonicalize_mask(mask, x.dtype.lanes)
-    active_indices = np.where(mask)[0]
-    active_values = x[active_indices]
-
     ret_dtype = "float32" if x.dtype.is_float16 else x.dtype.element_of
-    ret = PyVar.zeros(hw_native_vdtype(ret_dtype))
+    ret_lanes = x.dtype.lanes // 2 if x.dtype.is_float16 else x.dtype.lanes
+    ret = PyVar.zeros(DataType(ret_dtype).with_lanes(ret_lanes))
+
     # Use numpy sum for 2 reasons:
     # 1. Same behavior as hardware.
     # 2. Pairwise summation gets higher precision.
-    ret[0] = np.sum(active_values, dtype=ret_dtype)
+    hw_lanes = hw_native_vdtype(x.dtype).lanes
+    for i in range(x.dtype.lanes // hw_lanes):
+        start = i * hw_lanes
+        mask_i, x_i = mask[start : start + hw_lanes], x[start : start + hw_lanes]
+        ret[0] += np.sum(np.where(mask_i, x_i, 0), dtype=ret_dtype)
     return ret
 
 
@@ -1349,9 +1367,10 @@ def vmml(ptr, x, y):
 
 @register_ir_api
 def _py_vmml(ptr, x, y):
-    x_fp32 = x.astype("float32").reshape((4, 4))
-    y_fp32 = y.astype("float32").reshape((4, 4)).transpose((1, 0))
-    ptr.as_ptr("fp32x16")[0] = np.dot(x_fp32, y_fp32).reshape(-1)
+    inputs = (("in0", x.value), ("in1", y.value))
+    outputs = (("out", ptr),)
+    code_snippet = "__vmml(out, ((__global half16*)in0)[0], ((__global half16*)in1)[0]);"
+    pysim_run_sim(code_snippet, inputs, outputs)
 
 
 @register_ir_api
@@ -1427,9 +1446,10 @@ def vmma(acc_ptr, x, y):
 
 @register_ir_api
 def _py_vmma(acc_ptr, x, y):
-    x_fp32 = x.astype("float32").reshape((4, 4))
-    y_fp32 = y.astype("float32").reshape((4, 4)).transpose((1, 0))
-    acc_ptr.as_ptr("fp32x16")[0] += np.dot(x_fp32, y_fp32).reshape(-1)
+    inputs = (("in0", x.value), ("in1", y.value))
+    outputs = (("out", acc_ptr),)
+    code_snippet = "__vmma(out, ((__global half16*)in0)[0], ((__global half16*)in1)[0]);"
+    pysim_run_sim(code_snippet, inputs, outputs)
 
 
 def _vfma(acc, x, y, mask=None):
@@ -1691,9 +1711,10 @@ def _py_vfmao(acc, x, y, mask=None):
 
 
 @register_ir_api
-def vrint(x, mask=None):
+def rint(x, mask=None):
     """Computes the rounding on active elements of ``x``.
 
+    - The scalar situation where ``x`` is a scalar is also supported.
     - The inactive elements of result vector are undefined.
     - The feature Flexible Width Vector is supported.
     - The feature Multiple Width Vector is supported.
@@ -1703,12 +1724,12 @@ def vrint(x, mask=None):
            x: -0.4  0.2  1.4  1.5  1.6  1.8  1.9  2.01
         mask:   T    T    T    T    T    F    T    T
 
-         out = S.vrint(x, mask)
+         out = S.rint(x, mask)
          out: -0.0  0.0  1.0  2.0  2.0   ?   2.0  2.0
 
     Parameters
     ----------
-    x : Union[PrimExpr]
+    x : Union[PrimExpr, float]
         The operands. The vector x.
 
     mask : Optional[Union[Tuple[bool], List[bool], numpy.ndarray[bool], str, PrimExpr]]
@@ -1728,25 +1749,31 @@ def vrint(x, mask=None):
     --------
     .. code-block:: python
 
-        vc = S.vrint(va)
-        vc = S.vrint(va, mask="3T5F")
-        vc = S.vrint(va, mask=S.tail_mask(n, 8))
+        vc = S.rint(va)
+        vc = S.rint(va, mask="3T5F")
+        vc = S.rint(va, mask=S.tail_mask(n, 8))
+        scalar_c = S.rint(1.23456)
 
     See Also
     --------
-    - Zhouyi Compass OpenCL Programming Guide: __vrint
+    - Zhouyi Compass OpenCL Programming Guide: __vrint, __rint
     """
-    assert is_vector(x), "The 1st arg expect a vector."
-    x_vdtype = DataType(x.dtype)
-    assert x_vdtype.is_float, "vrint only support float inputs."
-    mask = canonicalize_mask(mask, x_vdtype.lanes)
-    return tir.call_extern(x_vdtype, "__vrint", PARAM_R_MARK, x, mask)
+    x_dtype = get_dtype(x)
+    assert x_dtype.is_float, "Only support float input."
+    if x_dtype.is_scalar:
+        assert mask is None, "Only support mask in vector scenario."
+        return tir.call_extern(x_dtype, "__rint", x)
+
+    # Vector scenario.
+    mask = canonicalize_mask(mask, x_dtype.lanes)
+    return tir.call_extern(x_dtype, "__vrint", PARAM_R_MARK, x, mask)
 
 
 @register_ir_api
-def _py_vrint(x, mask=None):
-    mask = canonicalize_mask(mask, x.dtype.lanes)
-    return PyVar(np.rint(x), x.dtype, mask)
+def _py_rint(x, mask=None):
+    x_dtype = get_dtype(x)
+    mask = canonicalize_mask(mask, x_dtype.lanes)
+    return PyVar(np.rint(x), x_dtype, mask)
 
 
 def _try_shrink_to_meaningful_range(min_val, max_val, dtype):
@@ -1871,6 +1898,6 @@ __all__ = (
     "fma",
     "vfmae",
     "vfmao",
-    "vrint",
+    "rint",
     "clip",
 )

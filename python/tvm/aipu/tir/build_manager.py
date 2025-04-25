@@ -205,8 +205,12 @@ class BuildManager:
             tir.transform.Simplify(),
             tir.transform.HoistIfThenElse(),
             compass_transform.RemoveIfInVecFor(),
-            compass_transform.AddDMAPragma(),
         ]
+
+        if self._is_from_schedule:
+            passes += [
+                compass_transform.AddDMAPragma(),
+            ]
 
         # PHASE 2
         passes += [
@@ -259,6 +263,8 @@ class BuildManager:
             compass_transform.ExchangeConstantToRight(),
             compass_transform.Simplify(),
             compass_transform.LowerVirtualVectorPointer(),
+            compass_transform.LowerTag(self._aipu_info),
+            compass_transform.HandleSubFuncReturnFWV(),
             compass_transform.AlignVectorWidthBySplit(self._aipu_info),
             compass_transform.AlignVectorWidthByPad(self._aipu_info),
             # After this line width of all vector nodes must equal to the hardware vector width.

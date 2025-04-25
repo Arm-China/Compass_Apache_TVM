@@ -540,7 +540,7 @@ def _test_gather(dshape, indices, axis, dtype, quantized=False, oob=False, wrap_
                 quantized=quantized,
                 input_range=input_range,
             )
-        except ValueError as exc:
+        except (ValueError, RuntimeError) as exc:
             if not oob:
                 raise exc
         except Exception as exc:

@@ -27,7 +27,11 @@ specific workload.
 #
 # This file has been modified by Arm China team.
 #
+import importlib
 from tvm._ffi.libinfo import __version__
+
+# error reporting
+from .utils import InvalidShapeError
 
 # Ensure C++ schedules get registered first, so python schedules can
 # override them.
@@ -50,32 +54,39 @@ from .einsum import *
 from .unique import *
 from .searchsorted import *
 from .signal import *
-from . import generic
-from . import nn
-from . import x86
-from . import cuda
-from . import gpu
-from . import arm_cpu
-from . import mali
-from . import bifrost
-from . import intel_graphics
-from . import utils
-from . import rocm
-from . import vision
-from . import image
-from . import sparse
-from . import hls
-from . import random
 
-try:
-    from . import aipu
-except ImportError:
-    pass
-from . import hexagon
-from . import adreno
 
-# error reporting
-from .utils import InvalidShapeError
+class LazyModule:
+    def __init__(self, module_name):
+        self.module_name = module_name
+        self.module = None
+
+    def __getattr__(self, name):
+        if self.module is None:
+            self.module = importlib.import_module(self.module_name, __name__)
+        return getattr(self.module, name)
+
+
+generic = LazyModule(".generic")
+nn = LazyModule(".nn")
+x86 = LazyModule(".x86")
+cuda = LazyModule(".cuda")
+gpu = LazyModule(".gpu")
+arm_cpu = LazyModule(".arm_cpu")
+mali = LazyModule(".mali")
+bifrost = LazyModule(".bifrost")
+intel_graphics = LazyModule(".intel_graphics")
+utils = LazyModule(".utils")
+rocm = LazyModule(".rocm")
+vision = LazyModule(".vision")
+image = LazyModule(".image")
+sparse = LazyModule(".sparse")
+hls = LazyModule(".hls")
+random = LazyModule(".random")
+hexagon = LazyModule(".hexagon")
+adreno = LazyModule(".adreno")
+aipu = LazyModule(".aipu")
+
 
 # not import testing by default
 # because testing can have extra deps that are not necessary

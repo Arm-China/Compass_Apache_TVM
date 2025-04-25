@@ -53,7 +53,8 @@ class AipuDriver {
   AipuDriver();
   ~AipuDriver();
   void Init(const std::string& aipu_bin, const std::string& work_dir, const std::string& target,
-            const std::string& umd_dtcm_sz, const std::string& func_name);
+            const std::string& umd_dtcm_sz, const std::string& func_name,
+            const std::string& extra_path = "");
   void SetInputs(const std::vector<DLTensor*>& inputs);
   void SetOutputs(const std::vector<DLTensor*>& outputs);
   void SetInputsWithDynamicShape(const std::vector<DLTensor*>& inputs);
@@ -72,7 +73,7 @@ class AipuDriver {
   std::vector<int64_t> GetOutputShape(uint32_t idx);
   // Internal supporting.
  private:
-  void ConfigEnvItems();
+  void ConfigEnvItems(const std::string& aipu_bin, const std::string& extra_path = "");
   void ConfigGlobal(bool is_profile);
   void ConfigGraphItems();
   void ConfigJobItems();

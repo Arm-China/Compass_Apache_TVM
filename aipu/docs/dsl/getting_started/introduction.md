@@ -13,6 +13,13 @@ Compass DSL is a Python programming language for AIPU general tensor computation
 
 Compass DSL is a user-friendly programming language for Zhouyi NPU hardware series. Compass DSL aims to bridge the gap between high-level operators in DL frameworks and Zhouyi NPU’s low level kernel implementations with high performance. With AIPU Python DSL, developers can write code that efficiently utilizes the capabilities of the Zhouyi NPU hardware.
 
+## Feature List
+
+- Simple and highly maintainable: [flexible width and multiple width vector](../language_basics/flexible_width_and_multiple_width_vector.md)
+- Easy to run and [profile](../how_to_guides/how_to_use_profiler.md) on device through [RPC](../how_to_guides/how_to_use_rpc.md)
+- Easy to [debug](../how_to_guides/how_to_debug_with_python.md) through [PySim](../explanation/pysim.md)
+- [Interact with powerful Python ecosystem](../how_to_guides/how_to_interact_with_python.md)
+
 ## Workflow
 
 The Compass DSL workflow is shown as follows:

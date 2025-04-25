@@ -52,6 +52,7 @@ from .model_cfg_builder import (
     skip_case,
     get_conv_in_out_shapes,
     get_model_cfg_path,
+    is_model_file_exists,
 )
 from .gen_op_inputs import (
     get_op_input,

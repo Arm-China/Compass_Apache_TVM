@@ -38,6 +38,7 @@ class AipuLogger:
         handler.setLevel(default_level)
         handler.setFormatter(self.formatter)
         logger.addHandler(handler)
+        logger.propagate = False
         self.logger = logger
 
     def set_log_level(self, log_level):

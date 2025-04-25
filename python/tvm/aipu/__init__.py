@@ -4,6 +4,7 @@
 from . import utils
 from . import logger
 from . import error
+from . import runtime
 from . import tir
 
 try:

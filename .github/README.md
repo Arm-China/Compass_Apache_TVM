@@ -9,6 +9,16 @@ The [Apache TVM](https://tvm.apache.org/) is an open-source machine learning com
 
 **The Zhouyi Compass is integrated with the Apache TVM for Neural Network (NN) model quick support and heterogeneous execution**. Through the Zhouyi Compass integration with the Apache TVM, your NN model can be supported quickly even though the NN compiler of the Zhouyi Compass does not support the ML framework of the NN model yet.
 
+
+## Compass DSL
+
+Besides the graph level work, Compass DSL is our operator level work that based on TVM Script, it is a Python programming language for AIPU general tensor computations in the context of Artificial Intelligence (AI).
+
+Compass DSL is a user-friendly programming language for **Zhouyi NPU** hardware series. Compass DSL aims to bridge the gap between high-level operators in DL frameworks and Zhouyi NPU’s low level kernel implementations with high performance. With AIPU Python DSL, developers can write code that efficiently utilizes the capabilities of the Zhouyi NPU hardware.
+
+For more info about Compass DSL, see [Compass DSL Documentation](https://arm-china.github.io/Compass_Apache_TVM).
+
+
 ## Graph Partition and Heterogeneous Execution
 
 **The graph partition solution** is based on the Apache TVM Bring Your Own Codegen (BYOC) framework. It splits the NN operators that the Zhouyi NPU supports and forms the NPU sub graphs. The remaining operators form sub graphs corresponding to the specific device supported.

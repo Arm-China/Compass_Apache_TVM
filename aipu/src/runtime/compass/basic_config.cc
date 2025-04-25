@@ -36,7 +36,7 @@ void ConfigAipuCompass(String output_dir, String verbose) {
   return;
 }
 
-TVM_REGISTER_GLOBAL("aipu_compass.ConfigAipuCompass").set_body([](TVMArgs args, TVMRetValue* rv) {
+TVM_REGISTER_GLOBAL("aipu.runtime.ConfigAipuCompass").set_body([](TVMArgs args, TVMRetValue* rv) {
   if (args.num_args == 0) {
     ConfigAipuCompass();
   } else if (args.num_args == 1) {
@@ -56,13 +56,13 @@ Map<String, String> AipuCompassBasicConfig::GetCommon() { return inst_->common; 
 
 Map<String, String> AipuCompassBasicConfig::GetRuntime() { return inst_->runtime; }
 
-TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassBasicConfig_GetCommon")
+TVM_REGISTER_GLOBAL("aipu.runtime.AipuCompassBasicConfig_GetCommon")
     .set_body_method(&runtime::AipuCompassBasicConfig::GetCommon);
 
-TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassBasicConfig_GetRuntime")
+TVM_REGISTER_GLOBAL("aipu.runtime.AipuCompassBasicConfig_GetRuntime")
     .set_body_method(&runtime::AipuCompassBasicConfig::GetRuntime);
 
-TVM_REGISTER_GLOBAL("aipu_compass.AipuCompassBasicConfig_Global")
+TVM_REGISTER_GLOBAL("aipu.runtime.AipuCompassBasicConfig_Global")
     .set_body_typed(runtime::AipuCompassBasicConfig::Global);
 
 }  // namespace runtime

@@ -22,7 +22,7 @@ class AipuCompassBasicConfigObj : public Object {
   // Override things that inherited from Object.
  public:
   // TVM C++ object protocol relevant.
-  static constexpr const char* _type_key = "aipu_compass.AipuCompassBasicConfig";
+  static constexpr const char* _type_key = "aipu.runtime.AipuCompassBasicConfig";
   static constexpr bool _type_has_method_visit_attrs = false;
   TVM_DECLARE_BASE_OBJECT_INFO(AipuCompassBasicConfigObj, Object);
 };

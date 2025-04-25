@@ -21,6 +21,10 @@
  * \file rewrite_simplify.h
  * \brief Rewrite-rule based simplification.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
+
 #ifndef TVM_ARITH_REWRITE_SIMPLIFY_H_
 #define TVM_ARITH_REWRITE_SIMPLIFY_H_
 
@@ -152,7 +156,7 @@ class RewriteSimplifier::Impl : public IRMutatorWithAnalyzer {
   std::vector<PrimExpr> literal_constraints_;
 
   // Optionally enabled extensions
-  Extension enabled_extensions_{kNone};
+  Extension enabled_extensions_{kConvertFloatDivWithImmToMul};
 
   /*! Whether the simplifier is current
    */

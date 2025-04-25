@@ -93,6 +93,35 @@ def test_vector_cast(from_dtype, to_dtype):
     testing.assert_allclose(aipu_out, gt_out)
 
 
+def gen_cast_literal_func(n, dtype):
+    const_vector = list(range(n))
+
+    @S.prim_func
+    def cast_literal_func(a: S.ptr(dtype, "global"), out: S.ptr(dtype, "global")):
+        S.vstore(S.cast(const_vector, dtype), out)
+
+    return cast_literal_func
+
+
+@pytest.mark.parametrize("n", (3, 9, 27, 33))
+def test_vector_cast_literal(n):
+    dtype = "float32"
+    a = rand(n, dtype)
+    gt_out = np.array(list(range(n)), dtype)
+
+    py_func = gen_cast_literal_func(n, dtype)
+    bm = aipu.tir.BuildManager()
+    ex = bm.build(py_func)
+
+    py_out = np.empty(n, dtype)
+    py_func(a, py_out)
+    testing.assert_allclose(py_out, gt_out)
+
+    aipu_out = np.empty(n, dtype)
+    ex(a, aipu_out)
+    testing.assert_allclose(aipu_out, gt_out)
+
+
 if __name__ == "__main__":
     test_vector_cast("float32", "int32")
     test_vector_cast("float16", "uint32")
@@ -101,3 +130,4 @@ if __name__ == "__main__":
     test_vector_cast("int8", "int32")
     test_vector_cast("int32", "uint8")
     test_vector_cast("uint16", "float32")
+    test_vector_cast_literal(33)

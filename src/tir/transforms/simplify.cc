@@ -208,6 +208,7 @@ class StmtSimplifier : public IRMutatorWithAnalyzer {
   Stmt VisitStmt(const Stmt& stmt) override {
     Optional<Stmt> cache = this->current_stmt_;
     this->current_stmt_ = stmt;
+    this->analyzer_->convert_div_to_mul = config_->convert_float_div_with_imm_to_mul;
     Stmt output = Parent::VisitStmt(stmt);
     this->current_stmt_ = std::move(cache);
     return output;

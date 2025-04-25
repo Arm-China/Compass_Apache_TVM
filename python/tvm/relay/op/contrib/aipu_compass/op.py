@@ -30,9 +30,9 @@ def _tile_anchor(
     heights = scales_grid / ratio_sqrts * base_anchor_size[0]
     widths = scales_grid * ratio_sqrts * base_anchor_size[1]
 
-    y_centers = np.array(range(grid_height), dtype=np.float)
+    y_centers = np.array(range(grid_height), dtype=float)
     y_centers = y_centers * anchor_stride_[0] + anchor_offset_[0]
-    x_centers = np.array(range(grid_width), dtype=np.float)
+    x_centers = np.array(range(grid_width), dtype=float)
     x_centers = x_centers * anchor_stride_[1] + anchor_offset_[1]
     x_centers, y_centers = np.meshgrid(x_centers, y_centers)
 

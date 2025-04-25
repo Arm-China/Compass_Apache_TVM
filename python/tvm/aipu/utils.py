@@ -10,6 +10,7 @@ from subprocess import run, STDOUT
 import numpy as np
 from .. import autotvm, contrib, rpc, tir, target as tgt, DataType, get_range, int_within_range
 from .logger import INFO
+from .runtime import AipuCompassBasicConfig
 
 
 HW_NATIVE_STORAGE_DTYPES = ("int8", "uint8", "int16", "uint16", "int32", "uint32", "float16")
@@ -316,15 +317,13 @@ def sync_compass_output_dir(rpc_sess, filter_fn=lambda x: True):
         The function used to select the files that need to be synchronized to local. It will be
         called for each file, only the files whose return value are True will be selected.
     """
-    from tvm.relay.backend.contrib import aipu_compass  # pylint: disable=import-outside-toplevel
-
     msg = f'The arg "rpc_sess" expect a RPC session, but got: "{type(rpc_sess)}".'
     assert isinstance(rpc_sess, rpc.RPCSession), msg
 
     remote_files = tuple(
         x for x in rpc_sess.list_files(".") if x.startswith("compass_output") and filter_fn(x)
     )
-    local_output_dir = aipu_compass.AipuCompassBasicConfig.get().common["output_dir"]
+    local_output_dir = AipuCompassBasicConfig.get().common["output_dir"]
 
     for remote_file in remote_files:
         rel_path = remote_file.split(os.path.sep, 1)[1]

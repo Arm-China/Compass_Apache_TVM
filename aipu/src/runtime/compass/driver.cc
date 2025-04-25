@@ -64,7 +64,7 @@ AipuDriver::AipuDriver() {
 
 void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
                       const std::string& target, const std::string& umd_dtcm_sz,
-                      const std::string& func_name) {
+                      const std::string& func_name, const std::string& extra_path) {
   work_dir_ = work_dir;
   target_ = target;
   umd_dtcm_sz_ = umd_dtcm_sz;
@@ -73,20 +73,9 @@ void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
   // Create directories recursively and ignore the directories exist error.
   CreateDirectories(work_dir_);
 
-  // For X2 the output directory of driver will be created inside "aipu_config_global" or
-  // "aipu_load_graph_helper", and it will use the current directory, so change the current
-  // directory to the working directory temporarily.
-  std::string old_cur_dir = GetCwd();
-  ChDir(work_dir_);
-
   // These items are independent with graph ID and job ID, they must be
   // configured firstly, because they are used during loading the graph.
-  ConfigEnvItems();
-
-  status_ = aipu_load_graph_helper(ctx_, aipu_bin.c_str(), aipu_bin.size(), &graph_id_);
-  AIPU_DRIVER_HANDLE_ERROR(status_);
-
-  ChDir(old_cur_dir);
+  ConfigEnvItems(aipu_bin, extra_path);
 
   // These items must be configured first, otherwise the invocation of
   // "aipu_create_job" will failed for simulaltor.
@@ -107,7 +96,6 @@ void AipuDriver::Init(const std::string& aipu_bin, const std::string& work_dir,
 
     ConfigJobItems();
   }
-
   return;
 }
 

@@ -114,6 +114,7 @@ from .op import TVMBackendAllocWorkspace, TVMBackendFreeWorkspace
 from .op import start_profile_intrinsic, end_profile_intrinsic
 from .op import vscale, get_active_lane_mask, get_vscale_expr
 from .op import dp4a
+from .op import ignore_loop_partition
 from .op import precodegen, reassign, vector_get_element, vector_set_element, const_pred
 from .op import low_true_pred, pointer
 from .generic import add, subtract, multiply, cast

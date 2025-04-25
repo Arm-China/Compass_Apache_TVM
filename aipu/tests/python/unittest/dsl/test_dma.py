@@ -51,7 +51,7 @@ __kernel void fadd(__global uchar* restrict A, __global uchar* restrict B, __glo
   __lsram uchar B_lsram[8192];
   DmaDirect_kGlobal_to_kLsram((int)A_lsram, (int)(A + cse_var_1), 8192, 8192, 8192, 8192);
   DmaDirect_kGlobal_to_kLsram((int)B_lsram, (int)(B + cse_var_1), 8192, 8192, 8192, 8192);
-  for (int i0_c_i1_c_fused = 0; i0_c_i1_c_fused < 8192; ++i0_c_i1_c_fused) {
+  for (int i0_c_i1_c_fused = 0; i0_c_i1_c_fused < 8192; i0_c_i1_c_fused += 1) {
     A_lsram[i0_c_i1_c_fused] = (uchar)(A_lsram[i0_c_i1_c_fused] + B_lsram[i0_c_i1_c_fused]);
   }
   DmaDirect_kLsram_to_kGlobal((int)(C + cse_var_1), (int)A_lsram, 8192, 8192, 8192, 8192);
@@ -92,8 +92,8 @@ __kernel void fadd(__global uchar* restrict A, __global uchar* restrict B, __glo
   __lsram uchar B_lsram[8192];
   DmaDirect_kGlobal_to_kLsram((int)A_lsram, (int)(A + cse_var_1), 8192, 8192, 8192, 8192);
   DmaDirect_kGlobal_to_kLsram((int)B_lsram, (int)(B + cse_var_1), 8192, 8192, 8192, 8192);
-  for (int i0_c = 0; i0_c < 32; ++i0_c) {
-    for (int i1_c = 0; i1_c < 256; ++i1_c) {
+  for (int i0_c = 0; i0_c < 32; i0_c += 1) {
+    for (int i1_c = 0; i1_c < 256; i1_c += 1) {
       int cse_var_2 = ((i0_c * 256) + i1_c);
       A_lsram[cse_var_2] = (uchar)(A_lsram[cse_var_2] + B_lsram[cse_var_2]);
     }

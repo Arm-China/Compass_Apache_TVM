@@ -49,48 +49,59 @@ def is_number(s):
     return False
 
 
-def get_subgraph_and_op_count(ir_path: str):
+def get_subgraph_and_op_count(ir_path: str, ir_type="relay"):
     """Get the number of NPU subgraph and the number of other OP.
 
     Args:
-        ir_path (str): the path to the relay ir.
+        ir_path (str): the path to the relay/relax ir.
 
     Returns:
         int, int: number of NPU subgraph, number of other OP.
     """
     assert os.path.isfile(ir_path), f"{ir_path} is Not Exists."
 
+    if ir_type.endswith("relax"):
+        is_main_in_line = lambda line: "def main" in line
+        is_main_end = lambda _: False
+    else:
+        is_main_in_line = lambda line: "{" in line and "main" in line
+        is_main_end = lambda line: line.strip() == "}"
+
+    npu_subgraph_count = 0
+    other_op_count = 0
+
     with open(ir_path, "r") as f:
         main_body = []
         is_body = False
         for line in f.readlines():
-            if "{" in line and "main" in line:
+            if is_main_in_line(line):
                 is_body = True
                 continue
             if is_body:
-                if line.strip() == "}":
+                if is_main_end(line):
                     break
                 main_body.append(line.strip())
 
-    npu_subgraph_count = 0
-    other_op_count = 0
-    aipu_func_pre_name = "@tvmgen_default_aipu_compass_main_"
-    for line in main_body:
-        if line.startswith("("):
-            continue
-        if line.startswith(aipu_func_pre_name):
-            npu_subgraph_count += 1
-            continue
-        if line.startswith("%"):
-            func_name = line.split("=", 1)[1].strip()
-            if func_name.startswith(aipu_func_pre_name):
+    if ir_type.endswith("relax"):
+        for line in main_body:
+            if " = " not in line:
+                continue
+            rvalue = line.split(" = ")[1]
+            if rvalue.startswith("cls.tvm_aipu"):
                 npu_subgraph_count += 1
-                continue
-            if func_name.startswith("%"):
-                continue
-            if func_name.startswith("("):
-                continue
-        other_op_count += 1
+            elif rvalue.startswith("R."):
+                other_op_count += 1
+        return npu_subgraph_count, other_op_count
+
+    prefix = "@tvmgen_default_aipu_compass_main_"
+    for line in main_body:
+        rval = lambda line: line.split("=", 1)[1].strip()
+        if line.startswith(prefix) or (line.startswith("%") and rval(line).startswith(prefix)):
+            npu_subgraph_count += 1
+        elif line.startswith("(") or (line.startswith("%") and rval(line).startswith(("%", "("))):
+            pass
+        else:
+            other_op_count += 1
 
     return npu_subgraph_count, other_op_count
 

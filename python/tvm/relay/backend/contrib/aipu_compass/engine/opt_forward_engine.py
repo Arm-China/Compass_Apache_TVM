@@ -6,10 +6,10 @@ import json
 import numpy as np
 from tvm import nd
 from tvm.aipu.utils import check_call_aipu_tool
+from tvm.aipu.relax.codegen import CodeGenAipuCompass
 from AIPUBuilder.Optimizer.utils import dtype2nptype
 from .engine import PurePythonForwardEngine, FunctionData
 from ..aipu_builder import OptForward
-from ..codegen import CodeGenAipuCompass
 from ..config import AipuCompassConfig, AipuCompassFunctionConfig
 from ..utils import relative_symlink_in_dir, compute_cos_distance
 

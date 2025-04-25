@@ -2,6 +2,7 @@
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """The math part of IR APIs."""
 import numpy as np
+import pyfma
 from tvm import tir, DataType
 from ..pysim import PyVar, binary_op_match_types
 from .base import register_ir_api
@@ -46,9 +47,73 @@ def exp(x):
     return tir.call_extern(dtype, "exp" if dtype.is_scalar else "vexp", x)
 
 
+def _mad(a, b, c):
+    return pyfma.fma(a, b.astype("float32"), c)
+
+
+def _convert_int8(x):
+    # rtz
+    y = x.astype("int32")  # trunc in default
+    return y
+
+
+def _convert_float8(x):
+    return x.astype("float32")
+
+
+def _native_divide(x, y):
+    return x / y
+
+
+def _hex2fp32(x_str):
+    return np.asarray(float.fromhex(x_str)).astype("float32")
+
+
+# Calc exp fp, use Taylor's Formula align to compiler.
+# This function is from aipuexe.
+def _fexp_tpc(x):
+    x = x.astype("float32")
+    is_inp_scalar = x.ndim == 0
+    x = np.asarray([x]) if is_inp_scalar else x
+
+    ln2hi = _hex2fp32("0x1.62e300p-1")
+    ln2lo = _hex2fp32("0x1.2fefa2p-17")
+    invln2 = _hex2fp32("0x1.715476p+0")
+    zero = 0.0
+    fhalf = np.ones_like(x) * 0.5
+    fhalf[x < zero] = -0.5
+    p = _convert_int8(_mad(x, invln2, fhalf))
+    float_p = _convert_float8(p)
+    float_hi = _mad(float_p, -ln2hi, x)  # t * ln2hi is exact here
+
+    # Evaluate poly
+    t = float_hi - float_p * ln2lo
+    double_t = t * t
+
+    tt0 = _mad(double_t, _hex2fp32("0x1.637698p-25"), _hex2fp32("-0x1.bbd41cp-20"))
+    tt1 = _mad(double_t, tt0, _hex2fp32("0x1.1566aap-14"))
+    tt2 = _mad(double_t, tt1, _hex2fp32("-0x1.6c16c2p-9"))
+    tt3 = _mad(double_t, tt2, _hex2fp32("0x1.555556p-3"))
+    v = _mad(double_t, -tt3, t)
+
+    y = 1.0 + t + _native_divide(t * v, 2.0 - v)
+
+    # Scale by 2^p, r = y * (2 ** p)
+    r = y * np.power(2.0, p.astype("float32"))
+
+    ulim = _hex2fp32("0x1.62e430p+6")  # ln(largest_normal) = 88.7228390520683530536
+    llim = _hex2fp32("-0x1.5d589ep+6")  # ln(smallest_normal) = -87.33654475055310898657
+
+    r[x < llim] = zero
+    r[x >= ulim] = np.inf
+    r[np.isnan(x)] = x[np.isnan(x)]
+    r = r[0] if is_inp_scalar else r
+    return r
+
+
 @register_ir_api
 def _py_exp(x):
-    return PyVar(np.exp(x), get_dtype(x))
+    return PyVar(_fexp_tpc(x), get_dtype(x))
 
 
 @register_ir_api

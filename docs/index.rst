@@ -59,7 +59,7 @@ driving its costs down.
    arch/index
    deep_dive/tensor_ir/index
    deep_dive/relax/index
-   dev/aipu/index
+   aipu/index
 
 .. toctree::
    :maxdepth: 1
@@ -67,18 +67,6 @@ driving its costs down.
 
    reference/api/python/index
    reference/api/links
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Legacy
-
-   tutorial/index
-   how_to/legacy_index
-   dev/tutorial/index
-   dev/how_to/how_to.rst
-   reference/langref/index
-   topic/microtvm/index
-   topic/vta/index
 
 .. toctree::
    :maxdepth: 1

@@ -1,12 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
 """Build AIPU Compass function for running through AIPU Compass Driver."""
+import os
+import re
 import time
 import numpy as np
 from tvm import nd
 from tvm.aipu.logger import DEBUG
 from tvm.aipu.utils import check_call_aipu_tool
-from ..codegen import CodeGenAipuCompass
+from tvm.aipu.relax.codegen import CodeGenAipuCompass
 from ..config import AipuCompassFunctionConfig
 from .engine import AipuForwardEngine
 from ..utils import relative_symlink_in_dir, create_aipu_compass_module
@@ -86,6 +88,14 @@ class CompassDriverMotor(AipuForwardEngine):
             aipu_bin = nd.from_dlpack(aipu_bin)
         except:  # pylint: disable=bare-except
             aipu_bin = nd.array(aipu_bin)
+        pattern = re.compile(r"^extra_weight_(\d+)\.bin$")
+
+        for filename in os.listdir(cfg.gbuilder_work_dir):
+            if pattern.match(filename):
+                os.makedirs(cfg.runtime_work_dir, exist_ok=True)
+                os.symlink(
+                    f"{cfg.gbuilder_work_dir}/{filename}", f"{cfg.runtime_work_dir}/{filename}"
+                )
 
         # Embed the pre-build result into Relay IR through attribute of function.
         return func.with_attr("compass.pre_build.aipu_bin", aipu_bin)

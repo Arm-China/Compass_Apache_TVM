@@ -20,25 +20,8 @@ class _Mutator(tir.StmtExprMutator):
 
         # There's any single real instruction for it, implement it through multiple instructions.
         out_sign = "s" if DataType(call.dtype).is_int else "u"
-        if x_vdtype.bits == 16:
-            # For i16x16/u16x16, the middle result type is i32x8/u32x8, so here
-            # need cast the parameter R accordingly.
-            lo_r, hi_r = S.vxtl(r), S.vxth(r)
-        else:
-            # For i32x8/u32x8, even through the middle result type looks like i32x8/u32x8, actually
-            # they are i64x4/u64x4, so here need cast the parameter R accordingly too.
-            lo_r, hi_r = S.vzip(r, r, "low"), S.vzip(r, r, "high")
-
-        lo = S.vmull(x, y, mask=mask, out_sign=out_sign, r=lo_r)
-        hi = S.vmulh(x, y, mask=mask, out_sign=out_sign, r=hi_r)
-
-        if x_vdtype.bits == 16:
-            # For i16x16/u16x16, the middle result type is i32x8/u32x8, so here
-            # need reinterpret it to i16x16/u16x16.
-            lo = S.reinterpret(lo, x_vdtype)
-            hi = S.reinterpret(hi, x_vdtype)
-
-        return S.vconcat(lo, hi, "even")
+        new_vmul = S.vmul(x, y, out_sign=out_sign)
+        return S.vsel(new_vmul, r, mask)
 
     def visit_call(self, call):
         ret = super().visit_call(call)

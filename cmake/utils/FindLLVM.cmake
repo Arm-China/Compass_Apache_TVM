@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+#
+# This file has been modified by Arm China team.
+#
 #######################################################
 # Enhanced version of find llvm.
 #
@@ -56,6 +59,9 @@ macro(find_llvm use_llvm)
     find_package(LLVM ${llvm_version_required} REQUIRED CONFIG)
     llvm_map_components_to_libnames(LLVM_LIBS "all")
     if (NOT LLVM_LIBS)
+      set(LLVM_LIBS ${LLVM_AVAILABLE_LIBS})
+    endif()
+    if (NOT LLVM_LIBS)
       message(STATUS "Not found - LLVM_LIBS")
       message(STATUS "Fall back to using llvm-config")
       set(LLVM_CONFIG "${LLVM_TOOLS_BINARY_DIR}/llvm-config")
@@ -68,7 +74,7 @@ macro(find_llvm use_llvm)
       set(LLVM_LIBS LLVM)
       message(STATUS "Link with dynamic LLVM library")
     else()
-      list(REMOVE_ITEM LLVM_LIBS LTO)
+      list(REMOVE_ITEM LLVM_LIBS LTO Remarks)
       message(STATUS "Link with static LLVM libraries")
     endif()
     set(TVM_LLVM_VERSION ${LLVM_VERSION_MAJOR}${LLVM_VERSION_MINOR})
