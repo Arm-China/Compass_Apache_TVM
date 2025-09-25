@@ -30,6 +30,7 @@ from tvm.tir import Let, StringImm, Pointer, convert_to_prim_expr
 from tvm.tir import reassign, vector_set_element
 from tvm.tir.buffer import is_integer_indices
 
+from ....compass import CompassInfo
 from ...ir_builder import ir as I
 from ...ir_builder import tir as T
 from ...ir_builder.base import IRBuilder
@@ -147,7 +148,7 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
     if isinstance(value, T.meta_var):
         return value.value
     elif isinstance(value, (list, tuple)):
-        if tvm.target.AipuInfo.current() is not None:
+        if CompassInfo.current() is not None:
             return value
 
         for i, v in enumerate(value):
@@ -160,7 +161,7 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
         return res
     elif isinstance(value, np.ndarray):
         u8_data = value.view("uint8")
-        dtype = str(value.dtype)
+        dtype = tvm.DataType(value.dtype)
         alloc_const_frame = T.allocate_const(u8_data, dtype="uint8", extents=u8_data.shape)
         alloc_const_frame.add_callback(partial(alloc_const_frame.__exit__, None, None, None))
         u8_buffer_var = alloc_const_frame.__enter__()
@@ -175,7 +176,8 @@ def bind_assign_value(self: Parser, node: doc.expr, var_name: str, value: Any) -
     elif isinstance(value, (Buffer, IterVar)) or (
         isinstance(value, Var) and not self.var_table.exist(value)
     ):
-        if isinstance(value, Buffer) and value.name != "":
+        is_compass = CompassInfo.current() is not None
+        if is_compass and isinstance(value, Buffer) and value.name != "":
             self.report_error(node, "Unsupport reassign a buffer, maybe you can use pointer.")
         IRBuilder.name(var_name, value)
         return value
@@ -281,12 +283,12 @@ def visit_for(self: Parser, node: doc.For) -> None:
         )
     with self.var_table.with_frame():
         with for_frame as iters:
-            is_aipu = tvm.target.AipuInfo.current() is not None
+            is_compass = CompassInfo.current() is not None
             iter_vars = node.target.elts if isinstance(node.target, doc.Tuple) else (node.target,)
             for var in iter_vars:
                 if isinstance(var, doc.Starred):
                     var = var.value
-                if is_aipu and var.id in self.var_table.get():
+                if is_compass and var.id in self.var_table.get():
                     self.report_error(
                         node.target,
                         f"The iter var {var.id} of the for loop has been defined in outside scope, "
@@ -570,6 +572,8 @@ def visit_function_def(self: Parser, node: doc.FunctionDef) -> None:
                             ann = ann()
                     except Exception:  # pylint: disable=broad-except
                         ann = func_annotation.get(arg.arg, None)
+                        if hasattr(ann, "type_ann_func"):
+                            ann = ann.type_ann_func()
                         if ann is None:
                             raise
                     param = T.arg(arg.arg, ann)
@@ -615,7 +619,7 @@ def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
     node : doc.Expr
         The doc AST Expr node.
     """
-    if tvm.target.AipuInfo.current() is not None:
+    if CompassInfo.current() is not None:
         if isinstance(node.value, doc.Call):
             func_str = _get_func_str(node.value.func)
             if func_str in ("pdb.set_trace", "set_trace", "breakpoint"):
@@ -631,7 +635,7 @@ def visit_expr_stmt(self: Parser, node: doc.Expr) -> None:
         T.evaluate(res)
     elif isinstance(res, (int, bool)):
         T.evaluate(tvm.tir.const(res))
-    elif isinstance(res, (tvm.relay.Call, tvm.relax.Call)) and not res.args:
+    elif isinstance(res, tvm.relax.Call) and not res.args:
         # Using GlobalVar.__call__ with no arguments is ambiguous, as
         # each IR has a different function Call representation.  If
         # this occurs, convert to the TIR representation.
@@ -669,7 +673,7 @@ def visit_if(self: Parser, node: doc.If) -> None:
                     self.visit_body(node.orelse)
             return
 
-        if tvm.DataType(cond.dtype).is_vector:
+        if cond.dtype.is_vector:
             self.report_error(node.test, "The condition required to be a scalar expression.")
         if cond.dtype == "handle":
             self.report_error(node.test, "Please check whether the pointer is null explicitly.")

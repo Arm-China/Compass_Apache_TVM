@@ -39,7 +39,7 @@ TVM4J contains three modules:
 - core
     * It contains all the Java interfaces.
 - native
-    * The JNI native library is compiled in this module. It does not link TVM runtime library (libtvm\_runtime.so for Linux and libtvm\_runtime.dylib for OSX). Instead, you have to specify `libtvm.so.path` which contains the TVM runtime library as Java system property.
+    * The JNI native library is compiled in this module. Need to expose libtvm_runtime to LD_LIBRARY_PATH
 - assembly
     * It assembles Java interfaces (core), JNI library (native) and TVM runtime library together. The simplest way to integrate tvm4j in your project is to rely on this module. It automatically extracts the native library to a tempfile and load it.
 
@@ -89,35 +89,6 @@ It is your job to verify the types of callback arguments, as well as the type of
 
 You can register the Java function by `Function.register` and use `Function.getFunction` to get the registered function later.
 
-## Use TVM to Generate Shared Library
-
-There's nothing special for this part. The following Python snippet generate add_cpu.so which add two vectors on CPU.
-
-```python
-import os
-import tvm
-from tvm import te
-from tvm.contrib import cc, utils
-
-def test_add(target_dir):
-    n = te.var("n")
-    A = te.placeholder((n,), name='A')
-    B = te.placeholder((n,), name='B')
-    C = te.compute(A.shape, lambda i: A[i] + B[i], name="C")
-    s = te.create_schedule(C.op)
-    fadd = tvm.build(s, [A, B, C], "llvm", name="myadd")
-
-    fadd.save(os.path.join(target_dir, "add_cpu.o"))
-    cc.create_shared(os.path.join(target_dir, "add_cpu.so"),
-            [os.path.join(target_dir, "add_cpu.o")])
-
-if __name__ == "__main__":
-    import sys
-    if len(sys.argv) != 2:
-        sys.exit(-1)
-    test_add(sys.argv[1])
-```
-
 ## Run the Generated Shared Library
 
 The following code snippet demonstrate how to load generated shared library (add_cpu.so).
@@ -132,7 +103,7 @@ import java.util.Arrays;
 
 public class LoadAddFunc {
   public static void main(String[] args) {
-    String loadingDir = args[0];
+    String loadingDir = args[0].cast<String>();
     Module fadd = Module.load(loadingDir + File.separator + "add_cpu.so");
 
     Device dev = Device.cpu();

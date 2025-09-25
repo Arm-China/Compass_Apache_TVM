@@ -16,9 +16,6 @@
 # under the License.
 # pylint: disable=invalid-name, missing-docstring
 """Unittests for tvm.script.ir_builder.tir"""
-#
-# This file has been modified by Arm China team.
-#
 import numpy as np
 import pytest
 import tvm

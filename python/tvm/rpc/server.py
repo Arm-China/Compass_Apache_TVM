@@ -32,18 +32,18 @@ import os
 import ctypes
 import socket
 import select
+import shutil
 import struct
-import tarfile
 import logging
 import threading
 import multiprocessing
 import time
 import errno
 import sys
-import tvm._ffi
+import tvm.ffi
 
-from tvm._ffi.base import py_str
-from tvm._ffi.libinfo import find_lib_path
+from tvm.base import py_str
+from tvm.libinfo import find_lib_path
 from tvm.runtime.module import load_module as _load_module
 from tvm.contrib import utils
 from tvm.contrib.popen_pool import PopenWorker
@@ -72,24 +72,17 @@ def _server_env(load_library, work_path=None):
         temp = utils.tempdir()
 
     # pylint: disable=unused-variable
-    @tvm._ffi.register_func("tvm.rpc.server.workpath", override=True)
+    @tvm.ffi.register_func("tvm.rpc.server.workpath", override=True)
     def get_workpath(path):
         return temp.relpath(path)
 
-    @tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
+    @tvm.ffi.register_func("tvm.rpc.server.load_module", override=True)
     def load_module(file_name):
         """Load module from remote side."""
         path = temp.relpath(file_name)
-        if file_name.endswith(".compass.tar"):
-            cfg = tvm.get_global_func("aipu.runtime.AipuCompassBasicConfig_Global")()
-            output_dir = tvm.get_global_func("aipu.runtime.AipuCompassBasicConfig_GetCommon")(cfg)[
-                "output_dir"
-            ]
-            os.makedirs(output_dir, exist_ok=True)
-            with tarfile.open(path, "r") as tar:
-                tar.extractall(path=output_dir)
-            filename = [file for file in os.listdir(output_dir) if file.endswith(".so")][0]
-            path = os.path.join(output_dir, filename)
+        if path.endswith(".cps.tar"):
+            shutil.unpack_archive(path, os.path.dirname(path))
+            path = path.rsplit(".cps.tar", 1)[0]
         try:
             m = _load_module(path)
         except Exception as e:
@@ -99,7 +92,7 @@ def _server_env(load_library, work_path=None):
         logger.info("load_module %s", path)
         return m
 
-    @tvm._ffi.register_func("tvm.rpc.server.list_files", override=True)
+    @tvm.ffi.register_func("tvm.rpc.server.list_files", override=True)
     def list_files(path):
         """List files from remote folder recursively."""
 
@@ -116,7 +109,7 @@ def _server_env(load_library, work_path=None):
 
         return "\n".join(file_paths)
 
-    @tvm._ffi.register_func("tvm.rpc.server.download_linked_module", override=True)
+    @tvm.ffi.register_func("tvm.rpc.server.download_linked_module", override=True)
     def download_linked_module(file_name):
         """Load module from remote side."""
         # pylint: disable=import-outside-toplevel
@@ -201,7 +194,7 @@ def _serving(sock, addr, opts, load_library):
         server_proc.join()
         os.system("rmmod aipu && insmod /home/tvm/lib/aipu.ko")
     elif server_proc.exitcode != 0:
-        if os.getenv("AIPU_TVM_RPC_SERVER_NOT_DOWN", "False") == "False":
+        if os.getenv("CPS_TVM_RPC_SERVER_NOT_DOWN", "False") == "False":
             raise RuntimeError(
                 f"Child process {server_proc.pid} exited unsuccessfully "
                 f"with error code {server_proc.exitcode}"
@@ -379,7 +372,6 @@ class PopenRPCServerState(object):
         timeout=None,
         server_ip=None,
     ):
-
         # start update
         self.host = host
         self.port = port

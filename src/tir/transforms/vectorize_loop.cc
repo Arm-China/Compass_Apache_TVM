@@ -25,7 +25,7 @@
  */
 // Loop vectorizer as in Halide pipeline.
 #include <tvm/arith/analyzer.h>
-#include <tvm/runtime/registry.h>
+#include <tvm/ffi/function.h>
 #include <tvm/tir/analysis.h>
 #include <tvm/tir/builtin.h>
 #include <tvm/tir/expr.h>
@@ -83,8 +83,8 @@ bool EnableBufferLevelPredication(Target target) {
     return enable_buffer_predication.value();
   }
 
-  // Use buffer-level predication by default for AArch64 SVE targets
-  return arith::TargetHasSVE(target);
+  // Use buffer-level predication by default for VLA targets
+  return arith::TargetHasVLA(target);
 }
 
 /*!
@@ -239,7 +239,7 @@ class VecAllocAccess : public StmtExprMutator {
       shape.Set(shape.size() - 1, analyzer_.Simplify(shape[shape.size() - 1] * var_lanes_));
 
       // TODO(Lunderberg): Move this pass to be prior to
-      // StorageFlatten/FlattenBuffer, implement by appending a
+      // FlattenBuffer, implement by appending a
       // dimension to the buffer.  Since it is currently after the
       // flattening, the strides are not technically necessary, but
       // are updated for consistency.
@@ -287,7 +287,7 @@ class VecAllocAccess : public StmtExprMutator {
 };
 
 static inline Optional<PrimExpr> ShallowCopy(Optional<PrimExpr> predicate) {
-  if (!predicate.defined()) return NullOpt;
+  if (!predicate.defined()) return std::nullopt;
 
   auto call = Downcast<Call>(predicate.value());
   return Call(call->dtype, call->op, call->args, call->span);
@@ -513,7 +513,11 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
       if (value.dtype().is_scalable_vector()) {
         return Call(op->dtype.with_scalable_vscale_factor(lanes), op->op, {value});
       } else {
-        return Call(op->dtype.with_lanes(lanes), op->op, {value});
+        int new_lanes = (op->dtype != DataType::Float4E2M1FN() &&
+                         op->args[0].dtype() != DataType::Float4E2M1FN())
+                            ? (value.dtype().bits() * value.dtype().lanes()) / op->dtype.bits()
+                            : value.dtype().lanes();
+        return Call(op->dtype.with_lanes(new_lanes), op->op, {value});
       }
     }
   }
@@ -635,6 +639,68 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
       }
     }
   }
+  PrimExpr VisitExpr_(const ShuffleNode* op) final {
+    CHECK(op->vectors.size() == 1 && op->indices.size() == 1)
+        << "Cannot vectorize ShuffleNode with multiple vectors or indices: the vector size is "
+        << op->vectors.size() << " and the index size is " << op->indices.size();
+    int lane_vectors = 0;
+    int lane_indices = 0;
+    Array<PrimExpr> vectors = MutateArray(op->vectors, &lane_vectors);
+    Array<PrimExpr> indices = MutateArray(op->indices, &lane_indices);
+    if (vectors.same_as(op->vectors) && indices.same_as(op->indices)) {
+      return GetRef<PrimExpr>(op);
+    }
+
+    int new_vec_length = Downcast<IntImm>(var_lanes_)->value / op->vectors[0].dtype().lanes();
+    PrimExpr updated_index = indices[0];
+    // Check that the indices satisfy the specific patterns.
+    auto f_check_index = [this, op](const PrimExpr& index) {
+      // Allowing Ramp(0, 1, var_lanes_)
+      if (const auto* ramp = index.as<RampNode>()) {
+        if (ramp->base->IsInstance<IntImmNode>() && Downcast<IntImm>(ramp->base)->value == 0 &&
+            ramp->stride->IsInstance<IntImmNode>() && Downcast<IntImm>(ramp->stride)->value == 1 &&
+            ramp->lanes->IsInstance<IntImmNode>() &&
+            Downcast<IntImm>(ramp->lanes)->value == Downcast<IntImm>(var_lanes_)->value) {
+          return true;
+        }
+      }
+      // Allowing FloorMod(Ramp(0, 1, var_lanes_), Broadcast(op->vectors[0]->lanes, var_lanes_))
+      if (const auto* floordiv = index.as<FloorModNode>()) {
+        if (const auto* ramp = floordiv->a.as<RampNode>()) {
+          if (const auto* broadcast = floordiv->b.as<BroadcastNode>()) {
+            if (ramp->base->IsInstance<IntImmNode>() && Downcast<IntImm>(ramp->base)->value == 0 &&
+                ramp->stride->IsInstance<IntImmNode>() &&
+                Downcast<IntImm>(ramp->stride)->value == 1 &&
+                ramp->lanes->IsInstance<IntImmNode>() &&
+                Downcast<IntImm>(ramp->lanes)->value == Downcast<IntImm>(var_lanes_)->value &&
+                broadcast->value->IsInstance<IntImmNode>() &&
+                Downcast<IntImm>(broadcast->value)->value == op->vectors[0]->dtype.lanes() &&
+                broadcast->lanes->IsInstance<IntImmNode>() &&
+                Downcast<IntImm>(broadcast->lanes)->value == Downcast<IntImm>(var_lanes_)->value) {
+              return true;
+            }
+          }
+        }
+      }
+
+      return false;
+    };
+    CHECK(f_check_index(updated_index));
+
+    if (new_vec_length == 1) {
+      return tir::Substitute(op->vectors[0], {{var_, tvm::IntImm(var_->dtype, 0)}});
+    } else {
+      PrimExpr prev_ramp = ramp_;
+      PrimExpr prev_var_lanes = var_lanes_;
+      ramp_ = Ramp(IntImm(var_->dtype, 0), IntImm(var_->dtype, 2), new_vec_length);
+      var_lanes_ = tvm::IntImm(var_lanes_.dtype(), new_vec_length);
+      lane_vectors = 0;
+      vectors = MutateArray(op->vectors, &lane_vectors);
+      ramp_ = prev_ramp;
+      var_lanes_ = prev_var_lanes;
+      return vectors[0];
+    }
+  }
   // BufferStore
   Stmt VisitStmt_(const BufferStoreNode* op) final {
     auto store = GetRef<BufferStore>(op);
@@ -715,7 +781,7 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
     // temp clear need_scalarize flag, so VisitStmt
     // won't trigger an ICHECK eror
     Stmt then_case = this->VisitStmt(op->then_case);
-    Optional<Stmt> else_case = NullOpt;
+    Optional<Stmt> else_case = std::nullopt;
     if (op->else_case) {
       else_case = this->VisitStmt(op->else_case.value());
     }
@@ -792,7 +858,7 @@ class Vectorizer : public StmtMutator, public ExprFunctor<PrimExpr(const PrimExp
     }
 
     // TODO(Lunderberg): Move this pass to be prior to
-    // StorageFlatten/FlattenBuffer.  That will allow this pass to be
+    // FlattenBuffer.  That will allow this pass to be
     // implemented as adding a new buffer dimension, which is later
     // flattened.
 
@@ -916,10 +982,28 @@ class LoopVectorizer : public StmtMutator {
 
   Stmt VisitStmt_(const ForNode* op) final {
     if (op->kind == ForKind::kVectorized) {
-      ICHECK(is_zero(op->min));
+      auto* extent_as_int = op->extent.as<IntImmNode>();
       PrimExpr lanes;
       PrimExpr pred;
-      if (const IntImmNode* extent_as_int = op->extent.as<IntImmNode>()) {
+
+      if (!extent_as_int || extent_as_int->value < 1) {
+        // Indicate the extent of the for loop isn't a compile-time known value.
+        if (origin_vectorize_extents_.count(op->loop_var.get()) != 0) {
+          // Indicate the for loop is split by the pass "tir.LoopPartition" and
+          // the origin extent is a compile-time known value.
+          int origin_extent = origin_vectorize_extents_[op->loop_var.get()];
+          lanes = origin_extent;
+          pred = low_true_pred(op->extent, origin_extent);
+        } else {
+          bool is_scalable_expr = CheckContains::ExprContains(op->extent, arith::IsVScaleCall);
+          ICHECK(is_scalable_expr && arith::TargetHasVLA(target_))
+              << "Failed to vectorize loop with extent " << op->extent << " for target " << target_;
+          lanes = op->extent;
+        }
+      }
+
+      ICHECK(is_zero(op->min));
+      if (extent_as_int) {
         int extent = extent_as_int->value;
         if (extent < 1) {
           LOG(FATAL) << "Failed to vectorize loop with extent " << op->extent << " for target "
@@ -936,21 +1020,6 @@ class LoopVectorizer : public StmtMutator {
         } else {
           // Indicate it is a normal regular for loop, only need a all true predicate.
           lanes = extent;
-        }
-      } else {
-        // Indicate the extent of the for loop isn't a compile-time known value.
-        if (origin_vectorize_extents_.count(op->loop_var.get()) != 0) {
-          // Indicate the for loop is split by the pass "tir.LoopPartition" and
-          // the origin extent is a compile-time known value.
-          int origin_extent = origin_vectorize_extents_[op->loop_var.get()];
-          lanes = origin_extent;
-          pred = low_true_pred(op->extent, origin_extent);
-        } else {
-          // Indicate it is a SVE vectorize for loop, only need a all true predicate here.
-          bool is_scalable_expr = CheckContains::ExprContains(op->extent, arith::IsVScaleCall);
-          ICHECK(is_scalable_expr && arith::TargetHasSVE(target_))
-              << "Failed to vectorize loop with extent " << op->extent << " for target " << target_;
-          lanes = op->extent;
         }
       }
       return Vectorizer(op->loop_var, lanes, target_, pred)(op->body);
@@ -1015,7 +1084,7 @@ Pass VectorizeLoop(bool enable_vectorize) {
   return CreatePrimFuncPass(pass_func, 0, "tir.VectorizeLoop", {});
 }
 
-TVM_REGISTER_GLOBAL("tir.transform.VectorizeLoop").set_body_typed(VectorizeLoop);
+TVM_FFI_REGISTER_GLOBAL("tir.transform.VectorizeLoop").set_body_typed(VectorizeLoop);
 
 }  // namespace transform
 

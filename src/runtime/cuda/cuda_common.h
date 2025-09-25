@@ -21,14 +21,11 @@
  * \file cuda_common.h
  * \brief Common utilities for CUDA
  */
-/*
- * This file has been modified by Arm China team.
- */
 #ifndef TVM_RUNTIME_CUDA_CUDA_COMMON_H_
 #define TVM_RUNTIME_CUDA_CUDA_COMMON_H_
 
 #include <cuda_runtime.h>
-#include <tvm/runtime/packed_func.h>
+#include <tvm/ffi/function.h>
 
 #include <string>
 
@@ -47,16 +44,11 @@ namespace runtime {
     }                                                                   \
   }
 
-#define CUDA_CHECK_ERROR(e)                                   \
+#define CUDA_CALL(func)                                       \
   {                                                           \
+    cudaError_t e = (func);                                   \
     ICHECK(e == cudaSuccess || e == cudaErrorCudartUnloading) \
         << "CUDA: " << cudaGetErrorString(e);                 \
-  }
-
-#define CUDA_CALL(func)     \
-  {                         \
-    cudaError_t e = (func); \
-    CUDA_CHECK_ERROR(e);    \
   }
 
 /*! \brief Thread local workspace */

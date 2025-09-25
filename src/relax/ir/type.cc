@@ -21,8 +21,8 @@
  * \file src/relax/ir/type.cc
  * \brief Relax type system.
  */
+#include <tvm/ffi/function.h>
 #include <tvm/relax/type.h>
-#include <tvm/runtime/registry.h>
 
 namespace tvm {
 namespace relax {
@@ -36,7 +36,7 @@ ShapeType::ShapeType(int ndim, Span span) {
   data_ = std::move(n);
 }
 
-TVM_REGISTER_GLOBAL("relax.ShapeType").set_body_typed([](int ndim, Span span) {
+TVM_FFI_REGISTER_GLOBAL("relax.ShapeType").set_body_typed([](int ndim, Span span) {
   return ShapeType(ndim, span);
 });
 
@@ -48,28 +48,30 @@ ObjectType::ObjectType(Span span) {
 
 TVM_REGISTER_NODE_TYPE(ObjectTypeNode);
 
-TVM_REGISTER_GLOBAL("relax.ObjectType").set_body_typed([](Span span) { return ObjectType(span); });
+TVM_FFI_REGISTER_GLOBAL("relax.ObjectType").set_body_typed([](Span span) {
+  return ObjectType(span);
+});
 
-DynTensorType::DynTensorType(int ndim, DataType dtype, Span span) {
-  ObjectPtr<DynTensorTypeNode> n = make_object<DynTensorTypeNode>();
+TensorType::TensorType(int ndim, DataType dtype, Span span) {
+  ObjectPtr<TensorTypeNode> n = make_object<TensorTypeNode>();
   n->ndim = std::move(ndim);
   n->dtype = std::move(dtype);
   n->span = span;
   data_ = std::move(n);
 }
 
-DynTensorType DynTensorType::CreateUnknownNDim(DataType dtype, Span span) {
-  ObjectPtr<DynTensorTypeNode> n = make_object<DynTensorTypeNode>();
+TensorType TensorType::CreateUnknownNDim(DataType dtype, Span span) {
+  ObjectPtr<TensorTypeNode> n = make_object<TensorTypeNode>();
   n->ndim = -1;
   n->dtype = std::move(dtype);
   n->span = std::move(span);
-  return DynTensorType(std::move(n));
+  return TensorType(std::move(n));
 }
 
-TVM_REGISTER_NODE_TYPE(DynTensorTypeNode);
+TVM_REGISTER_NODE_TYPE(TensorTypeNode);
 
-TVM_REGISTER_GLOBAL("relax.DynTensorType").set_body_typed([](int ndim, DataType dtype, Span span) {
-  return DynTensorType(ndim, dtype, span);
+TVM_FFI_REGISTER_GLOBAL("relax.TensorType").set_body_typed([](int ndim, DataType dtype, Span span) {
+  return TensorType(ndim, dtype, span);
 });
 
 PackedFuncType::PackedFuncType(Span span) {
@@ -80,7 +82,7 @@ PackedFuncType::PackedFuncType(Span span) {
 
 TVM_REGISTER_NODE_TYPE(PackedFuncTypeNode);
 
-TVM_REGISTER_GLOBAL("relax.PackedFuncType").set_body_typed([](Span span) {
+TVM_FFI_REGISTER_GLOBAL("relax.PackedFuncType").set_body_typed([](Span span) {
   return PackedFuncType(span);
 });
 

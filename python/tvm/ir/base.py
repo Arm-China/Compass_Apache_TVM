@@ -15,9 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Common base structures."""
-import tvm._ffi
+import tvm.ffi
 import tvm.error
-from tvm._ffi import get_global_func, register_object
+from tvm.ffi import get_global_func, register_object
 from tvm.runtime import Object, _ffi_node_api
 
 from . import _ffi_api, json_compact
@@ -98,7 +98,7 @@ class EnvFunc(Object):
 
     @property
     def func(self):
-        return _ffi_api.EnvFuncGetPackedFunc(self)  # type: ignore # pylint: disable=no-member
+        return _ffi_api.EnvFuncGetFunction(self)  # type: ignore # pylint: disable=no-member
 
     @staticmethod
     def get(name):
@@ -157,11 +157,9 @@ def structural_equal(lhs, rhs, map_free_vars=False):
     - Normal node: equality is recursively defined without the restriction
       of graph nodes.
 
-    Vars(tir::Var, TypeVar) and non-constant relay expression nodes are graph nodes.
-    For example, it means that `%1 = %x + %y; %1 + %1` is not structurally equal
-    to `%1 = %x + %y; %2 = %x + %y; %1 + %2` in relay.
+    Vars(tir::Var, relax::Var) are graph nodes.
 
-    A var-type node(e.g. tir::Var, TypeVar) can be mapped as equal to another var
+    A var-type node(e.g. tir::Var) can be mapped as equal to another var
     with the same type if one of the following condition holds:
 
     - They appear in a same definition point(e.g. function argument).

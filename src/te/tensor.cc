@@ -20,12 +20,9 @@
 /*!
  * \file tensor.cc
  */
-#include <tvm/runtime/registry.h>
+#include <tvm/ffi/function.h>
 #include <tvm/te/operation.h>
 #include <tvm/te/tensor.h>
-#include <tvm/te/tensor_intrin.h>
-
-#include <memory>
 
 namespace tvm {
 namespace te {
@@ -81,6 +78,8 @@ String TensorNode::GetNameHint() const {
   return op->num_outputs() == 1 ? op->name : (op->name + ".v" + std::to_string(value_index));
 }
 
+PrimExpr TensorNode::ToPrimExpr() const { return GetRef<Tensor>(this)(); }
+
 Tensor Operation::output(size_t i) const {
   auto node = make_object<TensorNode>();
   node->op = *this;
@@ -99,7 +98,7 @@ Tensor::Tensor(Array<PrimExpr> shape, DataType dtype, Operation op, int value_in
   data_ = std::move(n);
 }
 
-TVM_REGISTER_GLOBAL("te.Tensor")
+TVM_FFI_REGISTER_GLOBAL("te.Tensor")
     .set_body_typed([](Array<PrimExpr> shape, DataType dtype, Operation op, int value_index) {
       return Tensor(shape, dtype, op, value_index);
     });
@@ -112,78 +111,20 @@ TVM_STATIC_IR_FUNCTOR(ReprPrinter, vtable)
       p->stream << "Tensor(shape=" << t->shape << ", op.name=" << t->op->name << ')';
     });
 
-// TensorIntrin
-TensorIntrin::TensorIntrin(std::string name, Operation op, Array<Tensor> inputs,
-                           Array<Buffer> buffers, Array<Var> scalar_params, Stmt body,
-                           Stmt reduce_init, Stmt reduce_update) {
-  auto n = make_object<TensorIntrinNode>();
-  n->name = std::move(name);
-  n->op = std::move(op);
-  n->inputs = std::move(inputs);
-  n->buffers = std::move(buffers);
-  n->scalar_params = std::move(scalar_params);
-  n->body = std::move(body);
-  n->reduce_init = std::move(reduce_init);
-  n->reduce_update = std::move(reduce_update);
-  data_ = std::move(n);
-}
-
-TVM_REGISTER_GLOBAL("te.TensorIntrin")
-    .set_body_typed([](std::string name, Operation op, Array<Tensor> inputs, Array<Buffer> buffers,
-                       Array<Var> scalar_params, Stmt body, Stmt reduce_init, Stmt reduce_update) {
-      return TensorIntrin(name, op, inputs, buffers, scalar_params, body, reduce_init,
-                          reduce_update);
-    });
-
-TVM_REGISTER_NODE_TYPE(TensorIntrinNode);
-
-TVM_STATIC_IR_FUNCTOR(ReprPrinter, vtable)
-    .set_dispatch<TensorIntrinNode>([](const ObjectRef& node, ReprPrinter* p) {
-      auto* op = static_cast<const TensorIntrinNode*>(node.get());
-      p->stream << "TensorIntrin(name=" << op->name << ", " << op << ")";
-    });
-
-// TensorIntrinCall
-TensorIntrinCall::TensorIntrinCall(TensorIntrin intrin, Array<Tensor> tensors,
-                                   Array<Region> regions, Array<IterVar> reduce_axis,
-                                   Array<PrimExpr> scalar_inputs) {
-  auto n = make_object<TensorIntrinCallNode>();
-  n->intrin = std::move(intrin);
-  n->tensors = std::move(tensors);
-  n->regions = std::move(regions);
-  n->reduce_axis = std::move(reduce_axis);
-  n->scalar_inputs = std::move(scalar_inputs);
-  data_ = std::move(n);
-}
-
-TVM_REGISTER_GLOBAL("te.TensorIntrinCall")
-    .set_body_typed([](TensorIntrin intrin, Array<Tensor> tensors, Array<Region> regions,
-                       Array<IterVar> reduce_axis, Array<PrimExpr> scalar_inputs) {
-      return TensorIntrinCall(intrin, tensors, regions, reduce_axis, scalar_inputs);
-    });
-
-TVM_STATIC_IR_FUNCTOR(ReprPrinter, vtable)
-    .set_dispatch<TensorIntrinCallNode>([](const ObjectRef& node, ReprPrinter* p) {
-      auto* n = static_cast<const TensorIntrinCallNode*>(node.get());
-      p->stream << "TensorIntrinCall(intrin=" << n->intrin << ", " << n << ")";
-    });
-
-TVM_REGISTER_NODE_TYPE(TensorIntrinCallNode);
-
 // Other tensor ops.
-TVM_REGISTER_GLOBAL("te.TensorEqual").set_body_method(&Tensor::operator==);
+TVM_FFI_REGISTER_GLOBAL("te.TensorEqual").set_body_method(&Tensor::operator==);
 
-TVM_REGISTER_GLOBAL("te.TensorHash").set_body_typed([](Tensor tensor) -> int64_t {
+TVM_FFI_REGISTER_GLOBAL("te.TensorHash").set_body_typed([](Tensor tensor) -> int64_t {
   return static_cast<int64_t>(std::hash<Tensor>()(tensor));
 });
 
-TVM_REGISTER_GLOBAL("te.OpGetOutput").set_body_typed([](Operation op, int64_t output) {
+TVM_FFI_REGISTER_GLOBAL("te.OpGetOutput").set_body_typed([](Operation op, int64_t output) {
   return op.output(static_cast<size_t>(output));
 });
 
-TVM_REGISTER_GLOBAL("te.OpNumOutputs").set_body_method<Operation>(&OperationNode::num_outputs);
+TVM_FFI_REGISTER_GLOBAL("te.OpNumOutputs").set_body_method(&OperationNode::num_outputs);
 
-TVM_REGISTER_GLOBAL("te.OpInputTensors").set_body_method<Operation>(&OperationNode::InputTensors);
+TVM_FFI_REGISTER_GLOBAL("te.OpInputTensors").set_body_method(&OperationNode::InputTensors);
 
 }  // namespace te
 }  // namespace tvm

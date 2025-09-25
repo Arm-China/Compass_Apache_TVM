@@ -36,26 +36,25 @@ namespace relax {
 TVM_REGISTER_NODE_TYPE(InitAttrs);
 
 /* relax.full */
-Expr full(Variant<Expr, Array<PrimExpr>> shape, Expr fill_value, DataType dtype) {
+Expr full(Variant<Expr, Array<PrimExpr>> shape, Expr fill_value, Optional<DataType> dtype) {
   Expr shape_in_expr{nullptr};
   if (const auto* expr = shape.as<ExprNode>()) {
     shape_in_expr = GetRef<Expr>(expr);
-  } else if (const auto* _array = shape.as<ArrayNode>()) {
+  } else if (const auto* _array = shape.as<ffi::ArrayObj>()) {
     shape_in_expr = ShapeExpr(GetRef<Array<PrimExpr>>(_array));
   } else {
-    LOG(FATAL) << "Full only expects the input shape to be either an Expr or an Array of PrimExpr. "
-                  "However, the given one is "
-               << shape->GetTypeKey();
+    LOG(FATAL)
+        << "Full only expects the input shape to be either an Expr or an Array of PrimExpr. ";
   }
 
   ObjectPtr<InitAttrs> attrs = make_object<InitAttrs>();
-  attrs->dtype = dtype;
+  attrs->dtype = dtype.value_or(DataType::Void());
 
   static const Op& op = Op::Get("relax.full");
   return Call(op, {std::move(shape_in_expr), std::move(fill_value)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.full").set_body_typed(full);
+TVM_FFI_REGISTER_GLOBAL("relax.op.full").set_body_typed(full);
 
 StructInfo InferStructInfoFull(const Call& call, const BlockBuilder& ctx) {
   if (call->args.size() != 2) {
@@ -90,14 +89,14 @@ TVM_REGISTER_OP("relax.full")
     .set_attr<Bool>("FPurity", Bool(true));
 
 /* relax.full_like */
-Expr full_like(Expr x, Expr fill_value, DataType dtype) {
+Expr full_like(Expr x, Expr fill_value, Optional<DataType> dtype) {
   ObjectPtr<InitAttrs> attrs = make_object<InitAttrs>();
-  attrs->dtype = dtype;
+  attrs->dtype = dtype.value_or(DataType::Void());
   static const Op& op = Op::Get("relax.full_like");
   return Call(op, {std::move(x), std::move(fill_value)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.full_like").set_body_typed(full_like);
+TVM_FFI_REGISTER_GLOBAL("relax.op.full_like").set_body_typed(full_like);
 
 StructInfo InferStructInfoFullLike(const Call& call, const BlockBuilder& ctx) {
   Array<TensorStructInfo> input_sinfo = GetInputTensorStructInfo(call, ctx);
@@ -168,15 +167,15 @@ Expr ones(Expr shape, DataType dtype) {
   return Call(op, {std::move(shape)}, Attrs(attrs), {});
 }
 
-Expr ones_like(Expr x, DataType dtype) {
+Expr ones_like(Expr x, Optional<DataType> dtype) {
   ObjectPtr<InitAttrs> attrs = make_object<InitAttrs>();
-  attrs->dtype = dtype;
+  attrs->dtype = dtype.value_or(DataType::Void());
   static const Op& op = Op::Get("relax.ones_like");
   return Call(op, {std::move(x)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.ones").set_body_typed(ones);
-TVM_REGISTER_GLOBAL("relax.op.ones_like").set_body_typed(ones_like);
+TVM_FFI_REGISTER_GLOBAL("relax.op.ones").set_body_typed(ones);
+TVM_FFI_REGISTER_GLOBAL("relax.op.ones_like").set_body_typed(ones_like);
 
 TVM_REGISTER_OP("relax.ones")
     .set_attrs_type<InitAttrs>()
@@ -203,15 +202,15 @@ Expr zeros(Expr shape, DataType dtype) {
   return Call(op, {std::move(shape)}, Attrs(attrs), {});
 }
 
-Expr zeros_like(Expr x, DataType dtype) {
+Expr zeros_like(Expr x, Optional<DataType> dtype) {
   ObjectPtr<InitAttrs> attrs = make_object<InitAttrs>();
-  attrs->dtype = dtype;
+  attrs->dtype = dtype.value_or(DataType::Void());
   static const Op& op = Op::Get("relax.zeros_like");
   return Call(op, {std::move(x)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.zeros").set_body_typed(zeros);
-TVM_REGISTER_GLOBAL("relax.op.zeros_like").set_body_typed(zeros_like);
+TVM_FFI_REGISTER_GLOBAL("relax.op.zeros").set_body_typed(zeros);
+TVM_FFI_REGISTER_GLOBAL("relax.op.zeros_like").set_body_typed(zeros_like);
 
 TVM_REGISTER_OP("relax.zeros")
     .set_attrs_type<InitAttrs>()
@@ -236,15 +235,15 @@ Expr eye(PrimValue n, PrimValue m, PrimValue k, DataType dtype) {
   return Call(op, {std::move(n), std::move(m), std::move(k)}, Attrs(attrs), {});
 }
 
-Expr eye_like(Expr x, PrimValue k, DataType dtype) {
+Expr eye_like(Expr x, PrimValue k, Optional<DataType> dtype) {
   ObjectPtr<InitAttrs> attrs = make_object<InitAttrs>();
-  attrs->dtype = dtype;
+  attrs->dtype = dtype.value_or(DataType::Void());
   static const Op& op = Op::Get("relax.eye_like");
   return Call(op, {std::move(x), std::move(k)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.eye").set_body_typed(eye);
-TVM_REGISTER_GLOBAL("relax.op.eye_like").set_body_typed(eye_like);
+TVM_FFI_REGISTER_GLOBAL("relax.op.eye").set_body_typed(eye);
+TVM_FFI_REGISTER_GLOBAL("relax.op.eye_like").set_body_typed(eye_like);
 
 StructInfo InferStructInfoEye(const Call& call, const BlockBuilder& ctx) {
   if (call->args.size() != 3) {
@@ -320,7 +319,7 @@ Expr arange(PrimValue start, PrimValue stop, PrimValue step, DataType dtype) {
   return Call(op, {std::move(start), std::move(stop), std::move(step)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.arange").set_body_typed(arange);
+TVM_FFI_REGISTER_GLOBAL("relax.op.arange").set_body_typed(arange);
 
 StructInfo InferStructInfoArange(const Call& call, const BlockBuilder& ctx) {
   if (call->args.size() != 3) {
@@ -381,8 +380,8 @@ Expr triu(Expr x, Expr k) {
 
 Expr triu(Expr x, int k) { return triu(x, relax::PrimValue::Int64(k)); }
 
-TVM_REGISTER_GLOBAL("relax.op.tril").set_body_typed(static_cast<Expr (*)(Expr, Expr)>(tril));
-TVM_REGISTER_GLOBAL("relax.op.triu").set_body_typed(static_cast<Expr (*)(Expr, Expr)>(triu));
+TVM_FFI_REGISTER_GLOBAL("relax.op.tril").set_body_typed(static_cast<Expr (*)(Expr, Expr)>(tril));
+TVM_FFI_REGISTER_GLOBAL("relax.op.triu").set_body_typed(static_cast<Expr (*)(Expr, Expr)>(triu));
 
 StructInfo InferStructInfoTrilTriu(const Call& call, const BlockBuilder& ctx) {
   auto [data_sinfo, offset] = GetArgStructInfo<TensorStructInfo, PrimStructInfo>(call, ctx);

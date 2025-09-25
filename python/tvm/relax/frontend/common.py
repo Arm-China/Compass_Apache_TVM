@@ -15,12 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=invalid-name
+#
+# This file has been modified by Arm China team.
+#
 """Commons for Relax frontend."""
 from typing import Dict, List, Tuple
 import numpy as _np
 
 import tvm
-from tvm import topi
 
 
 def detach_params(mod: tvm.IRModule) -> Tuple[tvm.IRModule, Dict[str, List[tvm.nd.NDArray]]]:
@@ -58,7 +60,6 @@ def detach_params(mod: tvm.IRModule) -> Tuple[tvm.IRModule, Dict[str, List[tvm.n
 
 
 def autopad(
-    bb,
     data,
     strides,
     kernel_shape,
@@ -118,12 +119,5 @@ def autopad(
             "Value " + pad_type + ' in attribute "mode" is invalid for operator Pad.'
         )
 
-    if pad_type == "constant":
-        return bb.emit_te(topi.nn.pad, data, pad[:, 0].tolist(), pad[:, 1].tolist(), pad_value)
-    elif pad_type == "reflect":
-        return bb.emit_te(
-            topi.nn.mirror_pad, data, pad[:, 0].tolist(), pad[:, 1].tolist(), "REFLECT"
-        )
-    else:
-        # TODO(gigiblender) Support edge mode.
-        raise NotImplementedError("Pad mode {} not implemented".format(pad_type))
+    pad_width = pad.flatten().tolist()
+    return tvm.relax.op.nn.pad(data, pad_width, pad_type, pad_value)

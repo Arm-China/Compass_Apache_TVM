@@ -31,13 +31,19 @@ def test_nearbyint():
     )
     A = te.placeholder((m,), name="A")
     A_rounded = te.compute((m,), lambda *i: tvm.tir.nearbyint(A(*i)), name="A")
-    s = te.create_schedule(A_rounded.op)
-    f = tvm.build(s, [A, A_rounded], "llvm")
+
+    # Convert to TIR and create schedule
+    mod = te.create_prim_func([A, A_rounded])
+    sch = tir.Schedule(mod)
+
+    # Build from scheduled TIR
+    func = tvm.compile(sch.mod, target="llvm")
+
     dev = tvm.cpu(0)
     n = 10
     a = tvm.nd.array(np.random.uniform(high=100, size=n).astype(A.dtype), dev)
     a_rounded = tvm.nd.array(np.random.uniform(size=n).astype(A_rounded.dtype), dev)
-    f(a, a_rounded)
+    func(a, a_rounded)
     # Note that numpys rint rounds to nearest integer with
     # ties to halfway is broken by rounding to even.
     # So that 1.5 and 2.5 will round 2.
@@ -73,23 +79,47 @@ def test_unary_intrin():
         (tvm.tir.atanh, lambda x: np.arctanh(x)),
     ]
 
-    def run_test(tvm_intrin, np_func):
+    def run_test(tvm_intrin, np_func, atol=1e-5, rtol=1e-5):
         m = te.var(
             "m",
         )
         A = te.placeholder((m,), name="A")
         B = te.compute((m,), lambda *i: tvm_intrin(A(*i)), name="B")
-        s = te.create_schedule(B.op)
-        f = tvm.build(s, [A, B], "llvm")
+
+        # Convert to TIR and create schedule
+        mod = te.create_prim_func([A, B])
+        sch = tir.Schedule(mod)
+
+        # Build from scheduled TIR
+        func = tvm.compile(sch.mod, target="llvm")
+
         dev = tvm.cpu(0)
         n = 10
         a = tvm.nd.array(np.random.uniform(0.1, 0.5, size=n).astype(A.dtype), dev)
         b = tvm.nd.array(np.random.uniform(size=n).astype(A.dtype), dev)
-        f(a, b)
-        tvm.testing.assert_allclose(b.numpy(), np_func(a.numpy()), atol=1e-5, rtol=1e-5)
+        func(a, b)
+        tvm.testing.assert_allclose(b.numpy(), np_func(a.numpy()), atol=atol, rtol=rtol)
+
+        # Out‐of‐bounds test for asin/acos
+        name = tvm_intrin.__name__
+        if name in ("asin", "acos"):
+            # generate some values outside [-1, 1]
+            n = 8
+            out_np = np.concatenate(
+                [
+                    np.random.uniform(1.1, 2.0, size=n // 2),
+                    np.random.uniform(-2.0, -1.1, size=n // 2),
+                ]
+            ).astype(A.dtype)
+            a2 = tvm.nd.array(out_np, dev)
+            b2 = tvm.nd.array(np.empty_like(out_np), dev)
+            func(a2, b2)
+            # all outputs should be NaN
+            assert np.all(np.isnan(b2.numpy()))
 
     for func in test_funcs:
-        run_test(*func)
+        atol = rtol = 1e-3 if func[0].__name__ in ["asin", "acos", "atan"] else 1e-5
+        run_test(*func, atol, rtol)
 
 
 def test_binary_intrin():
@@ -107,14 +137,20 @@ def test_binary_intrin():
         A = te.placeholder((m,), name="A")
         B = te.placeholder((m,), name="B")
         C = te.compute((m,), lambda *i: tvm_intrin(A(*i), B(*i)), name="C")
-        s = te.create_schedule(C.op)
-        f = tvm.build(s, [A, B, C], "llvm")
+
+        # Convert to TIR and create schedule
+        mod = te.create_prim_func([A, B, C])
+        sch = tir.Schedule(mod)
+
+        # Build from scheduled TIR
+        func = tvm.compile(sch.mod, target="llvm")
+
         dev = tvm.cpu(0)
         n = 10
         a = tvm.nd.array(np.random.uniform(0, 1, size=n).astype(A.dtype), dev)
         b = tvm.nd.array(np.random.uniform(0, 1, size=n).astype(B.dtype), dev)
         c = tvm.nd.array(np.random.uniform(size=n).astype(A.dtype), dev)
-        f(a, b, c)
+        func(a, b, c)
         tvm.testing.assert_allclose(c.numpy(), np_func(a.numpy(), b.numpy()), atol=1e-5, rtol=1e-5)
 
     for func in test_funcs:
@@ -128,14 +164,20 @@ def test_ldexp():
     A = te.placeholder((m,), name="A")
     B = te.placeholder((m,), name="B", dtype="int32")
     C = te.compute((m,), lambda *i: tvm.tir.ldexp(A(*i), B(*i)), name="C")
-    s = te.create_schedule(C.op)
-    f = tvm.build(s, [A, B, C], "llvm")
+
+    # Convert to TIR and create schedule
+    mod = te.create_prim_func([A, B, C])
+    sch = tir.Schedule(mod)
+
+    # Build from scheduled TIR
+    func = tvm.compile(sch.mod, target="llvm")
+
     dev = tvm.cpu(0)
     n = 10
     a = tvm.nd.array(np.random.uniform(0, 1, size=n).astype(A.dtype), dev)
     b = tvm.nd.array(np.random.randint(0, 5, size=n).astype(B.dtype), dev)
     c = tvm.nd.array(np.random.uniform(size=n).astype(A.dtype), dev)
-    f(a, b, c)
+    func(a, b, c)
     tvm.testing.assert_allclose(c.numpy(), np.ldexp(a.numpy(), b.numpy()), atol=1e-5, rtol=1e-5)
 
 
@@ -162,17 +204,23 @@ def test_clz(target, dev, dtype):
     m = te.var("m")
     A = te.placeholder((m,), name="A", dtype=dtype)
     B = te.compute((m,), lambda *i: tvm.tir.clz(A(*i)), name="B")
-    s = te.create_schedule(B.op)
 
+    # Convert to TIR and create schedule
+    mod = te.create_prim_func([A, B])
+    sch = tir.Schedule(mod)
+
+    # Apply scheduling primitives if target is Vulkan
     if target.kind.name == "vulkan":
-        bx, tx = s[B].split(B.op.axis[0], factor=64)
+        block = sch.get_block("B")
+        loop = sch.get_loops(block)[0]
+        bx, tx = sch.split(loop, factors=[None, 64])
+        sch.bind(bx, "blockIdx.x")
+        sch.bind(tx, "threadIdx.x")
 
-        s[B].bind(bx, te.thread_axis("blockIdx.x"))
-        s[B].bind(tx, te.thread_axis("threadIdx.x"))
+    # Build from scheduled TIR
+    func = tvm.compile(sch.mod, target=target)
 
-    f = tvm.build(s, [A, B], target)
     n = 10
-
     highs = [10, 100, 1000, 10000, 100000, 1000000]
 
     if dtype == "int64":
@@ -182,7 +230,7 @@ def test_clz(target, dev, dtype):
         a_np = np.random.randint(1, high=high, size=(n,), dtype=dtype)
         a = tvm.nd.array(a_np, dev)
         b = tvm.nd.array(np.zeros((n,)).astype("int32"), dev)
-        f(a, b)
+        func(a, b)
         ref = clz_np(a_np, dtype)
         np.testing.assert_equal(b.numpy(), ref)
 

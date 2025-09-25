@@ -16,14 +16,11 @@
 # under the License.
 # pylint: disable=invalid-name
 """Pipe worker for multi-processing."""
-#
-# This file has been modified by Arm China team.
-#
 import os
 import subprocess
 import sys
 
-from tvm._ffi import register_func
+from tvm.ffi import register_func
 from tvm.runtime import ShapeTuple
 
 

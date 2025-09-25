@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable=invalid-name
 """Common utilities used in Non-maximum suppression operators"""
+#
+# This file has been modified by Arm China team.
+#
 import tvm
 from tvm import te
 
@@ -64,7 +67,7 @@ def binary_search(ib, y, num_boxes, scores, score_threshold, out):
     hi = ib.allocate("int32", (1,), name="hi", scope="local")
 
     lo[0] = 0
-    hi[0] = num_boxes
+    hi[0] = num_boxes.astype("int32")
 
     with ib.while_loop(lo[0] < hi[0]):
         mid = (hi[0] + lo[0]) >> 1
@@ -290,6 +293,12 @@ def run_all_class_nms(
     num_class = batch_class // batch
 
     if return_scores is False:
+        all_class_num0_buf = tvm.tir.decl_buffer(
+            (batch_class, num_boxes), "int32", "all_class_nms0", data_alignment=8
+        )
+        all_class_num1_buf = tvm.tir.decl_buffer(
+            (1, batch_class), "int32", "all_class_nms1", data_alignment=8
+        )
         selected_indices, num_detections = te.extern(
             [(batch_class, num_boxes), (1, batch_class)],
             [boxes, sorted_scores, sorted_indices, valid_count],
@@ -308,6 +317,7 @@ def run_all_class_nms(
                 outs[1],  # num_selected_boxes
                 nms_loop,
             ),
+            out_buffers=[all_class_num0_buf, all_class_num1_buf],
             dtype=["int32", "int32"],
             name="all_class_nms",
             tag="all_class_nms",

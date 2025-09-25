@@ -22,8 +22,8 @@
 /*
  * This file has been modified by Arm China team.
  */
+#include <tvm/ffi/function.h>
 #include <tvm/ir/module.h>
-#include <tvm/runtime/registry.h>
 #include <tvm/tir/data_type_rewriter.h>
 #include <tvm/tir/function.h>
 #include <tvm/tir/stmt_functor.h>
@@ -353,7 +353,7 @@ Stmt StmtMutator::VisitStmt_(const DeclBufferNode* op) {
 Stmt StmtMutator::VisitStmt_(const IfThenElseNode* op) {
   PrimExpr condition = this->VisitExpr(op->condition);
   Stmt then_case = this->VisitStmt(op->then_case);
-  Optional<Stmt> else_case = NullOpt;
+  Optional<Stmt> else_case = std::nullopt;
   if (op->else_case) {
     else_case = this->VisitStmt(op->else_case.value());
   }
@@ -528,7 +528,7 @@ Stmt StmtMutator::VisitStmt_(const BlockNode* op) {
   Array<BufferRegion> reads = Internal::Mutate(this, op->reads);
   Array<BufferRegion> writes = Internal::Mutate(this, op->writes);
   Array<MatchBufferRegion> match_buffers = Internal::Mutate(this, op->match_buffers);
-  Optional<Stmt> init = NullOpt;
+  Optional<Stmt> init = std::nullopt;
   if (op->init.defined()) {
     init = VisitStmt(op->init.value());
   }
@@ -600,7 +600,7 @@ void PostOrderVisit(const ObjectRef& node, std::function<void(const ObjectRef&)>
 
 class IRTransformer final : public StmtExprMutator {
  public:
-  IRTransformer(const runtime::PackedFunc& f_preorder, const runtime::PackedFunc& f_postorder,
+  IRTransformer(const ffi::Function& f_preorder, const ffi::Function& f_postorder,
                 const std::unordered_set<uint32_t>& only_enable)
       : f_preorder_(f_preorder), f_postorder_(f_postorder), only_enable_(only_enable) {}
 
@@ -624,29 +624,29 @@ class IRTransformer final : public StmtExprMutator {
       return fmutate(node);
     }
     if (f_preorder_ != nullptr) {
-      T pre = f_preorder_(node);
+      T pre = f_preorder_(node).template cast<T>();
       if (pre.defined()) return pre;
     }
     T new_node = fmutate(node);
     if (f_postorder_ != nullptr) {
-      T post = f_postorder_(new_node);
+      T post = f_postorder_(new_node).template cast<T>();
       if (post.defined()) return post;
     }
     return new_node;
   }
   // The functions
-  const runtime::PackedFunc& f_preorder_;
-  const runtime::PackedFunc& f_postorder_;
+  const ffi::Function& f_preorder_;
+  const ffi::Function& f_postorder_;
   // type indices enabled.
   const std::unordered_set<uint32_t>& only_enable_;
 };
 
-Stmt IRTransform(Stmt ir_node, const runtime::PackedFunc& f_preorder,
-                 const runtime::PackedFunc& f_postorder, Optional<Array<String>> only_enable) {
+Stmt IRTransform(Stmt ir_node, const ffi::Function& f_preorder, const ffi::Function& f_postorder,
+                 Optional<Array<String>> only_enable) {
   std::unordered_set<uint32_t> only_type_index;
   if (only_enable.defined()) {
     for (auto s : only_enable.value()) {
-      only_type_index.insert(Object::TypeKey2Index(s.c_str()));
+      only_type_index.insert(ffi::TypeKeyToIndex(s.c_str()));
     }
   }
   IRTransformer transform(f_preorder, f_postorder, only_type_index);
@@ -900,17 +900,17 @@ PrimExpr SubstituteWithDataTypeLegalization(PrimExpr expr,
   return IRSubstituteWithDataTypeLegalization(vmap)(std::move(expr));
 }
 
-TVM_REGISTER_GLOBAL("tir.IRTransform").set_body_typed(IRTransform);
+TVM_FFI_REGISTER_GLOBAL("tir.IRTransform").set_body_typed(IRTransform);
 
-TVM_REGISTER_GLOBAL("tir.PostOrderVisit").set_body_typed([](ObjectRef node, PackedFunc f) {
+TVM_FFI_REGISTER_GLOBAL("tir.PostOrderVisit").set_body_typed([](ObjectRef node, ffi::Function f) {
   tir::PostOrderVisit(node, [f](const ObjectRef& n) { f(n); });
 });
 
-TVM_REGISTER_GLOBAL("tir.PreOrderVisit").set_body_typed([](ObjectRef node, PackedFunc f) {
-  tir::PreOrderVisit(node, [f](const ObjectRef& n) { return f(n); });
+TVM_FFI_REGISTER_GLOBAL("tir.PreOrderVisit").set_body_typed([](ObjectRef node, ffi::Function f) {
+  tir::PreOrderVisit(node, [f](const ObjectRef& n) { return f(n).cast<bool>(); });
 });
 
-TVM_REGISTER_GLOBAL("tir.Substitute")
+TVM_FFI_REGISTER_GLOBAL("tir.Substitute")
     .set_body_typed([](ObjectRef node, Map<Var, PrimExpr> vmap) -> ObjectRef {
       if (node->IsInstance<StmtNode>()) {
         return Substitute(Downcast<Stmt>(node), vmap);

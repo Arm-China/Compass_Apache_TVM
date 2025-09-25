@@ -1,0 +1,132 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+/*!
+ * \file compass/src/runtime/sim/driver.cc
+ */
+#include <compass/tvm/runtime/basic_config.h>
+#include <compass/tvm/runtime/driver.h>
+#include <compass/tvm/runtime/utils.h>
+
+namespace tvm {
+namespace runtime {
+
+static std::mutex inst_lock;
+
+static inline std::string GetSimulatorPath(const Map<String, String>& rt_cfg,
+                                           const std::string& target) {
+  auto itr = rt_cfg.find("simulator");
+  if (itr != rt_cfg.end()) return (*itr).second;
+  size_t pos = target.find("_");
+  ICHECK_NE(pos, std::string::npos) << "Unsupport target" << target;
+  std::string exec_name = "aipu_simulator_" + StrLower(target.substr(0, pos));
+  const char* path_env = std::getenv("PATH");
+  if (path_env != nullptr) {
+    for (const auto& path : StrSplit(path_env, ":")) {
+      std::string full_path = path + "/" + exec_name;
+      if (IsExecutable(full_path)) return full_path;
+    }
+  }
+
+  LOG(FATAL) << "Can't find the executable \"" << exec_name
+             << "\", please ensure its path is contained in environment variable \"PATH\".";
+  throw;  // unreachable, written to stop compiler warning
+}
+
+static inline void ConfigGlobal(const std::string& target, bool with_profile,
+                                const std::string& work_dir, const std::string& json_file_path,
+                                aipu_ctx_handle_t* ctx, const std::string& func_name) {
+  aipu_global_config_simulation_t cfg = {0};
+  const Map<String, String>& rt_cfg = CompassBasicConfig::Global()->runtime;
+  std::string sim_path = GetSimulatorPath(rt_cfg, target);
+  cfg.simulator = sim_path.c_str();
+  if (!(StrStartsWith(target, "Z2_") || StrStartsWith(target, "X1_"))) {
+    cfg.npu_arch_desc = target.c_str();
+    cfg.simulator = nullptr;
+  }
+  cfg.log_level = 0;  // Use simulator's environment variable "SIM_LOG_LEVEL" if needed.
+  cfg.verbose = rt_cfg["verbose"] == "true";
+  cfg.en_eval = with_profile;
+  cfg.json_filename = json_file_path.c_str();
+
+  std::string report_file_path;  // Can't be defined inside "if", or the memory will be released.
+  if (!(StrStartsWith(target, "Z2_") || StrStartsWith(target, "X1_") ||
+        StrStartsWith(target, "X2_"))) {
+    if (const char* spm_env = std::getenv("CPS_TVM_RUNTIME_SPM")) {
+      cfg.en_fast_perf = true;
+
+      std::vector<std::string> cfgs = StrSplit(spm_env, ";");
+      ICHECK_EQ(cfgs.size(), 6) << "Invalid SPM configuration string: \"" << spm_env << "\".";
+
+      cfg.freq_mhz = std::stoi(cfgs[0]);
+      cfg.ddr_latency_rd = std::stoi(cfgs[1]);
+      cfg.ddr_latency_wr = std::stoi(cfgs[2]);
+      cfg.ddr_bw = std::stoi(cfgs[3]);
+      cfg.ddr_bw_ratio = std::stof(cfgs[4]);
+      report_file_path = work_dir + "/perf." + cfgs[5];
+      cfg.perf_report = report_file_path.c_str();
+    }
+  }
+
+  aipu_status_t status = aipu_config_global(ctx, AIPU_CONFIG_TYPE_SIMULATION, &cfg);
+  aipu_ctx_handle_t* ctx_ = ctx;              // Needed by the macro "COMPASS_DRIVER_HANDLE_ERROR".
+  const std::string& func_name_ = func_name;  // Needed by the macro "COMPASS_DRIVER_HANDLE_ERROR".
+  COMPASS_DRIVER_HANDLE_ERROR(status);
+  return;
+}
+
+void CompassDriverObj::LoadGraph(const std::string& cps_bin_path, const std::string& target,
+                                 const std::string& umd_dtcm_sz) {
+  // PySim sometimes calls DSL executor in multiple threads. Simulator will crash when it is invoked
+  // by multiple threads simultaneously. Add this lock to ensure init in single thread.
+  std::lock_guard<std::mutex> lock(inst_lock);
+
+  // For X2 and above, the output directory of driver will be created inside "aipu_config_global" or
+  // "aipu_load_graph_helper", and it will use the current directory, so change the current
+  // directory to the working directory temporarily.
+  std::string old_cur_dir = GetCwd();
+  ChDir(work_dir_);
+
+  // Only set the environment variable if it doesn't exist.
+  if (umd_dtcm_sz != "") setenv("UMD_DTCM_SZ", umd_dtcm_sz.c_str(), 0);
+
+  std::string cps_bin_dir = Dirname(cps_bin_path);
+  std::string json_file_path = cps_bin_dir + "/temp.graph.json";
+  // These elements must be configured first, because they are used during load graph.
+  ConfigGlobal(target, with_profile_, work_dir_, json_file_path, ctx_, func_name_);
+
+  aipu_load_graph_cfg_t cfg = {0};
+  cfg.extra_weight_path = cps_bin_dir.c_str();
+
+  status_ = aipu_load_graph(ctx_, cps_bin_path.c_str(), &graph_id_, &cfg);
+  COMPASS_DRIVER_HANDLE_ERROR(status_);
+
+  ChDir(old_cur_dir);
+  return;
+}
+
+void CompassDriverObj::ConfigJobItems() {
+  aipu_job_config_simulation_t cfg = {0};
+  cfg.data_dir = work_dir_.c_str();
+
+  status_ = aipu_config_job(ctx_, job_id_, AIPU_CONFIG_TYPE_SIMULATION, &cfg);
+  COMPASS_DRIVER_HANDLE_ERROR(status_);
+  return;
+}
+
+void CompassDriverObj::Run() {
+  // The files generated by Compass simulator only will be placed to the current directory, so
+  // change the current directory to the working directory temporarily.
+  std::string old_cur_dir = GetCwd();
+  ChDir(work_dir_);
+
+  status_ = aipu_finish_job(ctx_, job_id_, -1);
+  COMPASS_DRIVER_HANDLE_ERROR(status_);
+
+  ChDir(old_cur_dir);
+  return;
+}
+
+void CompassDriverObj::DumpProfileData() { return; }
+
+}  // namespace runtime
+}  // namespace tvm

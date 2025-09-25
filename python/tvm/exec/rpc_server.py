@@ -40,6 +40,7 @@ def main(args):
             raise RuntimeError("Need key to present type of resource when tracker is available")
     else:
         tracker_addr = None
+
     server = rpc.Server(
         args.host,
         args.port,

@@ -100,14 +100,6 @@ Array<Postproc> Postproc::DefaultHexagon() {
   };
 }
 
-Array<Postproc> Postproc::DefaultMicro() {
-  return Array<Postproc>{
-      Postproc::DisallowDynamicLoop(),
-      Postproc::RewriteParallelVectorizeUnroll(),
-      Postproc::RewriteReductionBlock(),
-  };
-}
-
 TVM_STATIC_IR_FUNCTOR(ReprPrinter, vtable)
     .set_dispatch<PyPostprocNode>([](const ObjectRef& n, ReprPrinter* p) {
       const auto* self = n.as<PyPostprocNode>();
@@ -120,16 +112,16 @@ TVM_STATIC_IR_FUNCTOR(ReprPrinter, vtable)
 TVM_REGISTER_OBJECT_TYPE(PostprocNode);
 TVM_REGISTER_NODE_TYPE(PyPostprocNode);
 
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocInitializeWithTuneContext")
-    .set_body_method<Postproc>(&PostprocNode::InitializeWithTuneContext);
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocApply").set_body_method<Postproc>(&PostprocNode::Apply);
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocClone").set_body_method<Postproc>(&PostprocNode::Clone);
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocPyPostproc").set_body_typed(Postproc::PyPostproc);
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocDefaultLLVM").set_body_typed(Postproc::DefaultLLVM);
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocDefaultCUDA").set_body_typed(Postproc::DefaultCUDA);
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocDefaultCUDATensorCore")
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocInitializeWithTuneContext")
+    .set_body_method(&PostprocNode::InitializeWithTuneContext);
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocApply").set_body_method(&PostprocNode::Apply);
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocClone").set_body_method(&PostprocNode::Clone);
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocPyPostproc").set_body_typed(Postproc::PyPostproc);
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocDefaultLLVM").set_body_typed(Postproc::DefaultLLVM);
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocDefaultCUDA").set_body_typed(Postproc::DefaultCUDA);
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocDefaultCUDATensorCore")
     .set_body_typed(Postproc::DefaultCUDATensorCore);
-TVM_REGISTER_GLOBAL("meta_schedule.PostprocDefaultHexagon")
+TVM_FFI_REGISTER_GLOBAL("meta_schedule.PostprocDefaultHexagon")
     .set_body_typed(Postproc::DefaultHexagon);
 
 }  // namespace meta_schedule

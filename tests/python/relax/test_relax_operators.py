@@ -24,7 +24,7 @@ import pytest
 import tvm
 import tvm.testing
 from tvm import relax
-from tvm._ffi.base import TVMError
+from tvm.base import TVMError
 from tvm.script import ir as I, relax as R, tir as T
 
 exec_mode = tvm.testing.parameter("bytecode", "compiled")
@@ -378,7 +378,7 @@ def test_op_call_inplace_packed(exec_mode):
             for j in range(len(arr_a[i])):
                 arr_a[i][j] = arr_a[i][j] + arr_b[i][j]
         a.copyfrom(arr_a)
-        return tvm.runtime.container.ADT(0, [a, c])
+        return tvm.runtime.convert([a, c])
 
     @tvm.script.ir_module
     class CallInplaceTuple:

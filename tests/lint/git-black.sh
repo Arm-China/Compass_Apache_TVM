@@ -21,7 +21,7 @@
 set -euo pipefail
 
 unset PYTHONPATH
-source ${AIPU_TVM_DEV_DIR}/venvs/aipu_tvm_lint_2023_07/bin/activate
+source ${CPS_TVM_DEV_DIR}/venvs/tvm_lint_2023_07/bin/activate
 
 INPLACE_FORMAT=${INPLACE_FORMAT:=false}
 LINT_ALL_FILES=true

@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 """Legalize high-level operator calls in Relax functions to call_tir."""
+#
+# This file has been modified by Arm China team.
+#
 from . import binary
 from . import ccl
 from . import create
@@ -31,3 +34,4 @@ from . import qdq
 from . import search
 from . import statistical
 from . import unary
+from . import vision

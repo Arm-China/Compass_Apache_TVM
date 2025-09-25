@@ -18,44 +18,21 @@
 """Namespace for Tensor Expression Language
 """
 # expose all operators in tvm tir.op
-#
-# This file has been modified by Arm China team.
-#
 from tvm.tir import any, all, min_value, max_value, trace
 from tvm.tir import exp, erf, tanh, sigmoid, log, tan, cos, sin, sqrt, rsqrt, floor, ceil
 from tvm.tir import sinh, cosh, log2, log10
 from tvm.tir import asin, asinh, acos, acosh, atan, atanh
-from tvm.tir import (
-    trunc,
-    abs,
-    round,
-    nearbyint,
-    power,
-    popcount,
-    fmod,
-    if_then_else,
-    narrow_shift_right,
-)
+from tvm.tir import trunc, abs, round, nearbyint, power, popcount, fmod, if_then_else
 from tvm.tir import isnan, isfinite, isinf
-from tvm.tir import div, indexdiv, indexmod, truncdiv, truncmod, floordiv, floormod
+from tvm.tir import div, indexdiv, indexmod, truncdiv, truncmod, floordiv, floormod, logaddexp
 from tvm.tir import comm_reducer, min, max, sum
 from tvm.tir import add, subtract, multiply
 
-from .schedule import (
-    Schedule,
-    Stage,
-    create_schedule,
-    SpecializedCondition,
-    AXIS_SEPARATOR,
-)
 from .tensor import TensorSlice, Tensor
-from .tensor_intrin import decl_tensor_intrin
 from .tag import tag_scope
 from .operation import placeholder, compute, scan, extern, var, size_var, const
-from .operation import thread_axis, reduce_axis
+from .operation import thread_axis, reduce_axis, AXIS_SEPARATOR
 from .operation import create_prim_func
 from .operation import extern_primfunc
 
-from .tensor import PlaceholderOp, ComputeOp, TensorComputeOp, ScanOp, ExternOp, HybridOp
-from .autodiff import gradient
-from . import hybrid
+from .tensor import PlaceholderOp, ComputeOp, ScanOp, ExternOp

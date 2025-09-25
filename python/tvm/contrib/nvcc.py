@@ -22,10 +22,10 @@ import os
 import subprocess
 import warnings
 
-import tvm._ffi
+import tvm.ffi
 from tvm.target import Target
 
-from .._ffi.base import py_str
+from ..base import py_str
 from . import utils
 
 
@@ -198,14 +198,14 @@ def get_cuda_version(cuda_path=None):
     raise RuntimeError("Cannot read cuda version file")
 
 
-@tvm._ffi.register_func
+@tvm.ffi.register_func
 def tvm_callback_cuda_compile(code, target):  # pylint: disable=unused-argument
     """use nvcc to generate fatbin code for better optimization"""
     ptx = compile_cuda(code, target_format="fatbin")
     return ptx
 
 
-@tvm._ffi.register_func("tvm_callback_libdevice_path")
+@tvm.ffi.register_func("tvm_callback_libdevice_path")
 def find_libdevice_path(arch):
     """Utility function to find libdevice
 
@@ -270,7 +270,7 @@ def callback_libdevice_path(arch):
         return ""
 
 
-@tvm._ffi.register_func("tvm.contrib.nvcc.get_compute_version")
+@tvm.ffi.register_func("tvm.contrib.nvcc.get_compute_version")
 def get_target_compute_version(target=None):
     """Utility function to get compute capability of compilation target.
 
@@ -292,13 +292,15 @@ def get_target_compute_version(target=None):
     target = target or Target.current()
     if target and target.arch:
         arch = target.arch.split("_")[1]
-        if len(arch) == 2:
-            major, minor = arch
-            return major + "." + minor
-        elif len(arch) == 3:
+        if len(arch) < 2:
+            raise ValueError(f"The arch is not expected {target.arch}")
+        if arch[-1].isalpha():
             # This is for arch like "sm_90a"
-            major, minor, suffix = arch
+            suffix = arch[-1]
+            major = arch[:-2]
+            minor = arch[-2]
             return major + "." + minor + "." + suffix
+        return arch[:-1] + "." + arch[-1]
 
     # 3. GPU compute version
     if tvm.cuda(0).exist:
@@ -413,7 +415,7 @@ def have_cudagraph():
         return False
 
 
-@tvm._ffi.register_func("tvm.contrib.nvcc.supports_bf16")
+@tvm.ffi.register_func("tvm.contrib.nvcc.supports_bf16")
 def have_bf16(compute_version):
     """Either bf16 support is provided in the compute capability or not
 
@@ -429,7 +431,7 @@ def have_bf16(compute_version):
     return False
 
 
-@tvm._ffi.register_func("tvm.contrib.nvcc.supports_fp8")
+@tvm.ffi.register_func("tvm.contrib.nvcc.supports_fp8")
 def have_fp8(compute_version):
     """Whether fp8 support is provided in the specified compute capability or not
 
@@ -443,5 +445,21 @@ def have_fp8(compute_version):
     if major == 8 and minor == 9:
         return True
     if major >= 9:
+        return True
+    return False
+
+
+@tvm.ffi.register_func("tvm.contrib.nvcc.supports_fp4")
+def have_fp4(compute_version):
+    """Whether fp4 support is provided in the specified compute capability or not
+
+    Parameters
+    ----------
+    compute_version : str
+        GPU capability
+    """
+    major, minor = parse_compute_version(compute_version)
+    # fp4 is suppored in Blackwell (10.0) or later architectures.
+    if major == 10 and minor == 0:
         return True
     return False

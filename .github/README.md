@@ -39,29 +39,24 @@ The compilation part always runs on the host development environment. The compil
 
 **The result of compilation is a deployable object**: The object not only can be exported and deployed to the device user environment, but also can be run directly in the host development environment by the Zhouyi NPU simulator.
 
-All work of the execution part is handled by `class ExecutionEngine`. It hides the details of the specific executor (for example, graph executor or VM), so that the execution part code is the same regardless of which executor is used when compiling the NN model.
-
 The execution process can not only be run locally in the Simulator, but can also be conveniently executed on remote real devices through RPC. With RPC, all other parts except the compiled NN model are executed in the host development environment, so the complex preprocess or postprocess can be implemented easily.
 
 ## Supported Features
 
 - Support for various models and operators
   - 120+ models
-  - 130+ Relay OP
+  - 130+ Relax OP
   - Quantized models
   - PyTorch & ONNX QAT models
 - Support for automatic partition of NPU subgraphs
 - Support for heterogeneous execution of NPU, CPU and others
 - Support for Linux, QNX, and Android OS deployments
 - Easy switch between Simulator and RPC remote hardware operations
-- Unified interface support for switching Graph Executor or VM without modifying code
 - Release package
-  - Binary encryption distribution package
   - Source code release package
   - Out of box example
 - User Guide, API, and source level developer documentation
-- Support for Bare Metal scenarios
-- Support for custom operators across the full link from the Relay front-end to the NPU
+- Support for custom operators across the full link from the Relax front-end to the NPU
 - Quarterly synchronization with the latest official release
 
 ## Development Guide
@@ -76,5 +71,3 @@ To learn about other useful functions of the project, refer to the following mat
 
 - [Remote Procedure Call](../aipu/docs/rpc.md)
 - [Frequently Questioned Answers](../aipu/docs/fqa.md)
-- [Supporting Bare Metal](../aipu/docs/supporting_bare_metal.md)
-- [Compass Pipeline](../aipu/docs/pipeline.md)

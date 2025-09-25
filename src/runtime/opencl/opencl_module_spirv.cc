@@ -18,7 +18,7 @@
  */
 
 #include <dmlc/memory_io.h>
-#include <tvm/runtime/registry.h>
+#include <tvm/ffi/function.h>
 
 #include <string>
 #include <unordered_map>
@@ -96,7 +96,7 @@ cl_kernel OpenCLSPIRVModuleNode::InstallKernel(cl::OpenCLWorkspace* w, cl::OpenC
     size_t len = it->second.data.size() * sizeof(uint32_t);
     cl_int err;
     cl_device_id dev = w->devices[device_id];
-    auto platform = w->device_to_platform[dev];
+    auto platform = w->device_info[dev].platform_id;
     programs_[func_name][device_id] =
         clCreateProgramWithBinary(w->contexts[platform], 1, &dev, &len, &s, nullptr, &err);
     OPENCL_CHECK_ERROR(err);

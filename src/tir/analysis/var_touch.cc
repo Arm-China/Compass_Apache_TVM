@@ -50,7 +50,9 @@ class VarTouchVisitor : public StmtExprVisitor {
   void VisitStmt_(const ForNode* op) final {
     auto annotations = op->annotations;
     if (annotations.count("step")) {
-      Handle(Downcast<Var>(annotations["step"]).get());
+      if (const auto* step = annotations["step"].as<tir::VarNode>()) {
+        Handle(step);
+      }
     }
     StmtVisitor::VisitStmt_(op);
   }

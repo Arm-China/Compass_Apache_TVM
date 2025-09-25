@@ -41,6 +41,7 @@ import math
 import operator
 import re
 import warnings
+import copy
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as _np
@@ -63,13 +64,13 @@ def get_type(elem_type: Union[str, int]) -> str:
         return elem_type
 
     try:
-        from onnx.mapping import (  # pylint: disable=import-outside-toplevel
-            TENSOR_TYPE_TO_NP_TYPE,
+        from onnx.helper import (  # pylint: disable=import-outside-toplevel
+            tensor_dtype_to_np_dtype,
         )
     except ImportError as exception:
         raise ImportError("Unable to import onnx which is required {}".format(exception))
 
-    return str(TENSOR_TYPE_TO_NP_TYPE[elem_type])
+    return str(tensor_dtype_to_np_dtype(elem_type))
 
 
 def get_constant(
@@ -567,15 +568,14 @@ class BitwiseXor(BitwiseBase):
         return cls.base_impl(bb, inputs, attr, params)
 
 
-class BitwiseNot(BitwiseBase):
+class BitwiseNot(OnnxOpConverter):
     """Converts an onnx BitwiseNot node into an equivalent Relax expression."""
-
-    numpy_op = _np.bitwise_not
-    relax_op = relax.op.bitwise_not
 
     @classmethod
     def _impl_v18(cls, bb, inputs, attr, params):
-        return cls.base_impl(bb, inputs, attr, params)
+        if isinstance(inputs[0], relax.Constant):
+            return relax.const(_np.bitwise_not(inputs[0].data.numpy()), inputs[0].struct_info.dtype)
+        return relax.op.bitwise_not(inputs[0])
 
 
 class BitShift(BitwiseBase):
@@ -608,6 +608,24 @@ class Softmax(OnnxOpConverter):
     """Converts an onnx Softmax node into an equivalent Relax expression."""
 
     @classmethod
+    def _impl_v1(cls, bb, inputs, attr, params):
+        axis = attr.get("axis", 1)
+        in_shape = [int(x) for x in inputs[0].struct_info.shape]
+        ndim = len(in_shape)
+        if axis < 0:
+            axis += ndim
+        if axis == 0:
+            reshape_shape = [-1]
+        elif axis == ndim - 1:
+            return relax.op.nn.softmax(inputs[0], axis=axis)
+        else:
+            axis_val = [in_shape[i] for i in range(axis)]
+            reshape_shape = [_np.prod(axis_val)] + [-1]
+        data_reshape = relax.op.reshape(inputs[0], reshape_shape)
+        out = relax.op.nn.softmax(data_reshape, axis=-1)
+        return relax.op.reshape(out, in_shape)
+
+    @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
         axis = attr.get("axis", -1)
         return relax.op.nn.softmax(inputs[0], axis=axis)
@@ -619,6 +637,7 @@ class LogSoftmax(OnnxOpConverter):
     @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
         axis = attr.get("axis", -1)
+        axis = axis + inputs[0].struct_info.ndim if axis < 0 else axis
         return relax.op.nn.log_softmax(inputs[0], axis=axis)
 
 
@@ -705,16 +724,17 @@ class Concat(OnnxOpConverter):
     def _impl_v13(cls, bb, inputs, attr, params):
         axis = attr.get("axis", 0)
 
-        def is_shape_like(x: Any) -> bool:
-            if isinstance(x, relax.ShapeExpr):
-                return True
-            elif isinstance(x, relax.Constant):
-                return x.struct_info.ndim == 1 and x.struct_info.dtype == "int64"
-            else:
-                return False
+        # If all inputs are constant, perform computation directly.
+        if all([isinstance(inp, relax.Constant) for inp in inputs]):
+            const_inputs = []
+            for inp in inputs:
+                const_inputs.append(inp.data.numpy())
+            out = _np.concatenate(const_inputs, axis=axis)
+            dtype = inputs[0].struct_info.dtype
+            return relax.const(out, dtype)
 
-        # If all inputs are shape expr, perform computation directly.
-        if all([is_shape_like(inp) for inp in inputs]):
+        # If the inputs contain only shape expr or constant, perform computation directly.
+        if all([isinstance(inp, (relax.ShapeExpr, relax.Constant)) for inp in inputs]):
             const_inputs = []
             for inp in inputs:
                 if isinstance(inp, relax.ShapeExpr):
@@ -724,15 +744,6 @@ class Concat(OnnxOpConverter):
                 else:
                     raise NotImplementedError("Unsupported input type: {}".format(type(inp)))
             return relax.ShapeExpr(const_inputs)
-
-        # If all inputs are constant, perform computation directly.
-        if all([isinstance(inp, relax.Constant) for inp in inputs]):
-            const_inputs = []
-            for inp in inputs:
-                const_inputs.append(inp.data.numpy())
-            out = _np.concatenate(const_inputs, axis=axis)
-            dtype = inputs[0].struct_info.dtype
-            return relax.const(out, dtype)
 
         return relax.op.concat(inputs, axis=axis)
 
@@ -754,6 +765,17 @@ class Cast(OnnxOpConverter):
         if isinstance(inputs[0], relax.PrimValue):
             return relax.PrimValue(inputs[0].value.astype(to_type))
         return relax.op.astype(inputs[0], to_type)
+
+
+def normalize_gather_indices(data, indices, axis):
+    """Make sure gather indices aren't negative"""
+    if not isinstance(indices, relax.Constant):
+        return indices
+    indices_data = indices.data.numpy()
+    shape = [int(x) for x in data.struct_info.shape]
+    max_value = _np.take(shape, axis)
+    indices_data = (indices_data + max_value) % max_value
+    return relax.const(indices_data, indices.struct_info.dtype)
 
 
 class Gather(OnnxOpConverter):
@@ -783,6 +805,7 @@ class Gather(OnnxOpConverter):
             shape_val = data[np_index]
             return relax.PrimValue(shape_val)
 
+        indices = normalize_gather_indices(data, indices, axis)
         return relax.op.take(data, indices, axis)
 
 
@@ -822,8 +845,13 @@ class ScatterElements(OnnxOpConverter):
 
     @classmethod
     def _impl_v11(cls, bb, inputs, attr, params):
+        return cls._impl_v16(bb, inputs, attr, params)
+
+    @classmethod
+    def _impl_v16(cls, bb, inputs, attr, params):
         axis = attr.get("axis", 0)
-        return relax.op.scatter_elements(inputs[0], inputs[1], inputs[2], axis=axis)
+        reduction = attr.get("reduction", b"update").decode("utf-8")
+        return relax.op.scatter_elements(inputs[0], inputs[1], inputs[2], axis, reduction)
 
 
 class ScatterND(OnnxOpConverter):
@@ -897,11 +925,20 @@ class EyeLike(OnnxOpConverter):
     @classmethod
     def _impl_v9(cls, bb, inputs, attr, params):
         k = attr.get("k", 0)
-        input_dtype = inputs[0].struct_info.dtype
+        in_sinfo = inputs[0].struct_info
+        input_dtype = in_sinfo.dtype
         if "dtype" in attr and get_type(attr["dtype"]) != input_dtype:
             raise ValueError(
                 f"dtype mismatch between input ({input_dtype}) and attribute ({attr['dtype']})"
             )
+        if (
+            hasattr(in_sinfo, "shape")
+            and all(isinstance(x, tir.IntImm) for x in in_sinfo.shape.values)
+            and len(in_sinfo.shape) == 2
+            and isinstance(k, int)
+        ):
+            shape = [int(x) for x in in_sinfo.shape]
+            return relax.const(_np.eye(shape[0], shape[1], k, input_dtype), input_dtype)
         return relax.op.eye_like(inputs[0], k, input_dtype)
 
 
@@ -989,6 +1026,19 @@ class Clip(OnnxOpConverter):
         return relax.op.clip(inputs[0], min, max)
 
     @classmethod
+    def _impl_v11(cls, bb, inputs, attr, params):
+        results = inputs[0]
+        if inputs[1] is not None and inputs[2] is not None:
+            min = inputs[1].data.numpy().item()
+            max = inputs[2].data.numpy().item()
+            return relax.op.clip(results, min, max)
+        if inputs[1] is not None:
+            return relax.op.maximum(results, inputs[1])
+        if inputs[2] is not None:
+            return relax.op.minimum(results, inputs[2])
+        return results
+
+    @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
         results = inputs[0]
         if inputs[1] is not None:
@@ -1014,6 +1064,9 @@ class Shape(OnnxOpConverter):
         if not data_info.shape:
             data_shape = bb.normalize(relax.op.shape_of(inputs[0]))
             return data_shape
+
+        if all(isinstance(x, tir.IntImm) for x in data_info.shape.values):
+            return relax.const(_np.array(data_info.shape.values), "int64")
 
         return data_info.shape
 
@@ -1100,8 +1153,7 @@ class PRelu(OnnxOpConverter):
     def _impl_v1(cls, bb, inputs, attr, params):
         x = inputs[0]
         slope = inputs[1]
-        # TODO(tvm-team): Should add a new op for this.
-        return x * slope + relax.op.nn.relu(x) * (relax.const(1.0) - slope)
+        return relax.op.nn.prelu(x, slope)
 
 
 class ThresholdedRelu(OnnxOpConverter):
@@ -1238,7 +1290,6 @@ class Conv(OnnxOpConverter):
             attr["auto_pad"] = attr["auto_pad"].decode("utf-8")
             if attr["auto_pad"] in ("SAME_UPPER", "SAME_LOWER"):
                 data = autopad(
-                    bb,
                     inputs[0],
                     attr.get("strides", [1] * (ndim - 2)),
                     attr["kernel_shape"],
@@ -1282,10 +1333,11 @@ class ConvTranspose(OnnxOpConverter):
 
     @classmethod
     def _impl_v1(cls, bb, inputs, attr, params):
-        if hasattr(inputs[0].struct_info, "ndim"):
-            ndim = inputs[0].struct_info.ndim
+        data = inputs[0]
+        if hasattr(data.struct_info, "ndim"):
+            ndim = data.struct_info.ndim
         else:
-            ndim = len(inputs[0].struct_info.shape)
+            ndim = len(data.struct_info.shape)
 
         if ndim == 3:
             op = relax.op.nn.conv1d_transpose
@@ -1300,8 +1352,59 @@ class ConvTranspose(OnnxOpConverter):
         else:
             raise NotImplementedError("Ndim > 5 not supported for convolution.")
 
+        input_shape = [int(x) for x in data.struct_info.shape]
+        if "auto_pad" in attr or "output_shape" in attr:
+            if "auto_pad" in attr:
+                attr["auto_pad"] = attr["auto_pad"].decode("utf-8")
+            if "output_shape" in attr or attr["auto_pad"] in ("SAME_UPPER", "SAME_LOWER"):
+                kernel_shape = attr["kernel_shape"]
+                kndim = len(kernel_shape)
+                dilations = attr.get("dilations", [1] * kndim)
+                output_padding = attr.get("output_padding", [0] * kndim)
+                strides = attr["strides"]
+                total_pad = [0] * kndim
+                # https://github.com/onnx/onnx/blob/main/docs/Operators.md#ConvTranspose
+                if "output_shape" in attr:
+                    for i in range(kndim):
+                        total_pad[i] = (
+                            strides[i] * (input_shape[ndim - kndim + i] - 1)
+                            + output_padding[i]
+                            + ((kernel_shape[i] - 1) * dilations[i] + 1)
+                            - attr["output_shape"][i]
+                        )
+                    left = [p // 2 for p in total_pad]
+                    right = [total_pad[i] - left[i] for i in range(kndim)]
+                    if "output_shape" in attr and "auto_pad" not in attr:
+                        pad = right + left
+                    elif "LOWER" in attr["auto_pad"]:
+                        pad = left + right
+                    else:
+                        pad = right + left
+                    attr["pads"] = pad
+                else:
+                    data = autopad(
+                        data,
+                        attr.get("strides", [1] * (ndim - 2)),
+                        attr["kernel_shape"],
+                        attr.get("dilations", [1] * (ndim - 2)),
+                        deconv=True,
+                        mode=attr["auto_pad"],
+                    )
+            elif attr["auto_pad"] == "VALID":
+                attr["pads"] = tuple(0 for _ in range(ndim - 2))
+            elif attr["auto_pad"] == "NOTSET":
+                pass
+            else:
+                msg = (
+                    f'Value {attr["auto_pad"]} in attribute "auto_pad" of operator ConvTranspose '
+                    f"is invalid."
+                )
+                raise tvm.error.OpAttributeInvalid(msg)
+            if "auto_pad" in attr:
+                attr.pop("auto_pad")
+
         conv_out = op(
-            data=inputs[0],
+            data=data,
             weight=inputs[1],
             strides=attr.get("strides", 1),
             padding=attr.get("pads", 0),
@@ -1340,7 +1443,7 @@ class CumSum(OnnxOpConverter):
             axis = int(axis.data.numpy())
         elif isinstance(axis, relax.Var):
             axis = 0
-        data = relax.op.cumsum(data, axis)
+        data = relax.op.cumsum(data, axis, data.struct_info.dtype)
         if attr.get("reverse", 0) != 0:
             data = bb.emit_te(topi.flip, data, axis=axis if axis else 0)
         return data
@@ -1350,12 +1453,20 @@ class Squeeze(OnnxOpConverter):
     """Converts an onnx Squeeze node into an equivalent Relax expression."""
 
     @classmethod
+    def _impl_v1(cls, bb, inputs, attr, params):
+        axis = attr.get("axes", None)
+        return cls._impl_common(inputs[0], axis)
+
+    @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
         data = inputs[0]
         axis = get_constant(inputs[1], params)
         if isinstance(axis, relax.Constant):
             axis = tuple([int(x) for x in axis.data.numpy()])
+        return cls._impl_common(data, axis)
 
+    @classmethod
+    def _impl_common(cls, data, axis):
         # If data is constant, perform computation directly.
         if isinstance(data, relax.Constant):
             if isinstance(axis, (tuple, type(None))):
@@ -1412,7 +1523,7 @@ class ConstantOfShape(OnnxOpConverter):
             shape = relax.ShapeExpr(list(shape.data.numpy()))
 
         # Special case where requested shape are constant
-        if len(shape) == 1 and all([isinstance(x, tir.IntImm) for x in shape]):
+        if all([isinstance(x, tir.IntImm) for x in shape]):
             shape = [int(x) for x in shape]
             return relax.const(_np.full(shape, value, dtype), dtype)
 
@@ -1565,6 +1676,8 @@ class Ceil(OnnxOpConverter):
 
     @classmethod
     def _impl_v1(cls, bb, inputs, attr, params):
+        if isinstance(inputs[0], relax.Constant):
+            return relax.const(_np.ceil(inputs[0].data.numpy()), inputs[0].struct_info.dtype)
         return relax.op.ceil(inputs[0])
 
 
@@ -1614,6 +1727,15 @@ class MultiInputBase(OnnxOpConverter):
             np_inputs = [inp.data.numpy() for inp in inputs]
             output = cls.numpy_op(*np_inputs)  # pylint: disable=not-callable
             return relax.const(output, output.dtype)
+
+        bin_op_dict = {
+            "sum": relax.op.add,
+            "max": relax.op.maximum,
+            "min": relax.op.minimum,
+        }
+        if len(inputs) == 2 and cls.relax_op.__name__ in bin_op_dict:
+            bin_op = bin_op_dict[cls.relax_op.__name__]
+            return bin_op(*inputs)
 
         # Expand inputs, stack them, then perform minimum over the new axis.
         inputs = [bb.normalize(relax.op.expand_dims(i, axis=0)) for i in inputs]
@@ -1718,7 +1840,10 @@ class Split(OnnxOpConverter):
         # When splits isnt specified divide evenly over axis.
         else:
             indices = attr["tvm_custom"]["num_outputs"]
-        return bb.emit_te(topi.split, inputs[0], indices, attr.get("axis", 0))
+        output = relax.op.split(inputs[0], indices, attr.get("axis", 0))
+        if isinstance(bb.normalize(output).struct_info, relax.TensorStructInfo):
+            return inputs[0]
+        return output
 
     @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
@@ -1739,7 +1864,7 @@ class Split(OnnxOpConverter):
         # When splits isnt specified divide evenly over axis.
         else:
             indices = attr["tvm_custom"]["num_outputs"]
-        return bb.emit_te(topi.split, inputs[0], indices, axis=attr.get("axis", 0))
+        return relax.op.split(inputs[0], indices, attr.get("axis", 0))
 
 
 def get_prim_value_list(values):
@@ -1754,6 +1879,44 @@ def get_prim_value_list(values):
 
 class Slice(OnnxOpConverter):
     """Converts an onnx Splice node into an equivalent Relax expression."""
+
+    @classmethod
+    def _impl_v1(cls, bb, inputs, attr, params):
+        data = inputs[0]
+        starts, ends = attr["starts"], attr["ends"]
+        starts, ends = [[x] if isinstance(x, int) else x for x in [starts, ends]]
+        assert len(starts) == len(ends)
+        steps = attr.get("steps", [1] * len(starts))
+        axes = attr["axes"]
+        if axes is None:
+            axes = list(range(len(starts)))
+        else:
+            axes = [axes] if isinstance(axes, int) else axes
+            N = max(axes) + 1
+            new_axes = list(range(N))
+            new_starts = [0] * N
+            new_ends = [_np.iinfo(_np.int32).max] * N
+            new_steps = [1] * N
+            for i, axis in enumerate(axes):
+                new_starts[axis] = starts[i]
+                new_ends[axis] = ends[i]
+                new_steps[axis] = steps[i]
+            axes, starts, ends, steps = new_axes, new_starts, new_ends, new_steps
+
+        # If input is a constant tensor, we can directly extract it.
+        if isinstance(data, relax.Constant):
+            data_np = data.data.numpy()
+            slices = [slice(None)] * len(data.struct_info.shape)
+            for i in range(len(starts)):
+                slices[i] = slice(starts[i], ends[i], steps[i])
+            out = data_np[tuple(slices)]
+            return relax.const(out, data.struct_info.dtype)
+
+        return relax.op.strided_slice(inputs[0], new_axes, new_starts, new_ends)
+
+    @classmethod
+    def _impl_v10(cls, bb, inputs, attr, params):
+        return cls._impl_v13(bb, inputs, attr, params)
 
     @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
@@ -1800,6 +1963,17 @@ class Slice(OnnxOpConverter):
             else:
                 return relax.ShapeExpr(sliced_values)
 
+        # If input is a constant tensor, we can directly extract it.
+        if isinstance(data, relax.Constant):
+            data_np = data.data.numpy()
+            # Starts, ends, and steps must be 1-d for shape operation.
+            assert all(len(i) == 1 for i in [starts, ends, steps])
+            slices = [slice(None)] * len(data.struct_info.shape)
+            assert len(axes) == 1
+            slices[axes[0]] = slice(starts[0], ends[0], steps[0])
+            out = data_np[tuple(slices)]
+            return relax.const(out, data.struct_info.dtype)
+
         # If all `starts`, `ends`, and `steps` are constant, use strict mode
         # Otherwise, we assume the slice is inbound.
         assume_inbound = not all(
@@ -1833,37 +2007,30 @@ class Pad(OnnxOpConverter):
                 "Value " + pad_mode + ' in attribute "mode" is invalid for operator Pad.'
             )
 
-        return relax.op.nn.pad(inputs[0], pad_width, constant_value, pad_mode)
+        return relax.op.nn.pad(inputs[0], pad_width, pad_mode, constant_value)
 
     @classmethod
     def _impl_v11(cls, bb, inputs, attr, params):
         pads = get_constant(inputs[1], params)
+        assert isinstance(pads, relax.Constant), "Dynamic pads are not supported yet."
+        pads = pads.data.numpy().tolist()
+        dims = int(len(pads) / 2)
+        pad_width = []
+        for i in range(dims):
+            pad_width += [pads[i], pads[i + dims]]
+
         constant_value = get_constant(inputs[2], params)
         if constant_value is not None:
             constant_value = constant_value.data.numpy().item()
         else:
             constant_value = 0.0
 
-        if isinstance(pads, relax.Constant):
-            pad_before, pad_after = _np.split(pads.data.numpy(), 2)
-            pad_before = _np.ndarray.tolist(pad_before)
-            pad_after = _np.ndarray.tolist(pad_after)
-        else:
-            raise ValueError("Dynamic pads are not supported yet.")
-
         pad_mode = attr.get("mode", b"constant").decode("utf-8")
         if not pad_mode in ["constant", "edge", "reflect"]:
             raise tvm.error.OpAttributeInvalid(
                 "Value " + pad_mode + ' in attribute "mode" is invalid for operator Pad.'
             )
-
-        if pad_mode == "constant":
-            return bb.emit_te(topi.nn.pad, inputs[0], pad_before, pad_after, constant_value)
-        elif pad_mode == "reflect":
-            return bb.emit_te(topi.nn.mirror_pad, inputs[0], pad_before, pad_after, "REFLECT")
-        else:
-            # TODO(gigiblender) Support edge mode.
-            raise NotImplementedError("Pad mode {} not implemented".format(pad_mode))
+        return relax.op.nn.pad(inputs[0], pad_width, pad_mode, constant_value)
 
 
 class Tile(OnnxOpConverter):
@@ -1871,12 +2038,16 @@ class Tile(OnnxOpConverter):
 
     @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
+        data = inputs[0]
         reps = get_constant(inputs[1], params)
         if isinstance(reps, relax.Constant):
             reps = reps.data.numpy().tolist()
         else:
             raise ValueError("Dynamic reps for Tile are supported yet.")
-        return bb.emit_te(topi.tile, inputs[0], reps)
+        if isinstance(data, relax.Constant):
+            data_np = data.data.numpy()
+            return relax.const(_np.tile(data_np, reps), data_np.dtype)
+        return relax.op.tile(data, reps)
 
 
 class Expand(OnnxOpConverter):
@@ -1905,18 +2076,23 @@ class Expand(OnnxOpConverter):
         # If possible, directly expand to constant shape.
         if isinstance(shape, relax.Constant):
             new_shape = shape.data.numpy().tolist()
-            # For some reason, onnx allows target shapes to be smaller than input shapes.
-            # We need to go correct it.
+            # ONNX Expand operator requires preserving target rank and broadcasting
+            # according to standard rules. Dimensions are right-aligned.
             data_shape = [dim.value for dim in data.struct_info.shape]
-            # Dimensions are right alignment.
-            data_shape = [1] * (len(new_shape) - len(data_shape)) + data_shape
-            # Fix small target shapes.
-            for i, s in enumerate(new_shape):
-                if i < len(data_shape) and s < data_shape[i]:
+
+            # Right-align the shapes
+            if len(new_shape) > len(data_shape):
+                data_shape = [1] * (len(new_shape) - len(data_shape)) + data_shape
+            else:
+                new_shape = [1] * (len(data_shape) - len(new_shape)) + new_shape
+            # Fix small target shapes - if target dim is smaller than input dim
+            # use the input dim (ONNX-specific behavior).
+            for i in range(len(new_shape)):
+                if new_shape[i] < data_shape[i]:
                     new_shape[i] = data_shape[i]
-            # If the new shape matches the input shape, no transformation is needed.
-            if new_shape == data_shape:
-                return data
+            if isinstance(data, relax.Constant):
+                data_np = data.data.numpy()
+                return relax.const(_np.broadcast_to(data_np, new_shape), data_np.dtype)
             return relax.op.broadcast_to(data, relax.ShapeExpr(new_shape))
 
         # Otherwise handle dynamic shapes.
@@ -2075,11 +2251,39 @@ class Identity(OnnxOpConverter):
         return inputs[0]
 
 
+class Dropout(OnnxOpConverter):
+    """Converts an onnx Dropout node into an equivalent Relax expression."""
+
+    @classmethod
+    def _impl_v1(cls, bb, inputs, attr, params):
+        return inputs[0]
+
+
 class Resize(OnnxOpConverter):
     """Converts an onnx Resize node into an equivalent Relax expression."""
 
     @classmethod
-    def _impl_v18(cls, bb, inputs, attr, params):
+    def _impl_v10(cls, bb, inputs, attr, params):
+        mode = attr.get("mode", b"nearest").decode("ascii")
+        if mode == "nearest":
+            mode = "nearest_neighbor"
+
+        # Unpack inputs.
+        x = inputs[0]
+        scales = get_constant(inputs[1], params)
+        ndims = len(x.struct_info.shape)
+        assert ndims == 4, "Only resize2d is currently supported."
+        assert isinstance(scales, relax.Constant), "Only constant scales currently supported."
+        scales = scales.data.numpy()
+        sizes = []
+        for i, dim in enumerate(x.struct_info.shape):
+            sizes.append(cast(scales[i] * dim, "int64"))
+        sizes = sizes[2:]
+
+        return relax.op.image.resize2d(x, relax.ShapeExpr(sizes), None, "NCHW", mode, "asymmetric")
+
+    @classmethod
+    def _impl_v11(cls, bb, inputs, attr, params):
         # Extract the many attributes of resize.
         coord_mode = attr.get("coordinate_transformation_mode", b"half_pixel").decode("ascii")
         cubic_coeff_a = attr.get("cubic_coeff_a", -0.75)
@@ -2095,8 +2299,11 @@ class Resize(OnnxOpConverter):
         # Unpack inputs.
         x = inputs[0]
         roi = get_constant(inputs[1], params)
+        roi = None if roi and roi.data.numpy().shape == (0,) else roi
         scales = get_constant(inputs[2], params)
-        sizes = get_constant(inputs[3], params)
+        scales = None if scales and scales.data.numpy().shape == (0,) else scales
+        sizes = get_constant(inputs[3], params) if len(inputs) == 4 else None
+        sizes = None if sizes and sizes.data.numpy().shape == (0,) else sizes
         ndims = len(x.struct_info.shape)
         assert ndims == 4, "Only resize2d is currently supported."
 
@@ -2143,6 +2350,14 @@ class Resize(OnnxOpConverter):
             cubic_exclude=exclude_outside,
             extrapolation_value=extrapolation_value,
         )
+
+    @classmethod
+    def _impl_v13(cls, bb, inputs, attr, params):
+        return cls._impl_v11(bb, inputs, attr, params)
+
+    @classmethod
+    def _impl_v18(cls, bb, inputs, attr, params):
+        return cls._impl_v11(bb, inputs, attr, params)
 
 
 class Einsum(OnnxOpConverter):
@@ -2241,6 +2456,18 @@ class MeanVarianceNormalization(OnnxOpConverter):
         data_squared = relax.op.power(data, relax.const(2, dtype="float32"))
         data_squared_mean = relax.op.mean(data_squared, axis=axis, keepdims=True)
         return (data - data_mean) / relax.op.sqrt(data_squared_mean - data_mean_squared)
+
+
+class LRN(OnnxOpConverter):
+    """Converts an onnx LRN node into an equivalent Relax expression."""
+
+    @classmethod
+    def _impl_v1(cls, bb, inputs, attr, params):
+        alpha = attr.get("alpha", 0.0001)
+        beta = attr.get("beta", 0.75)
+        bias = attr.get("bias", 1.0)
+        size = attr["size"]
+        return relax.op.nn.lrn(inputs[0], size=size, axis=1, alpha=alpha, beta=beta, bias=bias)
 
 
 class Pool(OnnxOpConverter):
@@ -2414,7 +2641,7 @@ class MaxUnpool(OnnxOpConverter):
             total_output_shape = output_shape
 
         elif pads is not None:
-            # Get pads in the proper format for relay.
+            # Get pads in the proper format
             pads = _np.concatenate([[0, 0, 0, 0], list(pads)], axis=0)
             pads = _np.reshape(pads, [-1, 2])
             # Compute the total padding per axis.
@@ -2475,6 +2702,10 @@ class LayerNormalization(OnnxOpConverter):
         axis = attr.get("axis", -1)
         epsilon = attr.get("epsilon", 1e-05)
 
+        if bias is None:
+            seq_len = data.struct_info.shape[1].value
+            bias = relax.const([0.0] * seq_len, dtype="float32")
+
         output = relax.op.nn.layer_norm(data, scale, bias, axis, epsilon)
         # Onnx layernorm has 3 outputs but only the first is used.
         # We construct two empty constants for this.
@@ -2490,6 +2721,9 @@ class ReduceMax(OnnxOpConverter):
         data = inputs[0]
         axes = attr.get("axes", None)
         keepdims = attr.get("keepdims", 1)
+        if isinstance(data, relax.Constant):
+            out = _np.max(data.data.numpy(), axis=axes, keepdims=keepdims)
+            return relax.const(out, out.dtype)
         return relax.op.max(data, axes, keepdims)
 
 
@@ -2683,6 +2917,16 @@ class ArgMin(OnnxOpConverter):
         return relax.op.argmin(data, axis, keepdims)
 
 
+class ReverseSequence(OnnxOpConverter):
+    """Operator converter for ReverseSequence"""
+
+    @classmethod
+    def _impl_v10(cls, bb, inputs, attr, params):
+        time_axis = attr.get("time_axis", 0)
+        batch_axis = attr.get("batch_axis", 1)
+        return relax.op.reverse_sequence(inputs[0], inputs[1], time_axis, batch_axis)
+
+
 class TopK(OnnxOpConverter):
     """Converts an onnx TopK node into an equivalent Relax expression."""
 
@@ -2831,11 +3075,97 @@ class NonZero(OnnxOpConverter):
 
     @classmethod
     def _impl_v9(cls, bb, inputs, attr, params):
-        ndim = inputs[0].struct_info.ndim
+        data = inputs[0]
+        ndim = data.struct_info.ndim
         ndim = 1 if ndim == 0 else ndim
         nonzero_numbers = tir.Var("nonzero_numbers", "int64")
+        if isinstance(data, relax.Constant):
+            indices = _np.nonzero(data.data.numpy())
+            if len(indices) > 0:
+                result = _np.stack(indices, axis=0)
+            else:
+                result = _np.empty((ndim, 0), dtype="int64")
+            return relax.const(result, "int64")
         return bb.match_cast(
-            relax.op.nonzero(inputs[0]), relax.TensorStructInfo((ndim, nonzero_numbers), "int64")
+            relax.op.nonzero(data), relax.TensorStructInfo((ndim, nonzero_numbers), "int64")
+        )
+
+
+class NonMaxSuppression(OnnxOpConverter):
+    """Converts an onnx NonMaxSuppression node into an equivalent Relax expression."""
+
+    @classmethod
+    def _impl_v10(cls, bb, inputs, attr, params):
+        # Get parameter values
+        boxes = inputs[0]
+        scores = inputs[1]
+        max_output_boxes_per_class = inputs[2] if len(inputs) >= 3 else relax.const([0], "int64")
+        iou_threshold = inputs[3] if len(inputs) >= 4 else relax.const([0.0], "float32")
+        score_threshold = inputs[4] if len(inputs) >= 5 else relax.const([0.0], "float32")
+
+        boxes_dtype = boxes.struct_info.dtype
+        if attr.get("center_point_box", 0) != 0:
+            xc, yc, w, h = relax.op.split(boxes, 4, axis=2)
+            half_w = w / relax.const(2.0, boxes_dtype)
+            half_h = h / relax.const(2.0, boxes_dtype)
+            x1 = xc - half_w
+            x2 = xc + half_w
+            y1 = yc - half_h
+            y2 = yc + half_h
+            boxes = relax.op.concat([y1, x1, y2, x2], axis=2)
+
+        def conditionally_squeeze_scalar(x):
+            rank = x.struct_info.ndim
+            assert rank <= 1, "nms thresholds must be scalars"
+            return relax.op.squeeze(x, [0]) if rank == 1 else x
+
+        max_output_boxes_per_class = conditionally_squeeze_scalar(max_output_boxes_per_class)
+        iou_threshold = conditionally_squeeze_scalar(iou_threshold)
+        score_threshold = conditionally_squeeze_scalar(score_threshold)
+
+        nms_out = bb.normalize(
+            relax.op.vision.all_class_non_max_suppression(
+                boxes,
+                scores,
+                max_output_boxes_per_class,
+                iou_threshold,
+                score_threshold,
+            )
+        )
+        return relax.op.dynamic_strided_slice(
+            nms_out[0],
+            begin=relax.const([0, 0], dtype="int64"),
+            end=relax.op.concat([nms_out[1], relax.const([3], dtype="int64")], axis=0),
+            strides=relax.const([1, 1], dtype="int64"),
+        )
+
+
+class Upsample(OnnxOpConverter):
+    """Operator converter for Upsample (nearest mode)."""
+
+    @classmethod
+    def _impl_v9(cls, bb, inputs, attr, params):
+        scales = attr.get("scales")
+        assert len(scales) == 4
+        assert scales[0] == scales[1] == 1
+
+        inp_shape = [int(x) for x in inputs[0].struct_info.shape]
+        assert len(inp_shape) == 4
+        out_shape2d = [int(dim * scale) for dim, scale in zip(inp_shape[2:], scales[2:])]
+
+        mode = attr.get("mode", b"nearest").decode("ascii")
+        if mode == "nearest":
+            mode = "nearest_neighbor"
+        msg = f'Value {mode} in attribute "mode" of operator Upsample is not valid.'
+        assert mode in ("linear", "nearest_neighbor", "cubic"), msg
+
+        return relax.op.image.resize2d(
+            data=inputs[0],
+            roi=None,
+            size=relax.ShapeExpr(out_shape2d),  # (H, W)
+            layout="NCHW",
+            method=mode,
+            coordinate_transformation_mode="asymmetric",  # Align with Upsample
         )
 
 
@@ -2892,21 +3222,8 @@ class DepthToSpace(OnnxOpConverter):
     def _impl_v11(cls, bb, inputs, attr, params):
         block_size = int(attr["blocksize"])
         mode = attr.get("mode", b"DCR").decode("utf-8")
-        b, c, h, w = inputs[0].struct_info.shape
-        if mode == "DCR":
-            x = relax.op.reshape(
-                inputs[0], (b, block_size, block_size, c // (block_size**2), h, w)
-            )
-            x = relax.op.permute_dims(x, [0, 3, 4, 1, 5, 2])
-            return relax.op.reshape(x, (b, c // (block_size**2), h * block_size, w * block_size))
-        elif mode == "CRD":
-            x = relax.op.reshape(
-                inputs[0], (b, c // (block_size**2), block_size, block_size, h, w)
-            )
-            x = relax.op.permute_dims(x, [0, 1, 4, 2, 5, 3])
-            return relax.op.reshape(x, (b, c // (block_size**2), h * block_size, w * block_size))
-        else:
-            raise ValueError(f"Unsupported mode: {mode}, expected DCR or CRD")
+        assert mode in ("DCR", "CRD"), f"Unsupported mode: {mode}, expected DCR or CRD"
+        return relax.op.nn.depth_to_space(inputs[0], block_size, mode=mode)
 
 
 class SpaceToDepth(OnnxOpConverter):
@@ -2915,14 +3232,7 @@ class SpaceToDepth(OnnxOpConverter):
     @classmethod
     def _impl_v1(cls, bb, inputs, attr, params):
         block_size = int(attr["blocksize"])
-        b, c, h, w = inputs[0].struct_info.shape
-        x = relax.op.reshape(
-            inputs[0], (b, c, h // block_size, block_size, w // block_size, block_size)
-        )
-        x = relax.op.permute_dims(x, [0, 3, 5, 1, 2, 4])
-        return relax.op.reshape(
-            x, (b, c * block_size * block_size, h // block_size, w // block_size)
-        )
+        return relax.op.nn.space_to_depth(inputs[0], block_size)
 
 
 class SequenceConstruct(OnnxOpConverter):
@@ -3087,7 +3397,7 @@ class QuantizeLinear(OnnxOpConverter):
         data, scale, zp = inputs
         zp_data = zp.data.numpy()
         out_dtype = zp.struct_info.dtype
-        return relax.op.qdq.quantize(data, scale, relax.const(zp_data, "int8"), 0, out_dtype)
+        return relax.op.qdq.quantize(data, scale, relax.const(zp_data, "int32"), 0, out_dtype)
 
     @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
@@ -3097,7 +3407,7 @@ class QuantizeLinear(OnnxOpConverter):
         axis = attr.get("axis", 1)
         if len(data.struct_info.shape) < 2:
             axis = 0
-        return relax.op.qdq.quantize(data, scale, relax.const(zp_data, "int8"), axis, out_dtype)
+        return relax.op.qdq.quantize(data, scale, relax.const(zp_data, "int32"), axis, out_dtype)
 
 
 class DequantizeLinear(OnnxOpConverter):
@@ -3107,18 +3417,195 @@ class DequantizeLinear(OnnxOpConverter):
     def _impl_v10(cls, bb, inputs, attr, params):
         data, scale, zp = inputs
         zp_data = zp.data.numpy()
-        assert -128 <= zp_data <= 127
-        return relax.op.qdq.dequantize(data, scale, relax.const(zp_data, "int8"), 0)
+        return relax.op.qdq.dequantize(data, scale, relax.const(zp_data, "int32"), 0)
 
     @classmethod
     def _impl_v13(cls, bb, inputs, attr, params):
         data, scale, zp = inputs
         zp_data = zp.data.numpy()
-        assert all(-128 <= zp_data.reshape(-1)) and all(zp_data.reshape(-1)) <= 127
         axis = attr.get("axis", 1)
         if len(data.struct_info.shape) < 2:
             axis = 0
-        return relax.op.qdq.dequantize(data, scale, relax.const(zp_data, "int8"), axis)
+        return relax.op.qdq.dequantize(data, scale, relax.const(zp_data, "int32"), axis)
+
+
+class Loop(OnnxOpConverter):
+    """Operator converter for Loop"""
+
+    @classmethod
+    def _impl_v11(cls, bb, inputs, attr, params):
+        max_loop_count = inputs[0]
+        cond = inputs[1]
+        loop_deps = inputs[2:]
+        num_deps = len(loop_deps)
+        # Create a copy of the body function to prevent the original
+        # from being modified.
+        body = copy.copy(attr["body"])
+        iter_dtype = max_loop_count.struct_info.dtype
+
+        # Determine what condition mode we're in.
+        assert cond is not None or max_loop_count is not None
+        is_for_loop = max_loop_count is not None and cond is None
+        is_condition_for_loop = cond is not None and max_loop_count is not None
+
+        # Loop inputs will be packed as
+        # [iter_count, max_count, condition, loop_deps, scan_outputs]
+        def cond_fn(*loop_inputs):
+            i = loop_inputs[0]
+            max_count = loop_inputs[1]
+            w = loop_inputs[2]
+
+            if cond is not None:
+                out_while = relax.op.equal(w, relax.const(True, "bool"))
+            if max_loop_count is not None:
+                out_loop = relax.op.less(i, max_count)
+
+            if is_condition_for_loop:
+                return relax.op.logical_and(out_while, out_loop)
+            if is_for_loop:
+                return out_loop
+            return out_while
+
+        # Get the current graph proto and create a clone for the subgraph
+        graph_scope = ONNXGraphImporter.current
+        subgraph_scope = ONNXGraphImporter(
+            graph_scope._shape,
+            graph_scope._dtype,
+            graph_scope._keep_params_in_input,
+            graph_scope._sanitize,
+        )
+        # Load nodes from outer graph into inner graph.
+        subgraph_scope._nodes = graph_scope._nodes.copy()
+
+        sinfo = relax.TensorStructInfo((), iter_dtype)
+        loop_vars = [
+            relax.Var(body.input[0].name, sinfo),  # iteration count
+            relax.Var("max_count", sinfo),  # iteration count
+            relax.Var(body.input[1].name, cond.struct_info),
+        ]
+        loop_vars += [
+            relax.Var(body.input[i + 2].name, v.struct_info) for i, v in enumerate(loop_deps)
+        ]
+        body_inp_args = [loop_vars[0]] + loop_vars[2:]
+        loop_var_names = [v.name_hint for v in loop_vars]
+
+        num_scan_outputs = len(body.output) - (1 + num_deps)
+
+        # Construct variables and initial empty tensors for any scan outputs.
+        # To do this, we'll figure out the output shapes of the body subgraph by importing
+        # it and doing type inference.
+        scan_output_vars = []
+        scan_output_init = []
+        if num_scan_outputs > 0:
+            with subgraph_scope:
+                sub_mod = subgraph_scope.from_onnx(body, graph_scope.opset)
+            sub_func_ret_sinfo = sub_mod["main"].body.body.struct_info
+
+        for i in range(num_scan_outputs):
+            name = body.output[i + 1 + num_deps].name
+            struct_info = sub_func_ret_sinfo.fields[i + 1 + num_deps]
+            shape = [int(x) for x in struct_info.shape]
+            dtype = struct_info.dtype
+            n = tir.Var("n", "int64")
+            out_struct_info = relax.TensorStructInfo(relax.ShapeExpr([n] + shape), dtype)
+            scan_output_vars.append(relax.Var(name, out_struct_info))
+            scan_output_init.append(relax.const(_np.array([]).reshape([0] + shape).astype(dtype)))
+
+        # Define the loop body, in this function we need to unpack loop inputs,
+        # convert the loop subgraph, and pack outputs for the next iteration.
+        def body_fn(bb, loop_inputs):
+            # Unpack inputs
+            loop_count = loop_inputs[0]
+            max_count = loop_inputs[1]
+            cond = loop_inputs[2]
+            current_vars = list(loop_inputs[3 : (3 + num_deps)])
+            scan_outputs = loop_inputs[(3 + num_deps) :]
+
+            # Prepare body input params by adding them to node dictionary.
+            new_inputs = [loop_count, max_count, cond] + current_vars
+            for i, inp in enumerate(new_inputs):
+                subgraph_scope._nodes[loop_var_names[i]] = inp
+
+            # Get the output of the current loop using the updated inputs.
+            with subgraph_scope:
+                sub_mod = subgraph_scope.from_onnx(body, graph_scope.opset)
+                body_func = sub_mod["main"].with_attr({"global_symbol": "loop_body"})
+                gvar = bb.add_func(body_func, "loop_body")
+                loop_outputs = bb.normalize(gvar(*body_inp_args))  # pylint: disable=not-callable
+            # Unpack the body outputs and prepare variables for next iteration.
+            new_cond = loop_outputs[0]
+            new_loop_vars = [loop_outputs[i] for i in range(1, 1 + num_deps)]
+            new_scan_outputs = [
+                loop_outputs[i] for i in range(1 + num_deps, len(loop_outputs.struct_info.fields))
+            ]
+
+            # Add new scan outputs to tracking
+            combined_scan_outputs = []
+            for i, scan in enumerate(scan_outputs):
+                new_scan = new_scan_outputs[i]
+                expand_scan = relax.op.expand_dims(new_scan, axis=0)
+                combined_scan = relax.op.concat([scan, expand_scan], axis=0)
+                combined_scan_outputs.append(combined_scan)
+
+            # Increment counter.
+            if max_loop_count is not None:
+                incr = relax.const(1, dtype=iter_dtype)
+                loop_count = relax.op.add(loop_count, incr)
+
+            # Pack loop outputs for next iteration
+            # [iter_count, cond, loop_deps, loop_scans]
+            return [loop_count, max_count, new_cond] + new_loop_vars + combined_scan_outputs
+
+        # Create the loop function. The current bb is within the dataflow scope,
+        # but the if node can not be placed inside the dataflow scope. Therefore
+        # we need a new bb to create loop function.
+        new_bb = relax.BlockBuilder()
+        loop_inputs = loop_vars + scan_output_vars
+        ret_sinfo = relax.TupleStructInfo([x.struct_info for x in loop_inputs])
+        empty_func = relax.Function.create_empty(loop_inputs, ret_sinfo)
+        new_bb.add_func(empty_func, "loop")
+        loop = bb.add_func(empty_func, "loop")
+
+        cond_out = cond_fn(*loop_inputs)
+        loop_outputs = body_fn(new_bb, loop_inputs)
+        # Using bb loop gvar in new_bb loop function.
+        true_branch = loop(*loop_outputs)  # pylint: disable=not-callable
+        false_branch = relax.Tuple(loop_inputs)
+        gv = relax.If(cond_out, true_branch, false_branch)
+        seqe = new_bb.normalize(relax.SeqExpr([], gv))
+        func = relax.Function(loop_inputs, seqe)
+        mod = new_bb.get()
+        func = func.inline_functions({"loop_body": mod["loop_body"]})
+        bb.update_func(loop, func)
+
+        # Now need to run initial values through the graph.
+        init_count = relax.const(0, dtype=iter_dtype)
+        # pylint: disable=not-callable
+        loop_args = [init_count, max_loop_count, cond, *loop_deps, *scan_output_init]
+        loop_call = loop(*loop_args)
+
+        # Try evaluate
+        if all(isinstance(arg, relax.Constant) for arg in loop_args):
+            loop_call = bb.normalize(loop_call)
+            tmp_bb = relax.BlockBuilder()
+            tmp_bb.get()[loop] = bb.get()[loop]
+            inps = [relax.Var(f"var_{i}", x.struct_info) for i, x in enumerate(loop_call.args)]
+            with tmp_bb.function("main", inps):
+                with tmp_bb.dataflow():
+                    lv = loop(*inps)
+                tmp_bb.emit_func_output(lv)
+            datas = [x.data for x in loop_call.args]
+            f_main = relax.VirtualMachine(relax.build(tmp_bb.get(), "llvm"), tvm.cpu())["main"]
+            outputs = f_main(*datas)
+            del bb.get()[loop]
+            loop_call = [relax.const(x) for x in outputs]
+
+        # Extract final iteration outputs.
+        if num_deps + num_scan_outputs == 1:
+            outputs = loop_call[3]
+        else:
+            outputs = relax.Tuple([loop_call[i + 3] for i in range(num_deps + num_scan_outputs)])
+        return outputs
 
 
 def _get_convert_map():
@@ -3141,13 +3628,13 @@ def _get_convert_map():
         "BitwiseAnd": BitwiseAnd,
         "BitwiseOr": BitwiseOr,
         "BitwiseXor": BitwiseXor,
-        "BitwiseNot": BitwiseNot,
         "BitShift": BitShift,
         "And": And,
         "Or": Or,
         "Xor": Xor,
         "Not": Not,
         # Unary operators
+        "BitwiseNot": BitwiseNot,
         "Log": Log,
         "Exp": Exp,
         "Acos": Acos,
@@ -3243,6 +3730,7 @@ def _get_convert_map():
         "ArgMax": ArgMax,
         "ArgMin": ArgMin,
         "TopK": TopK,
+        "ReverseSequence": ReverseSequence,
         "Expand": Expand,
         "ConstantOfShape": ConstantOfShape,
         "Slice": Slice,
@@ -3261,19 +3749,21 @@ def _get_convert_map():
         "ConvTranspose": ConvTranspose,
         "Flatten": Flatten,
         "Identity": Identity,
+        "Dropout": Dropout,
         "Resize": Resize,
         "Einsum": Einsum,
         "Range": Range,
         "OneHot": OneHot,
         "Unique": Unique,
         "NonZero": NonZero,
+        "Loop": Loop,
         # "If": If,
-        # "LRN": LRN,
+        "LRN": LRN,
         # "MaxRoiPool": MaxRoiPool,
         # "RoiAlign": RoiAlign,
-        # "NonMaxSuppression": NonMaxSuppression,
+        "NonMaxSuppression": NonMaxSuppression,
         # "GridSample": GridSample,
-        # "Upsample": Upsample,
+        "Upsample": Upsample,
         # others
         "DepthToSpace": DepthToSpace,
         "SpaceToDepth": SpaceToDepth,
@@ -3330,6 +3820,14 @@ class ONNXGraphImporter:
         self._sanitize: bool = sanitize
         self.bb: relax.BlockBuilder = relax.BlockBuilder()  # pylint: disable=invalid-name
         self._params = {}
+
+    def __enter__(self):
+        self._old_manager = ONNXGraphImporter.current
+        ONNXGraphImporter.current = self
+        return self
+
+    def __exit__(self, ptype, value, trace):
+        ONNXGraphImporter.current = self._old_manager
 
     def from_onnx(self, graph: onnx.onnx_ml_pb2.ModelProto, opset: int) -> IRModule:
         """Construct Relax expressions from the ONNX graph.
@@ -3460,6 +3958,9 @@ class ONNXGraphImporter:
             self._inputs[i_name] = self._nodes[i_name]
 
     def _check_for_unsupported_ops(self, graph: onnx.onnx_ml_pb2.GraphProto):
+        # pylint: disable=import-outside-toplevel
+        from tvm.compass.relax.op import ONNX_CUSTOM_OP_DICT
+
         convert_map = _get_convert_map()
         unsupported_ops = set()
         for node in graph.node:
@@ -3467,6 +3968,7 @@ class ONNXGraphImporter:
             if (
                 op_name not in convert_map
                 and op_name != "Constant"
+                and op_name not in ONNX_CUSTOM_OP_DICT
                 # and op_name not in _identity_list
             ):
                 unsupported_ops.add(op_name)
@@ -3517,6 +4019,9 @@ class ONNXGraphImporter:
                 "ConcatFromSequence",
                 "SplitToSequence",
             ]
+            return_tuple_ops_skip_outs_num_check = [
+                "Dropout",
+            ]
             for i, inp in enumerate(inputs):
                 if (
                     inp is not None
@@ -3548,11 +4053,12 @@ class ONNXGraphImporter:
                     outputs_num = 1
             else:
                 outputs_num = len(op)
-            assert (
-                len(outputs) <= outputs_num
-            ), "Missing outputs during conversion. Expected {} but Got {} in {}.".format(
-                len(outputs), outputs_num, op_name
-            )
+            if op_name not in return_tuple_ops_skip_outs_num_check:
+                assert (
+                    len(outputs) <= outputs_num
+                ), "Missing outputs during conversion. Expected {} but Got {} in {}.".format(
+                    len(outputs), outputs_num, op_name
+                )
             if outputs_num == 1:
                 self._nodes[outputs[0]] = op
             else:
@@ -3622,8 +4128,14 @@ class ONNXGraphImporter:
         sym : tvm.relax.function.Function
             Converted relax function
         """
+        # pylint: disable=import-outside-toplevel
+        from tvm.compass.relax.op import ONNX_CUSTOM_OP_DICT
+
         convert_map = _get_convert_map()
-        if op_name in convert_map:
+        if op_name in ONNX_CUSTOM_OP_DICT:
+            converter = ONNX_CUSTOM_OP_DICT[op_name]
+            sym = converter(self.bb, inputs, attrs, [self._nodes, self._params])
+        elif op_name in convert_map:
             convert_class = convert_map[op_name]
             op_function = convert_class.get_converter(opset)
             sym = op_function(self.bb, inputs, attrs, [self._nodes, self._params])
@@ -3720,4 +4232,6 @@ def from_onnx(
         )
 
     # Use the graph proto as a scope so that ops can access other nodes if needed.
-    return g.from_onnx(graph, opset)
+    with g:
+        mod = g.from_onnx(graph, opset)
+    return mod

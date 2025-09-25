@@ -71,7 +71,7 @@ def test_allreduce_sum(dims, target, dev):
     sch.bind(j, "threadIdx.z")
     sch.bind(k, "threadIdx.y")
     sch.bind(l, "threadIdx.x")
-    f = tvm.build(sch.mod["main"], target=target)
+    f = tvm.compile(sch.mod["main"], target=target)
 
     # prepare input and output array
     a_np = np.random.rand(1, d1, d2, d3).astype("float32")
@@ -102,7 +102,7 @@ def optional_metal_compile_callback(define_metal_compile_callback):
 
     if define_metal_compile_callback:
         if cached is None:
-            tvm._ffi.registry.remove_global_func(name)
+            tvm.ffi.registry.remove_global_func(name)
         else:
             tvm.register_func(name, cached, override=True)
 
@@ -123,7 +123,7 @@ def test_allreduce_sum_compile(optional_metal_compile_callback):
     sch.bind(j, "threadIdx.z")
     sch.bind(k, "threadIdx.y")
     sch.bind(l, "threadIdx.x")
-    tvm.build(sch.mod["main"], target=target)
+    tvm.compile(sch.mod["main"], target=target)
 
 
 @tvm.testing.parametrize_targets("cuda", "metal")
@@ -138,7 +138,7 @@ def test_allreduce_max(dims, target, dev):
     sch.bind(j, "threadIdx.z")
     sch.bind(k, "threadIdx.y")
     sch.bind(l, "threadIdx.x")
-    f = tvm.build(sch.mod["main"], target=target)
+    f = tvm.compile(sch.mod["main"], target=target)
 
     # prepare input and output array
     a_np = -np.random.rand(1, d1, d2, d3).astype("float32")

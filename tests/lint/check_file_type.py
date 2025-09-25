@@ -51,8 +51,6 @@ ALLOW_EXTENSION = {
     "cu",
     "cuh",
     "bat",
-    # relay text format
-    "rly",
     # relax text format
     "rlx",
     # configurations
@@ -89,7 +87,7 @@ ALLOW_EXTENSION = {
     "idl",
     # opencl file
     "cl",
-    # aipu buildtool config file
+    # Compass config file
     "cfg",
     # zephyr config file
     "conf",
@@ -152,46 +150,21 @@ ALLOW_SPECIFIC_FILE = {
     "docs/_static/img/tvm-logo-square.png",
     # pytest config
     "pytest.ini",
-    # microTVM tests
-    "tests/micro/testdata/mnist/digit-2.jpg",
-    "tests/micro/testdata/mnist/digit-9.jpg",
-    "tests/micro/testdata/mnist/mnist-8.onnx",
-    # microTVM Zephyr runtime
-    "apps/microtvm/zephyr/template_project/CMakeLists.txt.template",
-    "apps/microtvm/zephyr/template_project/qemu-hack/qemu-system-arm",
-    "apps/microtvm/zephyr/template_project/qemu-hack/qemu-system-xilinx-aarch64",
-    "apps/microtvm/zephyr/template_project/qemu-hack/qemu-system-i386",
-    "apps/microtvm/zephyr/template_project/qemu-hack/qemu-system-riscv32",
-    "apps/microtvm/zephyr/template_project/qemu-hack/qemu-system-riscv64",
-    "apps/microtvm/zephyr/template_project/fvp-hack/FVP_Corstone_SSE-300_Ethos-U55",
-    "apps/microtvm/zephyr/template_project/app-overlay/nucleo_l4r5zi.overlay",
-    # microTVM Arduino runtime
-    "apps/microtvm/arduino/template_project/Makefile.template",
-    # microTVM CRT
-    "src/runtime/crt/crt_config.h.template",
-    "src/runtime/crt/host/CMakeLists.txt.template",
-    # microTVM Virtual Machines
-    "apps/microtvm/poetry.lock",
-    "apps/microtvm/reference-vm/Vagrantfile",
-    "apps/microtvm/reference-vm/base-box/Vagrantfile.packer-template",
     # Hexagon
     "src/runtime/hexagon/rpc/android_bash.sh.template",
     "src/runtime/hexagon/profiler/lwp_handler.S",
     # Zhouyi NPU documentation related files.
-    "aipu/docs/images/rpc_server_arch.svg",
-    "aipu/docs/images/multi_task.png",
-    "aipu/docs/images/graph_parition_solution.png",
-    "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/input0.bin",
-    "aipu/samples/tf_mobilenet_v1_bare_metal/convert/cases/aipu/output.bin",
-    "aipu/samples/tf_mobilenet_v1_bare_metal/bsp/lib/libbm_bsp.a",
-    "aipu/docs/dsl/_templates/footer.html",
+    "compass/docs/images/rpc_server_arch.svg",
+    "compass/docs/images/multi_task.png",
+    "compass/docs/images/graph_parition_solution.png",
+    "compass/docs/dsl/_templates/footer.html",
     # Zhouyi NPU testing data related files.
-    "aipu/tests/data/aiff_2node_conv/gt.bin",
-    "aipu/tests/data/aiff_2node_conv/input0.bin",
-    "aipu/tests/data/aiff_2node_conv/weight.bin",
-    "aipu/tests/data/aiff_activation_elu/gt.bin",
-    "aipu/tests/data/aiff_activation_elu/input0.bin",
-    "aipu/tests/data/aiff_activation_elu/weight.bin",
+    "compass/tests/data/aiff_2node_conv/gt.bin",
+    "compass/tests/data/aiff_2node_conv/input0.bin",
+    "compass/tests/data/aiff_2node_conv/weight.bin",
+    "compass/tests/data/aiff_activation_elu/gt.bin",
+    "compass/tests/data/aiff_activation_elu/input0.bin",
+    "compass/tests/data/aiff_activation_elu/weight.bin",
 }
 
 
@@ -221,11 +194,14 @@ def filename_allowed(name):
     if name.startswith("3rdparty"):
         return True
 
+    if name.startswith("ffi/3rdparty"):
+        return True
+
     if name in ALLOW_SPECIFIC_FILE:
         return True
 
     # Zhouyi NPU documentation related files.
-    if name.startswith("aipu/docs/dsl/_static/") and name.endswith(".jpg"):
+    if name.startswith("compass/docs/dsl/_static/") and name.endswith(".jpg"):
         return True
 
     return False

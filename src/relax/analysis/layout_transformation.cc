@@ -26,6 +26,7 @@
 #include <tvm/arith/iter_affine_map.h>
 #include <tvm/relax/analysis.h>
 #include <tvm/tir/analysis.h>
+#include <tvm/tir/index_map.h>
 #include <tvm/tir/stmt_functor.h>
 
 #include "../../support/array.h"
@@ -454,7 +455,7 @@ class BlockAnalyzer : public StmtExprVisitor {
         spatial_dom_.Set(v->var, v->dom);
         continue;
       }
-      if (v->iter_type == kCommReduce) continue;
+      if (v->iter_type == tir::kCommReduce) continue;
       LOG(WARNING) << "[LayoutInference] Cannot compute block spatial domain in presence of "
                       "unknown block iter_type : "
                    << v->iter_type;
@@ -613,7 +614,7 @@ Map<tir::Block, Map<ObjectRef, tir::IndexMap>> SuggestLayoutTransforms(
   return analyzer.GetSuggestedTransforms();
 }
 
-TVM_REGISTER_GLOBAL(("relax.analysis.suggest_layout_transforms"))
+TVM_FFI_REGISTER_GLOBAL(("relax.analysis.suggest_layout_transforms"))
     .set_body_typed([](PrimFunc fn, Array<tir::IndexMap> write_buffer_transformations) {
       return SuggestLayoutTransforms(fn, write_buffer_transformations);
     });

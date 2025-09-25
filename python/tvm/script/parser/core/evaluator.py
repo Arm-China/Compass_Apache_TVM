@@ -23,8 +23,10 @@ import inspect
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
 import numpy as np
 
-from tvm import error, target as tgt
+from tvm import error
+from tvm.ir.expr import PrimExpr
 from tvm.tir import Pointer, if_then_else
+from ....compass import CompassInfo
 from . import dispatch, doc
 from .error import ParserError
 
@@ -76,7 +78,7 @@ def _get_builtin_or_none(name: str):
 
 
 def _check_literal_type(eval_result, node, parser):
-    if tgt.AipuInfo.current() is None:
+    if CompassInfo.current() is None:
         return
 
     if isinstance(eval_result, (np.integer, np.floating, np.bool_)):
@@ -465,10 +467,13 @@ class ExprEvaluator:
         test = self._eval_expr(fields["test"])
         body = self._eval_expr(fields["body"])
         orelse = self._eval_expr(fields["orelse"])
-        return if_then_else(test, body, orelse)
+        if isinstance(test, PrimExpr):
+            return if_then_else(test, body, orelse)
+        else:
+            return self._eval_expr(doc.IfExp(**fields))
 
     def _pre_eval_expr(self, v):
-        if tgt.AipuInfo.current() is None:
+        if CompassInfo.current() is None:
             return
 
         if isinstance(v, doc.Call) and isinstance(v.func, doc.Name):

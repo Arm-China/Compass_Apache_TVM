@@ -19,8 +19,8 @@
 /*
  * This file has been modified by Arm China team.
  */
+#include <tvm/ffi/function.h>
 #include <tvm/runtime/logging.h>
-#include <tvm/runtime/registry.h>
 #include <tvm/script/printer/doc.h>
 
 #include <algorithm>
@@ -353,7 +353,7 @@ void PythonDocPrinter::PrintTypedDoc(const LiteralDoc& doc) {
       output_ << float_imm->value;
     }
 
-  } else if (const auto* string_obj = value.as<StringObj>()) {
+  } else if (const auto* string_obj = value.as<ffi::StringObj>()) {
     output_ << "\"" << support::StrEscape(string_obj->data, string_obj->size) << "\"";
   } else {
     LOG(FATAL) << "TypeError: Unsupported literal value type: " << value->GetTypeKey();
@@ -761,7 +761,7 @@ String DocToPythonScript(Doc doc, const PrinterConfig& cfg) {
   return result.substr(0, last_space);
 }
 
-TVM_REGISTER_GLOBAL("script.printer.DocToPythonScript").set_body_typed(DocToPythonScript);
+TVM_FFI_REGISTER_GLOBAL("script.printer.DocToPythonScript").set_body_typed(DocToPythonScript);
 
 }  // namespace printer
 }  // namespace script

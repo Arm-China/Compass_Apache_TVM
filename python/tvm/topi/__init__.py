@@ -28,10 +28,7 @@ specific workload.
 # This file has been modified by Arm China team.
 #
 import importlib
-from tvm._ffi.libinfo import __version__
-
-# error reporting
-from .utils import InvalidShapeError
+from tvm.libinfo import __version__
 
 # Ensure C++ schedules get registered first, so python schedules can
 # override them.
@@ -40,20 +37,23 @@ from . import cpp
 from .math import *
 from .tensor import *
 from .generic_op_impl import *
+from .index_put import *
 from .reduction import *
 from .transform import *
 from .broadcast import *
 from .sort import *
 from .scatter import *
 from .scatter_elements import *
-from .sparse_fill_empty_rows import *
+from .slice_scatter import *
 from .sparse_reshape import *
-from .argwhere import *
 from .scan import *
 from .einsum import *
 from .unique import *
 from .searchsorted import *
 from .signal import *
+
+# error reporting
+from .utils import InvalidShapeError
 
 
 class LazyModule:
@@ -67,25 +67,11 @@ class LazyModule:
         return getattr(self.module, name)
 
 
-generic = LazyModule(".generic")
 nn = LazyModule(".nn")
-x86 = LazyModule(".x86")
-cuda = LazyModule(".cuda")
-gpu = LazyModule(".gpu")
-arm_cpu = LazyModule(".arm_cpu")
-mali = LazyModule(".mali")
-bifrost = LazyModule(".bifrost")
-intel_graphics = LazyModule(".intel_graphics")
 utils = LazyModule(".utils")
-rocm = LazyModule(".rocm")
 vision = LazyModule(".vision")
 image = LazyModule(".image")
-sparse = LazyModule(".sparse")
-hls = LazyModule(".hls")
-random = LazyModule(".random")
-hexagon = LazyModule(".hexagon")
-adreno = LazyModule(".adreno")
-aipu = LazyModule(".aipu")
+gpu = LazyModule(".gpu")
 
 
 # not import testing by default

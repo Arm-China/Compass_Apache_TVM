@@ -203,19 +203,6 @@ TVM_DLL PrimExpr left_shift(PrimExpr a, PrimExpr b, Span span = Span());
  */
 TVM_DLL PrimExpr right_shift(PrimExpr a, PrimExpr b, Span span = Span());
 /*!
- * \brief narrow shift right operator
- *
- * \param value left operand
- * \param t right operand
- * \param shift the shift value
- * \param s whether saturation
- * \param r whether round
- * \param span The location of this operation in the source.
- * \return The result expression.
- */
-TVM_DLL PrimExpr narrow_shift_right(PrimExpr value, DataType t, PrimExpr shift, PrimExpr s,
-                                    PrimExpr r, Span span = Span());
-/*!
  * \brief greater
  *
  * \param a left operand
@@ -410,6 +397,15 @@ TVM_DLL PrimExpr indexmod(PrimExpr a, PrimExpr b, Span span = Span());
  */
 TVM_DLL PrimExpr floordiv(PrimExpr a, PrimExpr b, Span span = Span());
 /*!
+ * \brief Compute log(exp(a) + exp(b)).
+ *
+ * \param a Left operand.
+ * \param b Right operand.
+ * \param span The location of this operation in the source.
+ * \return The result expression.
+ */
+TVM_DLL PrimExpr logaddexp(PrimExpr a, PrimExpr b, Span span = Span());
+/*!
  * \brief compute ceil(a / b)
  *
  * \param a left operand
@@ -419,6 +415,7 @@ TVM_DLL PrimExpr floordiv(PrimExpr a, PrimExpr b, Span span = Span());
  * \note this function does eager constant folding for
  *       index types(int32, int64) when possible.
  */
+
 TVM_DLL PrimExpr ceildiv(PrimExpr a, PrimExpr b, Span span = Span());
 /*!
  * \brief compute the remainder of floordiv
@@ -528,7 +525,7 @@ TVM_DLL PrimExpr pow(PrimExpr x, PrimExpr y, Span span = Span());
  * \param x The input data
  * \param span The location of this operation in the source.
  *
- * \return The aboslute value of input data x
+ * \return The absolute value of input data x
  */
 TVM_DLL PrimExpr abs(PrimExpr x, Span span = Span());
 /*!
@@ -982,7 +979,7 @@ inline PrimExpr MakeConstScalar(DataType t, ValueType value, Span span = Span())
       return LargeUIntImm(t, static_cast<int64_t>(low), static_cast<int64_t>(high), span);
     }
   }
-  if (t.is_float() || t.is_bfloat16() || t.is_float8())
+  if (t.is_float() || t.is_bfloat16() || t.is_float8() || t.is_float6() || t.is_float4())
     return FloatImm(t, static_cast<double>(value), span);
   // For now, we store const scalar values of custom datatypes within doubles; later, during the
   // datatypes lowering pass, we will lower the value to its true representation in the format
@@ -1113,6 +1110,7 @@ TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(indexmod);
 TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(truncdiv);
 TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(truncmod);
 TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(floordiv);
+TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(logaddexp);
 TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(floormod);
 TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(right_shift);  // NOLINT(*)
 TVM_DEFINE_INT_OP_CONST_VAL_OVERLOAD_SPANNED(left_shift);   // NOLINT(*)

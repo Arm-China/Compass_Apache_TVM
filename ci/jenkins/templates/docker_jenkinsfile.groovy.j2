@@ -179,7 +179,7 @@ def deploy() {
 
 
 
-if (false && rebuild_docker_images) {
+if (rebuild_docker_images) {
   stage('Docker Image Build') {
     parallel(
     {% for image in images %}

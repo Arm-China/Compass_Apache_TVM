@@ -25,7 +25,7 @@ import tvm
 import tvm.testing
 from tvm import dlight as dl
 from tvm import relax as rx
-from tvm._ffi import register_func
+from tvm.ffi import register_func
 from tvm.contrib import tvmjs
 from tvm.runtime import ShapeTuple
 from tvm.runtime import disco as di
@@ -270,7 +270,7 @@ def test_load_shard_in_relax():
     def relax_build(mod, target):
         with target:
             mod = rx.get_pipeline("zero")(mod)  # pylint: disable=no-value-for-parameter
-            return rx.build(mod, target="cuda")
+            return tvm.compile(mod, target="cuda")
 
     target = Target(
         {

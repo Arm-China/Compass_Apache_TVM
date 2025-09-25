@@ -23,7 +23,7 @@
  * This pass merges multiple TIR-level dynamic or static shared memory allocations into one
  * allocation.
  */
-#include <tvm/runtime/registry.h>
+#include <tvm/ffi/function.h>
 #include <tvm/tir/expr.h>
 #include <tvm/tir/op.h>
 #include <tvm/tir/stmt_functor.h>
@@ -350,7 +350,7 @@ class SharedMemoryRewriter : public StmtExprMutator {
       ICHECK_EQ(node->indices.size(), 1)
           << "MergeSharedMemoryAllocations expects flat memory buffers, "
           << "and is to be run after "
-          << "StorageFlatten (TE schedules) or FlattenBuffer (TIR schedules)";
+          << "FlattenBuffer";
       Array<PrimExpr> indices = {node->indices[0] +
                                  this->GetBufferOffset(node->buffer->data, node->buffer->dtype)};
 
@@ -374,7 +374,7 @@ class SharedMemoryRewriter : public StmtExprMutator {
           << "Buffer " << buffer << " has shape " << buffer->shape << ".  "
           << "MergeSharedMemoryAllocations expects flat memory buffers, "
           << "and is to be run after "
-          << "StorageFlatten (TE schedules) or FlattenBuffer (TIR schedules)";
+          << "FlattenBuffer";
       auto writer = buffer.CopyOnWrite();
       writer->data = merged_buf_var_;
     }
@@ -695,7 +695,7 @@ Pass MergeSharedMemoryAllocations() {
   return CreatePrimFuncPass(pass_func, 0, "tir.MergeSharedMemoryAllocations", {});
 }
 
-TVM_REGISTER_GLOBAL("tir.transform.MergeSharedMemoryAllocations")
+TVM_FFI_REGISTER_GLOBAL("tir.transform.MergeSharedMemoryAllocations")
     .set_body_typed(MergeSharedMemoryAllocations);
 
 }  // namespace transform

@@ -22,6 +22,9 @@
  * \brief The functions to make Relax neural network operator calls.
  */
 
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RELAX_OP_NN_NN_H_
 #define TVM_RELAX_OP_NN_NN_H_
 
@@ -57,18 +60,30 @@ Expr gelu(Expr data);
 /*! \brief Gaussian Error Linear Units function approximated by tanh. */
 Expr gelu_tanh(Expr data);
 
+/*! \brief Parametric Rectified Linear Unit function.*/
+Expr prelu(Expr data, Expr alpha, int axis);
+
+/*! \brief Scaled Exponential Linear Unit function. */
+Expr selu(Expr data);
+
 /*! \brief Sigmoid Linear Unit function. */
 Expr silu(Expr data);
 
 /*! \brief Softmax function. */
 Expr softmax(Expr data, int axis);
 
+/*! \brief Softplus function. */
+Expr softplus(Expr data, double beta, double threshold);
+
 /*! \brief LogSoftmax function. */
 Expr log_softmax(Expr data, int axis);
 
+/*! \brief Pixel Shuffle function. */
+Expr pixel_shuffle(Expr data, int upscale_factor);
+
 /*! \brief Compute batch normalization. */
 Expr batch_norm(Expr data, Expr gamma, Expr beta, Expr moving_mean, Expr moving_var,  //
-                int axis, double epsilon, bool center, bool scale, double momentum);
+                int axis, double epsilon, bool center, bool scale, double momentum, bool training);
 
 /*! \brief Compute layer normalization. */
 Expr layer_norm(Expr data, Expr gamma, Expr beta, Array<Integer> axes, double epsilon, bool center,
@@ -80,6 +95,22 @@ Expr group_norm(Expr data, Expr gamma, Expr beta, int num_groups, int channel_ax
 
 /*! \brief Compute root mean square normalization. */
 Expr rms_norm(Expr data, Expr weight, Array<Integer> axes, double epsilon);
+
+/*! \brief Compute local response normalization. */
+Expr lrn(Expr data, int size, int axis, double bias, double alpha, double beta);
+
+/*! \brief Compute spatial to channel conversion. */
+Expr space_to_depth(Expr data, int block_size, String layout);
+
+/*! \brief Compute channel to spatial conversion. */
+Expr depth_to_space(Expr data, int block_size, String layout, String mode);
+
+/*! \brief Compute spatial to batch conversion. */
+Expr space_to_batch_nd(Expr data, Array<Integer> block_shape, Array<Array<Integer>> paddings,
+                       double pad_value);
+
+/*! \brief Compute batch to spatial conversion. */
+Expr batch_to_space_nd(Expr data, Array<Integer> block_shape, Array<Array<Integer>> crops);
 
 /*!
  * \brief Applies the dropout operation to the input tensor.

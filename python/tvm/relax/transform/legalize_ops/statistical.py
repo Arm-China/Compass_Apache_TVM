@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=invalid-name
+#
+# This file has been modified by Arm China team.
+#
 """Default legalization function for statistical operators."""
 from typing import List
 from tvm import topi, tir, te
@@ -78,6 +81,17 @@ def _variance(bb: BlockBuilder, call: Call) -> Expr:
         call.attrs.axis,
         call.attrs.keepdims,
         primfunc_name_hint="variance",
+    )
+
+
+@register_legalize("relax.cumsum")
+def _cumsum(bb: BlockBuilder, call: Call) -> Expr:
+    return bb.call_te(
+        topi.cumsum,
+        call.args[0],
+        call.attrs.axis,
+        call.attrs.dtype,
+        call.attrs.exclusive,
     )
 
 

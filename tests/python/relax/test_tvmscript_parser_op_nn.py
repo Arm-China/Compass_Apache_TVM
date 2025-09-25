@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 from typing import Optional, Union
 
@@ -283,6 +286,98 @@ def test_group_norm():
     _check(foo, bb.get()["foo"])
 
 
+def test_lrn():
+    @R.function
+    def foo(
+        x: R.Tensor((2, 4, 4, 5), "float32"),
+    ) -> R.Tensor((2, 4, 4, 5), "float32"):
+        gv: R.Tensor((2, 4, 4, 5), "float32") = R.nn.lrn(
+            x,
+            size=5,
+            axis=1,
+            bias=2,
+            alpha=0.00001,
+            beta=0.75,
+        )
+        return gv
+
+    x = relax.Var("x", R.Tensor((2, 4, 4, 5), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x]):
+        gv = bb.emit(relax.op.nn.lrn(x, size=5, axis=1, bias=2, alpha=0.00001, beta=0.75))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_space_to_depth():
+    @R.function
+    def foo(
+        x: R.Tensor((2, 4, 6, 8), "float32"),
+    ) -> R.Tensor((2, 16, 3, 4), "float32"):
+        gv: R.Tensor((2, 16, 3, 4), "float32") = R.nn.space_to_depth(x, 2)
+        return gv
+
+    x = relax.Var("x", R.Tensor((2, 4, 6, 8), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x]):
+        gv = bb.emit(relax.op.nn.space_to_depth(x, 2))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_depth_to_space():
+    @R.function
+    def foo(
+        x: R.Tensor((2, 8, 6, 8), "float32"),
+    ) -> R.Tensor((2, 2, 12, 16), "float32"):
+        gv: R.Tensor((2, 2, 12, 16), "float32") = R.nn.depth_to_space(x, 2)
+        return gv
+
+    x = relax.Var("x", R.Tensor((2, 8, 6, 8), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x]):
+        gv = bb.emit(relax.op.nn.depth_to_space(x, 2))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_space_to_batch_nd():
+    @R.function
+    def foo(
+        x: R.Tensor((2, 4, 6, 8), "float32"),
+    ) -> R.Tensor((12, 2, 3, 8), "float32"):
+        gv: R.Tensor((12, 2, 3, 8), "float32") = R.nn.space_to_batch_nd(x, (2, 3), ((0, 0), (1, 2)))
+        return gv
+
+    x = relax.Var("x", R.Tensor((2, 4, 6, 8), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x]):
+        gv = bb.emit(relax.op.nn.space_to_batch_nd(x, (2, 3), ((0, 0), (1, 2))))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_batch_to_space_nd():
+    @R.function
+    def foo(
+        x: R.Tensor((12, 2, 3, 8), "float32"),
+    ) -> R.Tensor((2, 4, 6, 8), "float32"):
+        gv: R.Tensor((2, 4, 6, 8), "float32") = R.nn.batch_to_space_nd(x, (2, 3), ((0, 0), (1, 2)))
+        return gv
+
+    x = relax.Var("x", R.Tensor((12, 2, 3, 8), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x]):
+        gv = bb.emit(relax.op.nn.batch_to_space_nd(x, (2, 3), ((0, 0), (1, 2))))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
 def test_dropout():
     @R.function
     def foo(
@@ -359,6 +454,25 @@ def test_nll_loss_no_weights():
     bb = relax.BlockBuilder()
     with bb.function("foo", [predictions, targets]):
         gv = bb.emit(relax.op.nn.nll_loss(predictions, targets, reduction="mean", ignore_index=-1))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_prelu():
+    @R.function
+    def foo(
+        x: R.Tensor((2, 4, 4, 5), "float32"),
+        alpha: R.Tensor((1,), "float32"),
+    ) -> R.Tensor((2, 4, 4, 5), "float32"):
+        gv: R.Tensor((2, 4, 4, 5), "float32") = R.nn.prelu(x, alpha)
+        return gv
+
+    x = relax.Var("x", R.Tensor((2, 4, 4, 5), "float32"))
+    alpha = relax.Var("alpha", R.Tensor((1,), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x, alpha]):
+        gv = bb.emit(relax.op.nn.prelu(x, alpha))
         bb.emit_func_output(gv)
 
     _check(foo, bb.get()["foo"])

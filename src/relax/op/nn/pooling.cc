@@ -16,6 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include "pooling.h"
 
@@ -62,7 +65,7 @@ Expr max_pool1d(Expr data, Array<IntImm> pool_size, Array<IntImm> strides, Array
                     count_include_pad, layout, out_layout);
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.max_pool1d").set_body_typed(max_pool1d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.max_pool1d").set_body_typed(max_pool1d);
 
 StructInfo InferStructInfoPool1D(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
@@ -95,7 +98,7 @@ StructInfo InferStructInfoPool1D(const Call& call, const BlockBuilder& ctx) {
 
   PrimExpr numerator_w = input_w + padding_w - attrs->dilation[0] * (kernel_w - 1) - 1;
   if (attrs->ceil_mode) {
-    numerator_w += attrs->strides[1] - 1;
+    numerator_w += attrs->strides[0] - 1;
   }
   out_NCW_shape[2] = analyzer->Simplify(floordiv(numerator_w, attrs->strides[0]) + 1);
 
@@ -175,7 +178,7 @@ Expr max_pool2d(Expr data, Array<IntImm> pool_size, Array<IntImm> strides, Array
                     count_include_pad, layout, out_layout);
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.max_pool2d").set_body_typed(max_pool2d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.max_pool2d").set_body_typed(max_pool2d);
 
 StructInfo InferStructInfoPool2D(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
@@ -225,34 +228,45 @@ StructInfo InferStructInfoPool2D(const Call& call, const BlockBuilder& ctx) {
 InferLayoutOutput InferLayoutPool2d(const Call& call,
                                     const Map<String, Array<String>>& desired_layouts,
                                     const VarLayoutMap& var_layout_map) {
-  ICHECK(NoDesiredLayout(call, desired_layouts));
+  const auto& it = desired_layouts.find(Downcast<Op>(call->op)->name);
   const auto* tensor_sinfo = GetStructInfoAs<TensorStructInfoNode>(call);
   ICHECK(tensor_sinfo != nullptr) << "Invalid Call";
   ICHECK_EQ(tensor_sinfo->ndim, 4) << "Unsupported initial layout";
   const auto* attrs = call->attrs.as<Pool2DAttrs>();
   ICHECK(attrs) << "Invalid Call";
-
-  LayoutDecision layout = GetLayoutDecision(var_layout_map, call->args[0]);
+  LayoutDecision layout;
   ObjectPtr<Pool2DAttrs> new_attrs = make_object<Pool2DAttrs>(*attrs);
 
-  if (layout->layout.ndim() != layout->layout.ndim_primal()) {
-    tir::Layout in_layout(attrs->layout, DataType::Int(64));
-    auto desired_layout = TransposeSubLayoutLike(attrs->layout, InitialLayout(4), layout->layout);
-    auto data_si = GetStructInfo(call->args[0]);
-    TensorStructInfo data_sinfo = data_si.as<TensorStructInfo>().value();
-    Optional<ShapeExpr> data_shape = GetRef<ShapeExpr>(data_sinfo->shape.as<ShapeExprNode>());
-    if (CanProveLayoutTransform(in_layout, desired_layout, data_shape.value()->values)) {
-      // Not handling out_layout being different from in_layout now. Any use case ?
-      new_attrs->layout = desired_layout.name();
-      new_attrs->out_layout = desired_layout.name();
-      return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
-    } else {
-      layout = InitialLayout(4);
+  if (it != desired_layouts.end()) {
+    // We have a desired layout for pool2d.
+    Layout desired_data_layout = (*it).second[0];
+    ICHECK_EQ(desired_data_layout.ndim(), desired_data_layout.ndim_primal()) << "Axis swap only";
+    layout = TransposeLike(InitialLayout(4), attrs->layout, desired_data_layout);
+    new_attrs->layout = (*it).second[0];
+    new_attrs->out_layout = (*it).second[0];
+  } else {
+    // We dont have a desired layout for pool2d, propagate from the input instead.
+    layout = GetLayoutDecision(var_layout_map, call->args[0]);
+    if (layout->layout.ndim() != layout->layout.ndim_primal()) {
+      tir::Layout in_layout(attrs->layout, DataType::Int(64));
+      auto desired_layout = TransposeSubLayoutLike(attrs->layout, InitialLayout(4), layout->layout);
+      auto data_si = GetStructInfo(call->args[0]);
+      TensorStructInfo data_sinfo = data_si.as<TensorStructInfo>().value();
+      Optional<ShapeExpr> data_shape = GetRef<ShapeExpr>(data_sinfo->shape.as<ShapeExprNode>());
+      if (CanProveLayoutTransform(in_layout, desired_layout, data_shape.value()->values)) {
+        // Not handling out_layout being different from in_layout now. Any use case ?
+        new_attrs->layout = desired_layout.name();
+        new_attrs->out_layout = desired_layout.name();
+        return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
+      } else {
+        layout = InitialLayout(4);
+      }
     }
-  }
 
-  new_attrs->layout = TransposeLike(attrs->layout, InitialLayout(4), layout->layout).name();
-  new_attrs->out_layout = TransposeLike(attrs->out_layout, InitialLayout(4), layout->layout).name();
+    new_attrs->layout = TransposeLike(attrs->layout, InitialLayout(4), layout->layout).name();
+    new_attrs->out_layout =
+        TransposeLike(attrs->out_layout, InitialLayout(4), layout->layout).name();
+  }
   return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
 }
 
@@ -314,7 +328,7 @@ Expr max_pool3d(Expr data, Array<IntImm> pool_size, Array<IntImm> strides, Array
                     count_include_pad, layout, out_layout);
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.max_pool3d").set_body_typed(max_pool3d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.max_pool3d").set_body_typed(max_pool3d);
 
 StructInfo InferStructInfoPool3D(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
@@ -401,7 +415,7 @@ Expr avg_pool1d(Expr data, Array<IntImm> pool_size, Array<IntImm> strides, Array
                     count_include_pad, layout, out_layout);
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.avg_pool1d").set_body_typed(avg_pool1d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.avg_pool1d").set_body_typed(avg_pool1d);
 
 TVM_REGISTER_OP("relax.nn.avg_pool1d")
     .set_num_inputs(1)
@@ -420,7 +434,7 @@ Expr avg_pool2d(Expr data, Array<IntImm> pool_size, Array<IntImm> strides, Array
                     count_include_pad, layout, out_layout);
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.avg_pool2d").set_body_typed(avg_pool2d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.avg_pool2d").set_body_typed(avg_pool2d);
 
 TVM_REGISTER_OP("relax.nn.avg_pool2d")
     .set_num_inputs(1)
@@ -439,7 +453,7 @@ Expr avg_pool3d(Expr data, Array<IntImm> pool_size, Array<IntImm> strides, Array
                     count_include_pad, layout, out_layout);
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.avg_pool3d").set_body_typed(avg_pool3d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.avg_pool3d").set_body_typed(avg_pool3d);
 
 TVM_REGISTER_OP("relax.nn.avg_pool3d")
     .set_num_inputs(1)
@@ -470,7 +484,7 @@ Expr adaptive_avg_pool1d(Expr data, Optional<Array<IntImm>> output_size, String 
   return Call(op, {std::move(data)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.adaptive_avg_pool1d").set_body_typed(adaptive_avg_pool1d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.adaptive_avg_pool1d").set_body_typed(adaptive_avg_pool1d);
 
 StructInfo InferStructInfoAdaptiveAvgPool1D(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
@@ -553,7 +567,7 @@ Expr adaptive_avg_pool2d(Expr data, Optional<Array<IntImm>> output_size, String 
   return Call(op, {std::move(data)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.adaptive_avg_pool2d").set_body_typed(adaptive_avg_pool2d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.adaptive_avg_pool2d").set_body_typed(adaptive_avg_pool2d);
 
 StructInfo InferStructInfoAdaptiveAvgPool2D(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
@@ -652,7 +666,7 @@ Expr adaptive_avg_pool3d(Expr data, Optional<Array<IntImm>> output_size, String 
   return Call(op, {std::move(data)}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.adaptive_avg_pool3d").set_body_typed(adaptive_avg_pool3d);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.adaptive_avg_pool3d").set_body_typed(adaptive_avg_pool3d);
 
 StructInfo InferStructInfoAdaptiveAvgPool3D(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);

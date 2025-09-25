@@ -225,26 +225,37 @@ def _nn_conv2d_transpose(bb: BlockBuilder, call: Call) -> Expr:
 
 @register_legalize("relax.nn.pad")
 def _nn_pad(bb: BlockBuilder, call: Call) -> Expr:
-    # Unpack pad_width into two separate lists for topi.
+    pad_mode = call.attrs.pad_mode
     pad_widths = call.attrs.pad_width
     pad_before = pad_widths[::2]
     pad_after = pad_widths[1::2]
-    if call.attrs.pad_mode == "reflect":
+    if pad_mode == "reflect":
         return bb.call_te(
-            topi.nn.mirror_pad,
+            topi.nn.reflect_pad, call.args[0], pad_before=pad_before, pad_after=pad_after
+        )
+    elif pad_mode == "replicate":
+        return bb.call_te(
+            topi.nn.replicate_pad, call.args[0], pad_before=pad_before, pad_after=pad_after
+        )
+    elif pad_mode == "circular":
+        return bb.call_te(
+            topi.nn.circular_pad, call.args[0], pad_before=pad_before, pad_after=pad_after
+        )
+    else:
+        return bb.call_te(
+            topi.nn.pad,
             call.args[0],
             pad_before=pad_before,
             pad_after=pad_after,
-            mode="REFLECT",
+            pad_value=call.attrs.pad_value,
+            primfunc_name_hint="pad",
         )
-    return bb.call_te(
-        topi.nn.pad,
-        call.args[0],
-        pad_before=pad_before,
-        pad_after=pad_after,
-        pad_value=float(call.args[1].data.numpy()),
-        primfunc_name_hint="pad",
-    )
+
+
+@register_legalize("relax.nn.pixel_shuffle")
+def _nn_pixel_shuffle(bb: BlockBuilder, call: Call) -> Expr:
+    upscale_factor = call.attrs.upscale_factor
+    return bb.call_te(topi.nn.pixel_shuffle, call.args[0], upscale_factor=upscale_factor)
 
 
 @register_legalize("relax.nn.max_pool1d")
@@ -480,6 +491,11 @@ def _nn_leakyrelu(bb: BlockBuilder, call: Call) -> Expr:
     return bb.call_te(topi.nn.leaky_relu, call.args[0], call.attrs.alpha)
 
 
+@register_legalize("relax.nn.prelu")
+def _nn_prelu(bb: BlockBuilder, call: Call) -> Expr:
+    return bb.call_te(topi.nn.prelu, call.args[0], call.args[1], call.attrs.axis)
+
+
 @register_legalize("relax.nn.gelu")
 def _nn_gelu(bb: BlockBuilder, call: Call) -> Expr:
     def te_gelu(x: te.Tensor):
@@ -516,12 +532,40 @@ def _nn_gelu_tanh(bb: BlockBuilder, call: Call) -> Expr:
     return bb.call_te(te_gelu_tanh, call.args[0], primfunc_name_hint="gelu_tanh")
 
 
+@register_legalize("relax.nn.selu")
+def _nn_selu(bb: BlockBuilder, call: Call) -> Expr:
+    def te_selu(x: te.Tensor):
+        dtype = x.dtype
+        alpha = tir.const(1.6732632423543772848170429916717, dtype)
+        scale = tir.const(1.0507009873554804934193349852946, dtype)
+
+        # Compute SELU
+        # SELU(x) = scale∗(max(0,x)+min(0,α∗(exp(x)−1)))
+        positive_part = topi.maximum(x, tir.const(0, dtype))
+        negative_part = topi.minimum(
+            tir.const(0, dtype), alpha * (topi.exp(x) - tir.const(1, dtype))
+        )
+        return scale * (positive_part + negative_part)
+
+    return bb.call_te(te_selu, call.args[0], primfunc_name_hint="selu")
+
+
 @register_legalize("relax.nn.silu")
 def _nn_silu(bb: BlockBuilder, call: Call) -> Expr:
     def te_silu(x: te.Tensor):
         return topi.multiply(x, topi.sigmoid(x))
 
     return bb.call_te(te_silu, call.args[0], primfunc_name_hint="silu")
+
+
+@register_legalize("relax.nn.softplus")
+def _nn_softplus(bb: BlockBuilder, call: Call) -> Expr:
+    return bb.call_te(
+        topi.nn.softplus,
+        call.args[0],
+        call.attrs.beta,
+        call.attrs.threshold,
+    )
 
 
 @register_legalize("relax.nn.softmax")
@@ -562,9 +606,7 @@ def _nn_batch_norm(bb: BlockBuilder, call: Call) -> Expr:
         epsilon=call.attrs.epsilon,
         center=call.attrs.center,
         scale=call.attrs.scale,
-        # By default relax batch_norm is training mode.
-        # To transform it to inference mode, use DecomposeOpsForInference.
-        training=True,
+        training=call.attrs.training,
         momentum=call.attrs.momentum,
     )
 
@@ -603,6 +645,67 @@ def _nn_rms_norm(bb: BlockBuilder, call: Call) -> Expr:
         call.args[1],
         axis=call.attrs.axes,
         epsilon=call.attrs.epsilon,
+    )
+
+
+@register_legalize("relax.nn.lrn")
+def _nn_lrn(bb: BlockBuilder, call: Call) -> Expr:
+    return bb.call_te(
+        topi.nn.lrn,
+        call.args[0],
+        size=call.attrs.size,
+        axis=call.attrs.axis,
+        alpha=call.attrs.alpha,
+        beta=call.attrs.beta,
+        bias=call.attrs.bias,
+    )
+
+
+@register_legalize("relax.nn.space_to_depth")
+def _nn_space_to_depth(bb: BlockBuilder, call: Call) -> Expr:
+    return bb.call_te(
+        topi.nn.space_to_depth,
+        call.args[0],
+        block_size=call.attrs.block_size,
+        layout=call.attrs.layout,
+    )
+
+
+@register_legalize("relax.nn.depth_to_space")
+def _nn_depth_to_space(bb: BlockBuilder, call: Call) -> Expr:
+    return bb.call_te(
+        topi.nn.depth_to_space,
+        call.args[0],
+        block_size=call.attrs.block_size,
+        layout=call.attrs.layout,
+        mode=call.attrs.mode,
+    )
+
+
+@register_legalize("relax.nn.space_to_batch_nd")
+def _nn_space_to_batch_nd(bb: BlockBuilder, call: Call) -> Expr:
+    paddings = call.attrs.paddings
+    pad_before, pad_after = zip(*paddings) if paddings else ([], [])
+    return bb.call_te(
+        topi.nn.space_to_batch_nd,
+        call.args[0],
+        block_shape=call.attrs.block_shape,
+        pad_before=pad_before,
+        pad_after=pad_after,
+        pad_value=call.attrs.pad_value,
+    )
+
+
+@register_legalize("relax.nn.batch_to_space_nd")
+def _nn_batch_to_space_nd(bb: BlockBuilder, call: Call) -> Expr:
+    crops = call.attrs.crops
+    crop_begin_list, crop_end_list = zip(*crops) if crops else ([], [])
+    return bb.call_te(
+        topi.nn.batch_to_space_nd,
+        call.args[0],
+        block_shape=call.attrs.block_shape,
+        crop_begin_list=crop_begin_list,
+        crop_end_list=crop_end_list,
     )
 
 

@@ -87,8 +87,6 @@ class ExprFunctor:
             ret = self.visit_float_imm(expr)
         elif isinstance(expr, _expr.StringImm):
             ret = self.visit_string_imm(expr)
-        elif isinstance(expr, _expr.Any):
-            ret = self.visit_any(expr)
         else:
             raise RuntimeError(f"Unhandled case: {type(expr)}")
 
@@ -193,9 +191,6 @@ class ExprFunctor:
         raise NotImplementedError()
 
     def visit_string_imm(self, _):
-        raise NotImplementedError()
-
-    def visit_any(self, _):
         raise NotImplementedError()
 
 
@@ -330,9 +325,6 @@ class ExprVisitor(ExprFunctor):
         pass
 
     def visit_string_imm(self, _):
-        pass
-
-    def visit_any(self, _):
         pass
 
 
@@ -519,7 +511,4 @@ class ExprMutator(ExprFunctor):
         return op
 
     def visit_string_imm(self, op):
-        return op
-
-    def visit_any(self, op):
         return op

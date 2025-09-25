@@ -59,7 +59,7 @@ driving its costs down.
    arch/index
    deep_dive/tensor_ir/index
    deep_dive/relax/index
-   aipu/index
+   compass/index
 
 .. toctree::
    :maxdepth: 1

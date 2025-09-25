@@ -15,22 +15,28 @@
 # specific language governing permissions and limitations
 # under the License.
 """Neural network related operators."""
+#
+# This file has been modified by Arm China team.
+#
 from .nn import (
     adaptive_avg_pool1d,
     adaptive_avg_pool2d,
     adaptive_avg_pool3d,
     attention,
+    attention_bias,
     attention_var_len,
     avg_pool1d,
     avg_pool2d,
     avg_pool3d,
     batch_norm,
+    batch_to_space_nd,
     conv1d,
     conv1d_transpose,
     conv2d,
     conv2d_transpose,
     conv3d,
     cross_entropy_with_logits,
+    depth_to_space,
     dropout,
     gelu,
     gelu_tanh,
@@ -38,13 +44,21 @@ from .nn import (
     layer_norm,
     leakyrelu,
     log_softmax,
+    lrn,
     max_pool1d,
     max_pool2d,
     max_pool3d,
     nll_loss,
     pad,
+    pixel_shuffle,
+    prelu,
     relu,
+    relu6,
     rms_norm,
+    selu,
     silu,
     softmax,
+    softplus,
+    space_to_batch_nd,
+    space_to_depth,
 )

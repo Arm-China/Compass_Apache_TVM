@@ -16,7 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+/*
+ * This file has been modified by Arm China team.
+ */
 #include "nn.h"
 
 #include <utility>
@@ -34,6 +36,9 @@ RELAX_REGISTER_UNARY_NN_OP_AND_IMPL(gelu, "nn.gelu", /*require_float_dtype=*/tru
 /* relax.nn.gelu_tanh */
 RELAX_REGISTER_UNARY_NN_OP_AND_IMPL(gelu_tanh, "nn.gelu_tanh", /*require_float_dtype=*/true);
 
+/* relax.nn.selu */
+RELAX_REGISTER_UNARY_NN_OP_AND_IMPL(selu, "nn.selu", /*require_float_dtype=*/true);
+
 /* relax.nn.silu */
 RELAX_REGISTER_UNARY_NN_OP_AND_IMPL(silu, "nn.silu", /*require_float_dtype=*/true);
 
@@ -47,14 +52,98 @@ Expr leakyrelu(Expr data, double alpha) {
   return Call(op, {data}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.leakyrelu").set_body_typed(leakyrelu);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.leakyrelu").set_body_typed(leakyrelu);
 
 TVM_REGISTER_OP("relax.nn.leakyrelu")
     .set_num_inputs(1)
     .add_argument("data", "Tensor", "The input tensor.")
     .set_attrs_type<LeakyReluAttrs>()
+    .set_attr<FRelaxInferLayout>("FRelaxInferLayout", InferLayoutUnaryEwise)
     .set_attr<FInferStructInfo>("FInferStructInfo",
                                 InferStructInfoUnaryArith</*require_float_dtype=*/true>)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.softplus */
+TVM_REGISTER_NODE_TYPE(SoftplusAttrs);
+
+Expr softplus(Expr data, double beta, double threshold) {
+  auto attrs = make_object<SoftplusAttrs>();
+  attrs->beta = beta;
+  attrs->threshold = threshold;
+  static const Op& op = Op::Get("relax.nn.softplus");
+  return Call(op, {data}, Attrs(attrs), {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.softplus").set_body_typed(softplus);
+
+TVM_REGISTER_OP("relax.nn.softplus")
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "The input tensor.")
+    .set_attrs_type<SoftplusAttrs>()
+    .set_attr<FInferStructInfo>("FInferStructInfo",
+                                InferStructInfoUnaryArith</*require_float_dtype=*/true>)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.prelu */
+TVM_REGISTER_NODE_TYPE(PReluAttrs);
+
+Expr prelu(Expr data, Expr alpha, int axis = 1) {
+  auto attrs = make_object<PReluAttrs>();
+  attrs->axis = axis;
+  static const Op& op = Op::Get("relax.nn.prelu");
+  return Call(op, {data, alpha}, Attrs(attrs), {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.prelu").set_body_typed(prelu);
+
+StructInfo InferStructInfoPRelu(const Call& call, const BlockBuilder& ctx) {
+  TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
+  if (data_sinfo->IsUnknownNdim()) {
+    return data_sinfo;
+  }
+  if (!data_sinfo->IsUnknownDtype() && !data_sinfo->dtype.is_float()) {
+    ctx->ReportFatal(Diagnostic::Error(call) << "Prelu requires the input tensor to have float "
+                                                "dtype. However, the given input dtype is "
+                                             << data_sinfo->dtype);
+  }
+  const auto* attrs = call->attrs.as<PReluAttrs>();
+  NormalizeAxis(call, ctx, data_sinfo->ndim, attrs->axis);
+
+  return data_sinfo;
+}
+
+InferLayoutOutput InferLayoutPRelu(const Call& call,
+                                   const Map<String, Array<String>>& desired_layouts,
+                                   const VarLayoutMap& var_layout_map) {
+  ICHECK(NoDesiredLayout(call, desired_layouts));
+  const auto* attrs = call->attrs.as<PReluAttrs>();
+  ICHECK(attrs) << "Invalid Call";
+
+  LayoutDecision layout = GetLayoutDecision(var_layout_map, call->args[0]);
+
+  // TODO(Siva): We could handle if the axis is not the sub indexed one.
+  if (layout->layout.ndim() != layout->layout.ndim_primal()) {
+    const auto* tensor_sinfo = GetStructInfoAs<TensorStructInfoNode>(call->args[0]);
+    ICHECK(tensor_sinfo != nullptr) << "Invalid Call";
+    ICHECK(!tensor_sinfo->IsUnknownNdim()) << "Only support static ndim for now";
+    int ndim = tensor_sinfo->ndim;
+    layout = LayoutDecision(InitialLayout(ndim));
+  }
+
+  ObjectPtr<PReluAttrs> new_attrs = make_object<PReluAttrs>(*attrs);
+  new_attrs->axis = FindAxis(layout->layout, attrs->axis);
+
+  LayoutDecision alpha_layout = GetLayoutDecision(var_layout_map, call->args[1]);
+  return InferLayoutOutput({layout, alpha_layout}, {layout}, Attrs(new_attrs));
+}
+
+TVM_REGISTER_OP("relax.nn.prelu")
+    .set_num_inputs(2)
+    .add_argument("data", "Tensor", "The input tensor.")
+    .add_argument("alpha", "Tensor", "The channel-wise learnable slope.")
+    .set_attrs_type<PReluAttrs>()
+    .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoPRelu)
+    .set_attr<FRelaxInferLayout>("FRelaxInferLayout", InferLayoutPRelu)
     .set_attr<Bool>("FPurity", Bool(true));
 
 /* relax.nn.softmax */
@@ -67,14 +156,15 @@ Expr softmax(Expr data, int axis) {
   return Call(op, {data}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.softmax").set_body_typed(softmax);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.softmax").set_body_typed(softmax);
 
 StructInfo InferStructInfoSoftmax(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
   if (data_sinfo->IsUnknownNdim()) {
     return data_sinfo;
   }
-  if (!data_sinfo->IsUnknownDtype() && !data_sinfo->dtype.is_float()) {
+  if (!data_sinfo->IsUnknownDtype() && !data_sinfo->dtype.is_float() &&
+      !data_sinfo->dtype.is_bfloat()) {
     ctx->ReportFatal(Diagnostic::Error(call) << "Softmax requires the input tensor to have float "
                                                 "dtype. However, the given input dtype is "
                                              << data_sinfo->dtype);
@@ -124,7 +214,7 @@ Expr log_softmax(Expr data, int axis) {
   return Call(op, {data}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.log_softmax").set_body_typed(log_softmax);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.log_softmax").set_body_typed(log_softmax);
 
 TVM_REGISTER_OP("relax.nn.log_softmax")
     .set_num_inputs(1)
@@ -136,15 +226,16 @@ TVM_REGISTER_OP("relax.nn.log_softmax")
 /* relax.nn.pad */
 TVM_REGISTER_NODE_TYPE(PadAttrs);
 
-Expr pad(Expr data, Array<Integer> pad_width, Expr pad_value, String pad_mode) {
+Expr pad(Expr data, Array<Integer> pad_width, String pad_mode, double pad_value) {
   auto attrs = make_object<PadAttrs>();
   attrs->pad_width = std::move(pad_width);
   attrs->pad_mode = std::move(pad_mode);
+  attrs->pad_value = pad_value;
   static const Op& op = Op::Get("relax.nn.pad");
-  return Call(op, {data, pad_value}, Attrs(attrs), {});
+  return Call(op, {data}, Attrs(attrs), {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.pad").set_body_typed(pad);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.pad").set_body_typed(pad);
 
 StructInfo InferStructInfoPad(const Call& call, const BlockBuilder& ctx) {
   Array<TensorStructInfo> input_sinfo = GetInputTensorStructInfo(call, ctx);
@@ -170,12 +261,117 @@ StructInfo InferStructInfoPad(const Call& call, const BlockBuilder& ctx) {
   return TensorStructInfo(ShapeExpr(out_shape), input_sinfo[0]->dtype);
 }
 
+InferLayoutOutput InferLayoutPad(const Call& call,
+                                 const Map<String, Array<String>>& desired_layouts,
+                                 const VarLayoutMap& var_layout_map) {
+  ICHECK(NoDesiredLayout(call, desired_layouts));
+  const auto* attrs = call->attrs.as<PadAttrs>();
+  ICHECK(attrs) << "Invalid Call";
+  Array<Integer> pad_width = attrs->pad_width;
+
+  LayoutDecision layout = GetLayoutDecision(var_layout_map, call->args[0]);
+
+  // TODO(Siva): We could handle if the axis is not the sub indexed one.
+  if (layout->layout.ndim() != layout->layout.ndim_primal()) {
+    const auto* tensor_sinfo = GetStructInfoAs<TensorStructInfoNode>(call->args[0]);
+    ICHECK(tensor_sinfo != nullptr) << "Invalid Call";
+    ICHECK(!tensor_sinfo->IsUnknownNdim()) << "Only support static ndim for now";
+    int ndim = tensor_sinfo->ndim;
+    layout = LayoutDecision(InitialLayout(ndim));
+  }
+
+  const auto* call_sinfo = GetStructInfoAs<TensorStructInfoNode>(call);
+  ICHECK(call_sinfo != nullptr) << "Invalid Call";
+  int call_ndim = call_sinfo->ndim;
+  ICHECK(static_cast<int>(pad_width.size()) == 2 * call_ndim) << "Illegal pad_width";
+  ObjectPtr<PadAttrs> new_attrs = make_object<PadAttrs>(*attrs);
+  Array<Integer> new_pad_width;
+  new_pad_width.resize(pad_width.size());
+  for (int i = 0; i < call_ndim; ++i) {
+    int dst_i = FindAxis(layout->layout, i);
+    new_pad_width.Set(dst_i * 2, pad_width[i * 2]);
+    new_pad_width.Set(dst_i * 2 + 1, pad_width[i * 2 + 1]);
+  }
+  new_attrs->pad_width = new_pad_width;
+  return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
+}
+
 TVM_REGISTER_OP("relax.nn.pad")
-    .set_num_inputs(2)
+    .set_num_inputs(1)
     .add_argument("data", "Tensor", "The input tensor.")
-    .add_argument("pad_value", "Tensor", "The value to fill in padded area with.")
     .set_attrs_type<PadAttrs>()
     .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoPad)
+    .set_attr<FRelaxInferLayout>("FRelaxInferLayout", InferLayoutPad)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.pixel_shuffle */
+TVM_REGISTER_NODE_TYPE(PixelShuffleAttrs);
+
+Expr pixel_shuffle(Expr data, int upscale_factor) {
+  auto attrs = make_object<PixelShuffleAttrs>();
+  attrs->upscale_factor = upscale_factor;
+  static const Op& op = Op::Get("relax.nn.pixel_shuffle");
+  return Call(op, {data}, Attrs(attrs), {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.pixel_shuffle").set_body_typed(pixel_shuffle);
+
+StructInfo InferStructInfoPixelShuffle(const Call& call, const BlockBuilder& ctx) {
+  Array<TensorStructInfo> input_sinfo = GetInputTensorStructInfo(call, ctx);
+  const auto* attrs = call->attrs.as<PixelShuffleAttrs>();
+  int r = attrs->upscale_factor;
+  ICHECK_GT(r, 0) << "Upscale factor must be positive";
+
+  const TensorStructInfo& input = input_sinfo[0];
+  int ndim = input->ndim;
+  ICHECK_GE(ndim, 3) << "PixelShuffle requires at least 3D input tensor";
+
+  if (!input->shape.defined()) {
+    return TensorStructInfo(input->dtype, ndim);
+  }
+
+  const auto* shape = input->shape.as<ShapeExprNode>();
+  Array<PrimExpr> in_shape = shape->values;
+
+  int channel_idx = ndim - 3;
+  int h_idx = ndim - 2;
+  int w_idx = ndim - 1;
+
+  PrimExpr c_in = in_shape[channel_idx];
+  PrimExpr h_in = in_shape[h_idx];
+  PrimExpr w_in = in_shape[w_idx];
+
+  PrimExpr r_expr = IntImm(DataType::Int(32), r);
+  PrimExpr r_squared = r_expr * r_expr;
+
+  const auto* c_in_imm = c_in.as<IntImmNode>();
+  const auto* r2_imm = r_squared.as<IntImmNode>();
+
+  ICHECK_EQ(c_in_imm->value % r2_imm->value, 0)
+      << "Number of input channels must be divisible by the square of the upscale factor";
+
+  // Output shape:
+  Array<PrimExpr> out_shape;
+  for (int i = 0; i < ndim; ++i) {
+    if (i == channel_idx) {
+      out_shape.push_back(c_in / r_squared);
+    } else if (i == h_idx) {
+      out_shape.push_back(h_in * r_expr);
+    } else if (i == w_idx) {
+      out_shape.push_back(w_in * r_expr);
+    } else {
+      out_shape.push_back(in_shape[i]);
+    }
+  }
+
+  return TensorStructInfo(ShapeExpr(out_shape), input->dtype);
+}
+
+TVM_REGISTER_OP("relax.nn.pixel_shuffle")
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "The input tensor.")
+    .set_attrs_type<PixelShuffleAttrs>()
+    .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoPixelShuffle)
     .set_attr<Bool>("FPurity", Bool(true));
 
 /* relax.nn.batchnorm */
@@ -191,7 +387,8 @@ bool NormCheckDtypeAndShape(const Call& call, const BlockBuilder& ctx,
     axes_non_neg = NormalizeAxes(call, ctx, data_sinfo->ndim, axes);
   }
   int n_axis = axes.size();
-  if (!data_sinfo->IsUnknownDtype() && !data_sinfo->dtype.is_float()) {
+  if (!data_sinfo->IsUnknownDtype() &&
+      (!data_sinfo->dtype.is_float() && !data_sinfo->dtype.is_bfloat())) {
     ctx->ReportFatal(
         Diagnostic::Error(call)
         << op << " requires the input data to have float dtype. However, the given data dtype is "
@@ -251,13 +448,14 @@ bool NormCheckDtypeAndShape(const Call& call, const BlockBuilder& ctx,
 TVM_REGISTER_NODE_TYPE(BatchNormAttrs);
 
 Expr batch_norm(Expr data, Expr gamma, Expr beta, Expr moving_mean, Expr moving_var,  //
-                int axis, double epsilon, bool center, bool scale, double momentum) {
+                int axis, double epsilon, bool center, bool scale, double momentum, bool training) {
   ObjectPtr<BatchNormAttrs> attrs = make_object<BatchNormAttrs>();
   attrs->axis = axis;
   attrs->epsilon = epsilon;
   attrs->center = center;
   attrs->scale = scale;
   attrs->momentum = momentum;
+  attrs->training = training;
 
   static const Op& op = Op::Get("relax.nn.batch_norm");
   return Call(op,
@@ -265,8 +463,7 @@ Expr batch_norm(Expr data, Expr gamma, Expr beta, Expr moving_mean, Expr moving_
                std::move(moving_var)},
               Attrs{attrs}, {});
 }
-
-TVM_REGISTER_GLOBAL("relax.op.nn.batch_norm").set_body_typed(batch_norm);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.batch_norm").set_body_typed(batch_norm);
 
 StructInfo InferStructInfoBatchNorm(const Call& call, const BlockBuilder& ctx) {
   Array<TensorStructInfo> input_sinfo = GetInputTensorStructInfo(call, ctx);
@@ -344,7 +541,7 @@ Expr layer_norm(Expr data, Expr gamma, Expr beta, Array<Integer> axes, double ep
   return Call(op, {std::move(data), std::move(gamma), std::move(beta)}, Attrs{attrs}, {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.layer_norm").set_body_typed(layer_norm);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.layer_norm").set_body_typed(layer_norm);
 
 StructInfo InferStructInfoLayerNorm(const Call& call, const BlockBuilder& ctx) {
   Array<TensorStructInfo> input_sinfo = GetInputTensorStructInfo(call, ctx);
@@ -387,7 +584,7 @@ InferLayoutOutput InferLayoutLayerNorm(const Call& call,
 TVM_REGISTER_OP("relax.nn.layer_norm")
     .set_attrs_type<LayerNormAttrs>()
     .set_num_inputs(3)
-    .add_argument("data", "Tensor", "Input to which batch_norm will be applied.")
+    .add_argument("data", "Tensor", "Input to which layer_norm will be applied.")
     .add_argument("gamma", "Tensor", "The gamma scale factor.")
     .add_argument("beta", "Tensor", "The beta offset factor.")
     .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoLayerNorm)
@@ -412,7 +609,7 @@ Expr group_norm(Expr data, Expr gamma, Expr beta, int num_groups, int channel_ax
   return Call(op, {std::move(data), std::move(gamma), std::move(beta)}, Attrs{attrs}, {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.group_norm").set_body_typed(group_norm);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.group_norm").set_body_typed(group_norm);
 
 StructInfo InferStructInfoGroupNorm(const Call& call, const BlockBuilder& ctx) {
   Op op = Downcast<Op>(call->op);
@@ -499,7 +696,7 @@ InferLayoutOutput InferLayoutGroupNorm(const Call& call,
 TVM_REGISTER_OP("relax.nn.group_norm")
     .set_attrs_type<GroupNormAttrs>()
     .set_num_inputs(3)
-    .add_argument("data", "Tensor", "Input to which batch_norm will be applied.")
+    .add_argument("data", "Tensor", "Input to which group_norm will be applied.")
     .add_argument("gamma", "Tensor", "The gamma scale factor.")
     .add_argument("beta", "Tensor", "The beta offset factor.")
     .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoGroupNorm)
@@ -519,7 +716,7 @@ Expr rms_norm(Expr data, Expr weight, Array<Integer> axes, double epsilon) {
   return Call(op, {std::move(data), std::move(weight)}, Attrs{attrs}, {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.rms_norm").set_body_typed(rms_norm);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.rms_norm").set_body_typed(rms_norm);
 
 StructInfo InferStructInfoRMSNorm(const Call& call, const BlockBuilder& ctx) {
   Array<TensorStructInfo> input_sinfo = GetInputTensorStructInfo(call, ctx);
@@ -553,8 +750,7 @@ InferLayoutOutput InferLayoutRMSNorm(const Call& call,
     new_axis.push_back(FindAxis(layout->layout, axis->value));
   }
   new_attrs->axes = std::move(new_axis);
-  return InferLayoutOutput({layout, initial_layouts[1], initial_layouts[2]}, {layout},
-                           Attrs(new_attrs));
+  return InferLayoutOutput({layout, initial_layouts[1]}, {layout}, Attrs(new_attrs));
 }
 
 TVM_REGISTER_OP("relax.nn.rms_norm")
@@ -565,6 +761,368 @@ TVM_REGISTER_OP("relax.nn.rms_norm")
     .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoRMSNorm)
     .set_attr<FRelaxInferLayout>("FRelaxInferLayout", InferLayoutRMSNorm)
     .set_attr<TMixedPrecisionPolicy>("TMixedPrecisionPolicy", MixedPrecisionPolicyKind::kFollow)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.lrn */
+TVM_REGISTER_NODE_TYPE(LRNAttrs);
+
+Expr lrn(Expr data, int size, int axis, double bias, double alpha, double beta) {
+  ObjectPtr<LRNAttrs> attrs = make_object<LRNAttrs>();
+  attrs->size = size;
+  attrs->axis = axis;
+  attrs->bias = bias;
+  attrs->alpha = alpha;
+  attrs->beta = beta;
+
+  static const Op& op = Op::Get("relax.nn.lrn");
+  return Call(op, {std::move(data)}, Attrs{attrs}, {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.lrn").set_body_typed(lrn);
+
+StructInfo InferStructInfoLRN(const Call& call, const BlockBuilder& ctx) {
+  TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
+  if (data_sinfo->IsUnknownNdim()) {
+    return data_sinfo;
+  }
+  if (!data_sinfo->IsUnknownDtype() && !data_sinfo->dtype.is_float()) {
+    ctx->ReportFatal(Diagnostic::Error(call) << "LRN requires the input tensor to have float "
+                                                "dtype. However, the given input dtype is "
+                                             << data_sinfo->dtype);
+  }
+  const auto* attrs = call->attrs.as<LRNAttrs>();
+  NormalizeAxis(call, ctx, data_sinfo->ndim, attrs->axis);
+
+  return data_sinfo;
+}
+
+InferLayoutOutput InferLayoutLRN(const Call& call,
+                                 const Map<String, Array<String>>& desired_layouts,
+                                 const VarLayoutMap& var_layout_map) {
+  ICHECK(NoDesiredLayout(call, desired_layouts));
+  const auto* attrs = call->attrs.as<LRNAttrs>();
+  ICHECK(attrs) << "Invalid Call";
+
+  LayoutDecision layout = GetLayoutDecision(var_layout_map, call->args[0]);
+
+  // TODO(Siva): We could handle if the axis is not the sub indexed one.
+  if (layout->layout.ndim() != layout->layout.ndim_primal()) {
+    const auto* tensor_sinfo = GetStructInfoAs<TensorStructInfoNode>(call->args[0]);
+    ICHECK(tensor_sinfo != nullptr) << "Invalid Call";
+    ICHECK(!tensor_sinfo->IsUnknownNdim()) << "Only support static ndim for now";
+    int ndim = tensor_sinfo->ndim;
+    layout = LayoutDecision(InitialLayout(ndim));
+  }
+
+  ObjectPtr<LRNAttrs> new_attrs = make_object<LRNAttrs>(*attrs);
+  new_attrs->axis = FindAxis(layout->layout, attrs->axis);
+  return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
+}
+
+TVM_REGISTER_OP("relax.nn.lrn")
+    .set_attrs_type<LRNAttrs>()
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "Input to which lrn will be applied.")
+    .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoLRN)
+    .set_attr<FRelaxInferLayout>("FRelaxInferLayout", InferLayoutLRN)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.space_to_depth */
+TVM_REGISTER_NODE_TYPE(SpaceToDepthAttrs);
+
+Expr space_to_depth(Expr data, int block_size, String layout) {
+  ObjectPtr<SpaceToDepthAttrs> attrs = make_object<SpaceToDepthAttrs>();
+  attrs->block_size = block_size;
+  attrs->layout = layout;
+
+  static const Op& op = Op::Get("relax.nn.space_to_depth");
+  return Call(op, {std::move(data)}, Attrs{attrs}, {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.space_to_depth").set_body_typed(space_to_depth);
+
+StructInfo InferStructInfoSpaceToDepth(const Call& call, const BlockBuilder& ctx) {
+  TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
+  if (data_sinfo->IsUnknownNdim()) {
+    return data_sinfo;
+  }
+  const auto* attrs = call->attrs.as<SpaceToDepthAttrs>();
+  auto [layout, data2NCHW] = CheckTensorLayout(call, ctx, attrs->layout,  //
+                                               /*tgt_layout=*/"NCHW",     //
+                                               /*tensor_name=*/"data");
+  Optional<ShapeExpr> data_shape = CheckNdimPerLayoutAndGetShape(call, ctx, data_sinfo, layout);
+  if (!data_shape.defined()) {
+    // Shape is not defined, best we can do is return ndim and dtype.
+    return TensorStructInfo(data_sinfo->dtype, data_sinfo->ndim, data_sinfo->vdevice);
+  }
+
+  const int block_size = attrs->block_size;
+  Array<PrimExpr> data_NCHW_shape = data2NCHW.ForwardShape(data_shape.value()->values);
+  std::vector<PrimExpr> out_NCHW_shape;
+  out_NCHW_shape.resize(4);
+  out_NCHW_shape[0] = data_NCHW_shape[0];
+  out_NCHW_shape[1] = data_NCHW_shape[1] * (block_size * block_size);
+  out_NCHW_shape[2] = indexdiv(data_NCHW_shape[2], block_size);
+  out_NCHW_shape[3] = indexdiv(data_NCHW_shape[3], block_size);
+
+  Array<PrimExpr> out_shape = data2NCHW.BackwardShape(out_NCHW_shape);
+  return TensorStructInfo(ShapeExpr(out_shape), data_sinfo->dtype);
+}
+
+InferLayoutOutput InferLayoutSpaceToDepth(const Call& call,
+                                          const Map<String, Array<String>>& desired_layouts,
+                                          const VarLayoutMap& var_layout_map) {
+  const auto& it = desired_layouts.find("relax.nn.space_to_depth");
+  const auto* tensor_sinfo = GetStructInfoAs<TensorStructInfoNode>(call);
+  ICHECK(tensor_sinfo != nullptr) << "Invalid Call";
+  ICHECK_EQ(tensor_sinfo->ndim, 4) << "Unsupported initial layout";
+  const auto* attrs = call->attrs.as<SpaceToDepthAttrs>();
+  ICHECK(attrs) << "Invalid Call";
+
+  LayoutDecision layout;
+  ObjectPtr<SpaceToDepthAttrs> new_attrs = make_object<SpaceToDepthAttrs>(*attrs);
+
+  if (it != desired_layouts.end()) {
+    // We have a desired layout for s2d.
+    Layout desired_data_layout = (*it).second[0];
+    ICHECK_EQ(desired_data_layout.ndim(), desired_data_layout.ndim_primal()) << "Axis swap only";
+    layout = TransposeLike(InitialLayout(4), attrs->layout, desired_data_layout);
+    new_attrs->layout = (*it).second[0];
+  } else {
+    // We dont have a desired layout for s2d, propagate from the input instead.
+    layout = GetLayoutDecision(var_layout_map, call->args[0]);
+    if (layout->layout.ndim() != layout->layout.ndim_primal()) {
+      tir::Layout in_layout(attrs->layout, DataType::Int(64));
+      auto desired_layout = TransposeSubLayoutLike(attrs->layout, InitialLayout(4), layout->layout);
+      auto data_si = GetStructInfo(call->args[0]);
+      TensorStructInfo data_sinfo = data_si.as<TensorStructInfo>().value();
+      Optional<ShapeExpr> data_shape = GetRef<ShapeExpr>(data_sinfo->shape.as<ShapeExprNode>());
+      if (CanProveLayoutTransform(in_layout, desired_layout, data_shape.value()->values)) {
+        new_attrs->layout = desired_layout.name();
+        return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
+      } else {
+        layout = InitialLayout(4);
+      }
+    }
+
+    new_attrs->layout = TransposeLike(attrs->layout, InitialLayout(4), layout->layout).name();
+  }
+  return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
+}
+
+TVM_REGISTER_OP("relax.nn.space_to_depth")
+    .set_attrs_type<SpaceToDepthAttrs>()
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "The input tensor")
+    .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoSpaceToDepth)
+    .set_attr<FRelaxInferLayout>("FRelaxInferLayout", InferLayoutSpaceToDepth)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.depth_to_space */
+TVM_REGISTER_NODE_TYPE(DepthToSpaceAttrs);
+
+Expr depth_to_space(Expr data, int block_size, String layout, String mode) {
+  ObjectPtr<DepthToSpaceAttrs> attrs = make_object<DepthToSpaceAttrs>();
+  attrs->block_size = block_size;
+  attrs->layout = layout;
+  attrs->mode = mode;
+
+  static const Op& op = Op::Get("relax.nn.depth_to_space");
+  return Call(op, {std::move(data)}, Attrs{attrs}, {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.depth_to_space").set_body_typed(depth_to_space);
+
+StructInfo InferStructInfoDepthToSpace(const Call& call, const BlockBuilder& ctx) {
+  TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
+  if (data_sinfo->IsUnknownNdim()) {
+    return data_sinfo;
+  }
+  const auto* attrs = call->attrs.as<DepthToSpaceAttrs>();
+  auto [layout, data2NCHW] = CheckTensorLayout(call, ctx, attrs->layout,  //
+                                               /*tgt_layout=*/"NCHW",     //
+                                               /*tensor_name=*/"data");
+  Optional<ShapeExpr> data_shape = CheckNdimPerLayoutAndGetShape(call, ctx, data_sinfo, layout);
+  if (!data_shape.defined()) {
+    // Shape is not defined, best we can do is return ndim and dtype.
+    return TensorStructInfo(data_sinfo->dtype, data_sinfo->ndim, data_sinfo->vdevice);
+  }
+
+  const int block_size = attrs->block_size;
+  Array<PrimExpr> data_NCHW_shape = data2NCHW.ForwardShape(data_shape.value()->values);
+  std::vector<PrimExpr> out_NCHW_shape;
+  out_NCHW_shape.resize(4);
+  out_NCHW_shape[0] = data_NCHW_shape[0];
+  out_NCHW_shape[1] = indexdiv(data_NCHW_shape[1], block_size * block_size);
+  out_NCHW_shape[2] = data_NCHW_shape[2] * block_size;
+  out_NCHW_shape[3] = data_NCHW_shape[3] * block_size;
+
+  Array<PrimExpr> out_shape = data2NCHW.BackwardShape(out_NCHW_shape);
+  return TensorStructInfo(ShapeExpr(out_shape), data_sinfo->dtype);
+}
+
+InferLayoutOutput InferLayoutDepthToSpace(const Call& call,
+                                          const Map<String, Array<String>>& desired_layouts,
+                                          const VarLayoutMap& var_layout_map) {
+  const auto& it = desired_layouts.find("relax.nn.depth_to_space");
+  const auto* tensor_sinfo = GetStructInfoAs<TensorStructInfoNode>(call);
+  ICHECK(tensor_sinfo != nullptr) << "Invalid Call";
+  ICHECK_EQ(tensor_sinfo->ndim, 4) << "Unsupported initial layout";
+  const auto* attrs = call->attrs.as<DepthToSpaceAttrs>();
+  ICHECK(attrs) << "Invalid Call";
+
+  LayoutDecision layout;
+  ObjectPtr<DepthToSpaceAttrs> new_attrs = make_object<DepthToSpaceAttrs>(*attrs);
+
+  if (it != desired_layouts.end()) {
+    // We have a desired layout for d2s.
+    Layout desired_data_layout = (*it).second[0];
+    ICHECK_EQ(desired_data_layout.ndim(), desired_data_layout.ndim_primal()) << "Axis swap only";
+    layout = TransposeLike(InitialLayout(4), attrs->layout, desired_data_layout);
+    new_attrs->layout = (*it).second[0];
+  } else {
+    // We dont have a desired layout for d2s, propagate from the input instead.
+    layout = GetLayoutDecision(var_layout_map, call->args[0]);
+    if (layout->layout.ndim() != layout->layout.ndim_primal()) {
+      tir::Layout in_layout(attrs->layout, DataType::Int(64));
+      auto desired_layout = TransposeSubLayoutLike(attrs->layout, InitialLayout(4), layout->layout);
+      auto data_si = GetStructInfo(call->args[0]);
+      TensorStructInfo data_sinfo = data_si.as<TensorStructInfo>().value();
+      Optional<ShapeExpr> data_shape = GetRef<ShapeExpr>(data_sinfo->shape.as<ShapeExprNode>());
+      if (CanProveLayoutTransform(in_layout, desired_layout, data_shape.value()->values)) {
+        new_attrs->layout = desired_layout.name();
+        return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
+      } else {
+        layout = InitialLayout(4);
+      }
+    }
+
+    new_attrs->layout = TransposeLike(attrs->layout, InitialLayout(4), layout->layout).name();
+  }
+  return InferLayoutOutput({layout}, {layout}, Attrs(new_attrs));
+}
+
+TVM_REGISTER_OP("relax.nn.depth_to_space")
+    .set_attrs_type<DepthToSpaceAttrs>()
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "The input tensor")
+    .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoDepthToSpace)
+    .set_attr<FRelaxInferLayout>("FRelaxInferLayout", InferLayoutDepthToSpace)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.space_to_batch_nd */
+TVM_REGISTER_NODE_TYPE(SpaceToBatchNDAttrs);
+
+Expr space_to_batch_nd(Expr data, Array<Integer> block_shape, Array<Array<Integer>> paddings,
+                       double pad_value) {
+  ObjectPtr<SpaceToBatchNDAttrs> attrs = make_object<SpaceToBatchNDAttrs>();
+  attrs->block_shape = block_shape;
+  attrs->paddings = paddings;
+  attrs->pad_value = pad_value;
+
+  static const Op& op = Op::Get("relax.nn.space_to_batch_nd");
+  return Call(op, {std::move(data)}, Attrs{attrs}, {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.space_to_batch_nd").set_body_typed(space_to_batch_nd);
+
+StructInfo InferStructInfoSpaceToBatchND(const Call& call, const BlockBuilder& ctx) {
+  TensorStructInfo input_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
+  if (input_sinfo->IsUnknownNdim()) {
+    return input_sinfo;
+  }
+  int ndim = input_sinfo->ndim;
+
+  const auto* shape = input_sinfo->shape.as<ShapeExprNode>();
+  if (!shape) {
+    return TensorStructInfo(input_sinfo->dtype, ndim);
+  }
+
+  const auto* attrs = call->attrs.as<SpaceToBatchNDAttrs>();
+  Array<Integer> block_shape = attrs->block_shape;
+  Array<Array<Integer>> paddings = attrs->paddings;
+  const int bdims = static_cast<int>(block_shape.size());
+  const int pdims = static_cast<int>(paddings.size());
+  // Paddings must be provided for each spatial dim.
+  CHECK(pdims == bdims) << "SpaceToBatchND: Paddings must be provided for each spatial dim";
+
+  Array<PrimExpr> in_shape = shape->values;
+  Array<PrimExpr> out_shape(in_shape);
+  PrimExpr block_shape_numele = 1;
+  for (size_t i = 0; i < block_shape.size(); i++) {
+    block_shape_numele *= block_shape[i];
+  }
+  out_shape.Set(0, in_shape[0] * block_shape_numele);
+  for (size_t i = 0; i < block_shape.size(); i++) {
+    auto padded_value = in_shape[i + 1] + paddings[i][0] + paddings[i][1];
+    out_shape.Set(i + 1, indexdiv(padded_value, block_shape[i]));
+  }
+
+  return TensorStructInfo(ShapeExpr(out_shape), input_sinfo->dtype);
+}
+
+TVM_REGISTER_OP("relax.nn.space_to_batch_nd")
+    .set_attrs_type<SpaceToBatchNDAttrs>()
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "The input tensor")
+    .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoSpaceToBatchND)
+    .set_attr<Bool>("FPurity", Bool(true));
+
+/* relax.nn.batch_to_space_nd */
+TVM_REGISTER_NODE_TYPE(BatchToSpaceNDAttrs);
+
+Expr batch_to_space_nd(Expr data, Array<Integer> block_shape, Array<Array<Integer>> crops) {
+  ObjectPtr<BatchToSpaceNDAttrs> attrs = make_object<BatchToSpaceNDAttrs>();
+  attrs->block_shape = block_shape;
+  attrs->crops = crops;
+
+  static const Op& op = Op::Get("relax.nn.batch_to_space_nd");
+  return Call(op, {std::move(data)}, Attrs{attrs}, {});
+}
+
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.batch_to_space_nd").set_body_typed(batch_to_space_nd);
+
+StructInfo InferStructInfoBatchToSpaceND(const Call& call, const BlockBuilder& ctx) {
+  TensorStructInfo input_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
+  if (input_sinfo->IsUnknownNdim()) {
+    return input_sinfo;
+  }
+  int ndim = input_sinfo->ndim;
+
+  const auto* shape = input_sinfo->shape.as<ShapeExprNode>();
+  if (!shape) {
+    return TensorStructInfo(input_sinfo->dtype, ndim);
+  }
+
+  const auto* attrs = call->attrs.as<BatchToSpaceNDAttrs>();
+  Array<Integer> block_shape = attrs->block_shape;
+  Array<Array<Integer>> crops = attrs->crops;
+  const int bdims = static_cast<int>(block_shape.size());
+  const int cdims = static_cast<int>(crops.size());
+  // crops must be provided for each spatial dim.
+  CHECK(cdims == bdims) << "BatchToSpaceND: crops must be provided for each spatial dim";
+  CHECK(bdims < ndim) << "BatchToSpaceND: block_shape must be less than input shape";
+
+  Array<PrimExpr> in_shape = shape->values;
+  Array<PrimExpr> out_shape(in_shape);
+  PrimExpr block_shape_numele = 1;
+  for (size_t i = 0; i < block_shape.size(); i++) {
+    block_shape_numele *= block_shape[i];
+  }
+  out_shape.Set(0, indexdiv(in_shape[0], block_shape_numele));
+  for (size_t i = 0; i < block_shape.size(); i++) {
+    auto dim_value = in_shape[i + 1] * block_shape[i] - crops[i][0] - crops[i][1];
+    out_shape.Set(i + 1, dim_value);
+  }
+
+  return TensorStructInfo(ShapeExpr(out_shape), input_sinfo->dtype);
+}
+
+TVM_REGISTER_OP("relax.nn.batch_to_space_nd")
+    .set_attrs_type<BatchToSpaceNDAttrs>()
+    .set_num_inputs(1)
+    .add_argument("data", "Tensor", "The input tensor")
+    .set_attr<FInferStructInfo>("FInferStructInfo", InferStructInfoBatchToSpaceND)
     .set_attr<Bool>("FPurity", Bool(true));
 
 /* relax.nn.dropout */
@@ -578,7 +1136,7 @@ Expr dropout(Expr data, double rate) {
   return Call(op, {std::move(data)}, Attrs{attrs}, {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.dropout").set_body_typed(dropout);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.dropout").set_body_typed(dropout);
 
 StructInfo InferStructInfoDropout(const Call& call, const BlockBuilder& ctx) {
   TensorStructInfo data_sinfo = GetUnaryInputTensorStructInfo(call, ctx);
@@ -646,7 +1204,7 @@ Expr cross_entropy_with_logits(Expr predictions, Expr labels) {
   return Call(op, {std::move(predictions), std::move(labels)}, {}, {});
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.cross_entropy_with_logits")
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.cross_entropy_with_logits")
     .set_body_typed(cross_entropy_with_logits);
 
 TVM_REGISTER_OP("relax.nn.cross_entropy_with_logits")
@@ -680,7 +1238,7 @@ Expr nll_loss(Expr predictions, Expr targets, Optional<Expr> weights, String red
   }
 }
 
-TVM_REGISTER_GLOBAL("relax.op.nn.nll_loss").set_body_typed(nll_loss);
+TVM_FFI_REGISTER_GLOBAL("relax.op.nn.nll_loss").set_body_typed(nll_loss);
 
 StructInfo InferStructInfoNLLLoss(const Call& call, const BlockBuilder& ctx) {
   if (call->args.size() < 2 || call->args.size() > 3) {

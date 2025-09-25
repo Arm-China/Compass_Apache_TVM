@@ -21,12 +21,12 @@
 #
 from typing import Any, Optional, Union
 
-import tvm._ffi
+import tvm.ffi
 from tvm import tir
 from tvm.ir import Array, Op, PrimExpr
 from tvm.ir.base import Span
 from tvm.runtime import const
-from tvm import DataType, can_implicit_convert
+from tvm import can_implicit_convert
 
 from . import _ffi_api
 from .buffer import Buffer
@@ -323,24 +323,6 @@ def call_llvm_pure_intrin(dtype, name, *args, span=None):
     )
 
 
-def tvm_check_return(expected, return_unexpected, nested_call):
-    """Return new on stack dtype[num]
-    Parameters
-    ----------
-    expected : int
-        The expected return code.
-    return_unexpected : int
-        The unexpected return code.
-    nested_call : PrimExpr
-        The call expression to check return.
-    Returns
-    -------
-    call : PrimExpr
-        The call expression.
-    """
-    return call_intrin("int32", "tir.tvm_check_return", expected, return_unexpected, nested_call)
-
-
 def tvm_stack_alloca(dtype_str, num):
     """Return new on stack dtype[num]
 
@@ -405,7 +387,14 @@ def tvm_stack_make_array(data, shape, strides, ndim, arr_dtype, elem_offset):
         The call expression.
     """
     return call_intrin(
-        "handle", "tir.tvm_stack_make_array", data, shape, strides, ndim, arr_dtype, elem_offset
+        "handle",
+        "tir.tvm_stack_make_array",
+        data,
+        shape,
+        strides,
+        ndim,
+        arr_dtype,
+        elem_offset,
     )
 
 
@@ -481,17 +470,17 @@ def reassign(var, value):
 
 
 def _vector_element_check(var, idx):
-    from tvm.aipu.utils import is_hw_native_vdtype  # pylint: disable=import-outside-toplevel
-    from tvm.aipu.utils import HW_NATIVE_MASK_TYPES  # pylint: disable=import-outside-toplevel
+    from ..compass.dsl.utils import is_hw_native_vdtype  # pylint: disable=import-outside-toplevel
+    from ..compass.dsl.utils import HW_NATIVE_MASK_TYPES  # pylint: disable=import-outside-toplevel
 
-    if DataType(var.dtype).is_bool:
+    if var.dtype.is_bool:
         msg = "Only support get or set element from a hardware native mask variable."
         assert var.dtype in HW_NATIVE_MASK_TYPES, msg
 
     if isinstance(idx, int):
         msg = "Only support get or set element from a multiple width vector variable "
         msg += 'if "idx" is immediate value.'
-        dtype = DataType(var.dtype)
+        dtype = var.dtype
         assert dtype.is_vector and dtype.total_bits % (8 if dtype.is_bool else 256) == 0, msg
     else:
         msg = "Only support get or set element from a hardware native vector variable "
@@ -499,7 +488,7 @@ def _vector_element_check(var, idx):
         assert is_hw_native_vdtype(var.dtype), msg
 
     assert isinstance(idx, int) or (
-        isinstance(idx, PrimExpr) and DataType(idx.dtype).is_integer_scalar
+        isinstance(idx, PrimExpr) and idx.dtype.is_integer_scalar
     ), "The index value must be a scalar integer."
 
 
@@ -520,7 +509,7 @@ def vector_get_element(var, idx):
         The call expression.
     """
     _vector_element_check(var, idx)
-    return call_intrin(DataType(var.dtype).element_of, "tir.vector_get_element", var, idx)
+    return call_intrin(var.dtype.element_of, "tir.vector_get_element", var, idx)
 
 
 def vector_set_element(var, idx, value):
@@ -546,7 +535,7 @@ def vector_set_element(var, idx, value):
     """
     _vector_element_check(var, idx)
     value = tir.const(value) if isinstance(value, (int, float)) else value
-    elem_dtype = DataType(var.dtype).element_of
+    elem_dtype = var.dtype.element_of
     assert can_implicit_convert(value.dtype, elem_dtype), (
         f'Type mismatch assignment: "{elem_dtype}" vs. "{value.dtype}", need to do '
         "the explicit type conversion for the right hand side(i.e., new value).",
@@ -685,6 +674,25 @@ def tvm_tuple(*value):
         The call expression.
     """
     return call_intrin("handle", "tir.tvm_tuple", *value)
+
+
+def handle_add_byte_offset(handle, offset):
+    """Add offset to handle
+
+    Parameters
+    ----------
+    handle : Expr
+        The handle.
+
+    offset : int
+        The offset.
+
+    Returns
+    -------
+    call : PrimExpr
+        The call expression.
+    """
+    return call_intrin("handle", "tir.handle_add_byte_offset", handle, offset)
 
 
 def tvm_struct_get(arr, index, field, dtype):
@@ -1568,7 +1576,13 @@ def ptx_cp_async(dtype, shared_ptr, shared_offset, global_ptr, global_offset, by
         The call expression.
     """
     return call_intrin(
-        dtype, "tir.ptx_cp_async", shared_ptr, shared_offset, global_ptr, global_offset, bytes
+        dtype,
+        "tir.ptx_cp_async",
+        shared_ptr,
+        shared_offset,
+        global_ptr,
+        global_offset,
+        bytes,
     )
 
 
@@ -1883,7 +1897,15 @@ def simdgroup_store(
         The call expression.
     """
     return call_intrin(
-        "handle", "tir.simdgroup_store", d, index, ptr, stride, col, row, transpose_matrix
+        "handle",
+        "tir.simdgroup_store",
+        d,
+        index,
+        ptr,
+        stride,
+        col,
+        row,
+        transpose_matrix,
     )
 
 
@@ -2114,7 +2136,7 @@ def all(*args, span=None):
     return val
 
 
-@tvm._ffi.register_func("tvm.default_trace_action")
+@tvm.ffi.register_func("tvm.default_trace_action")
 def _tvm_default_trace_action(*args):
     print(list(args))
 
@@ -2842,37 +2864,6 @@ def round(x, span=None):
     return _ffi_api.round(x, span)  # type: ignore
 
 
-def narrow_shift_right(x, dtype, shift, s, r, span=None):
-    """Narrow shift right with optional saturation and round.
-
-    Parameters
-    ----------
-    x : PrimExpr
-        Input argument.
-
-    dtype : str
-            The final dtype will be cast to.
-
-    shift : int
-            The shift value.
-
-    s : int
-        Whether saturation.
-
-    r : int
-        Whether round.
-
-    span : Optional[Span]
-        The location of this operator in the source code.
-
-    Returns
-    -------
-    y : PrimExpr
-        The result.
-    """
-    return _ffi_api.narrow_shift_right(x, dtype, shift, s, r, span)
-
-
 def nearbyint(x, span=None):
     """Round elements of the array to the nearest integer.
     This intrinsic uses llvm.nearbyint instead of llvm.round
@@ -3461,6 +3452,28 @@ def floordiv(a, b, span=None):
     return _ffi_api._OpFloorDiv(a, b, span)  # type: ignore
 
 
+def logaddexp(a, b, span=None):
+    """Compute the logaddexp of two expressions.
+
+    Parameters
+    ----------
+    a : PrimExpr
+        The left hand operand
+
+    b : PrimExpr
+        The right hand operand
+
+    span : Optional[Span]
+        The location of this operator in the source.
+
+    Returns
+    -------
+    res : PrimExpr
+        The result expression.
+    """
+    return _ffi_api._OpLogAddExp(a, b, span)  # type: ignore
+
+
 def floormod(a, b, span=None):
     """Compute the floormod of two expressions.
 
@@ -3805,7 +3818,7 @@ def get_active_lane_mask(dtype, base, limit):
     return call_intrin(dtype, "tir.get_active_lane_mask", base, limit)
 
 
-def get_vscale_expr(dtype: Union[str, tvm.DataType], min_size: int = 128) -> PrimExpr:
+def get_vscale_expr(dtype: Union[str, tvm.ffi.dtype], min_size: int = 128) -> PrimExpr:
     """
     Create a datatype dependent scalable expression.
 
@@ -3817,7 +3830,7 @@ def get_vscale_expr(dtype: Union[str, tvm.DataType], min_size: int = 128) -> Pri
         The minimum size of the scalable vector in bits.
     """
     if isinstance(dtype, str):
-        dtype = tvm.DataType(dtype)
+        dtype = tvm.ffi.dtype(dtype)
     return min_size // dtype.bits * vscale()
 
 

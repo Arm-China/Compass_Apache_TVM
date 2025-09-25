@@ -27,7 +27,7 @@ SPHINXBUILD   = python3 -m sphinx
 PAPER         =
 BUILDDIR      = _build
 STAGINGDIR    = _staging
-AIPUDOCDIR    = $(PWD)/../aipu/docs
+COMPASSDOCDIR    = $(PWD)/../compass/docs
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -106,7 +106,7 @@ staging:
 	      -name "*.rst"  \
 	      -exec ln -s $(PWD)/{} $(STAGINGDIR)/{} \;
 
-	ln -s $(AIPUDOCDIR) $(STAGINGDIR)/aipu
+	ln -s $(COMPASSDOCDIR) $(STAGINGDIR)/compass
 	ln -s $(PWD)/conf.py $(STAGINGDIR)/conf.py
 	ln -s $(PWD)/_static $(STAGINGDIR)/_static
 
@@ -115,6 +115,10 @@ html: staging
 	cd $(STAGINGDIR) && $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(PWD)/$(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+htmldepoly: html
+	python3 $(PWD)/download_3rdparty_embeds.py -v
+	@echo "Replaced external URLs with local files."
 
 dirhtml: staging
 	cd $(STAGINGDIR) && $(SPHINXBUILD) -b dirhtml $(ALLSPHINXOPTS) $(PWD)/$(BUILDDIR)/dirhtml

@@ -119,8 +119,8 @@ def _check_ir_equality(mod):
 
 def _compile_cc(src: Path, dst: Path):
     # pylint: disable=import-outside-toplevel
-    from tvm._ffi.base import py_str
-    from tvm._ffi.libinfo import find_include_path
+    from tvm.base import py_str
+    from tvm.libinfo import find_include_path
 
     # pylint: enable=import-outside-toplevel
 
@@ -189,8 +189,8 @@ def test_extern_object():
         )
         _check_ir_equality(mod)
         mod = AttachExternModules(ext_mods)(mod)  # pylint: disable=not-callable
-        compiled = tvm.runtime.relax_vm.VirtualMachine(
-            relax.build(mod, target="llvm"),
+        compiled = tvm.runtime.vm.VirtualMachine(
+            tvm.compile(mod, target="llvm"),
             device=tvm.cpu(),
         )
         _test_scalar_add(compiled["scalar_add"])
@@ -238,8 +238,8 @@ def test_extern_source():
     )
     _check_ir_equality(mod)
     mod = AttachExternModules(ext_mods)(mod)  # pylint: disable=not-callable
-    compiled = tvm.runtime.relax_vm.VirtualMachine(
-        relax.build(mod, target="llvm"),
+    compiled = tvm.runtime.vm.VirtualMachine(
+        tvm.compile(mod, target="llvm"),
         device=tvm.cpu(),
     )
     _test_scalar_add(compiled["scalar_add"])

@@ -16,6 +16,9 @@
 # under the License.
 # pylint: disable= redefined-builtin
 """Relax core operators."""
+#
+# This file has been modified by Arm China team.
+#
 
 # Register operator gradient functions
 from . import _op_gradient, builtin, ccl, distributed, grad, image, memory, nn, op_attrs
@@ -50,6 +53,7 @@ from .binary import (
     divide,
     equal,
     floor_divide,
+    log_add_exp,
     floor_mod,
     greater,
     greater_equal,
@@ -83,7 +87,7 @@ from .create import (
 )
 from .datatype import astype, wrap_param
 from .index import dynamic_strided_slice, strided_slice, take
-from .linear_algebra import einsum, linear, matmul
+from .linear_algebra import einsum, linear, matmul, outer
 from .manipulate import (
     broadcast_to,
     collapse_sum_like,
@@ -94,15 +98,21 @@ from .manipulate import (
     flip,
     gather_elements,
     gather_nd,
+    index_put,
+    index_tensor,
+    meshgrid,
     layout_transform,
     one_hot,
+    reverse_sequence,
     permute_dims,
     repeat,
     reshape,
     scatter_elements,
     scatter_nd,
+    slice_scatter,
     split,
     squeeze,
+    stack,
     tile,
 )
 from .mask import masked_fill
@@ -111,7 +121,7 @@ from .sampling import multinomial_from_uniform
 from .search import argmax, argmin, where
 from .set import nonzero, unique
 from .sorting import argsort, sort, topk
-from .statistical import cumprod, cumsum, max, mean, min, prod, std, sum, variance
+from .statistical import cumprod, cumsum, max, mean, min, prod, std, sum, variance, all, any
 from .ternary import ewise_fma
 from .unary import (
     abs,
@@ -145,7 +155,9 @@ from .unary import (
     square,
     tan,
     tanh,
+    trunc,
 )
+from .vision import all_class_non_max_suppression
 
 
 def _register_op_make():

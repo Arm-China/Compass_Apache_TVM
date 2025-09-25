@@ -268,14 +268,7 @@ class BufferFlattener : public arith::IRMutatorWithAnalyzer {
   Map<Var, Buffer> updated_extern_buffer_map_;
 };
 
-PrimFunc FlattenBuffer(PrimFunc f) {
-  // Only apply this pass to TIR that is not from TE schedules
-  if (!IsFromLegacyTESchedule(f)) {
-    return BufferFlattener::Flatten(f);
-  } else {
-    return f;
-  }
-}
+PrimFunc FlattenBuffer(PrimFunc f) { return BufferFlattener::Flatten(f); }
 
 namespace transform {
 
@@ -286,7 +279,7 @@ Pass FlattenBuffer() {
   return CreatePrimFuncPass(pass_func, 0, "tir.FlattenBuffer", {});
 }
 
-TVM_REGISTER_GLOBAL("tir.transform.FlattenBuffer").set_body_typed(FlattenBuffer);
+TVM_FFI_REGISTER_GLOBAL("tir.transform.FlattenBuffer").set_body_typed(FlattenBuffer);
 }  // namespace transform
 
 }  // namespace tir

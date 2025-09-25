@@ -14,10 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-#
-# This file has been modified by Arm China team.
-#
 import tvm
 import tvm.testing
 from tvm import te

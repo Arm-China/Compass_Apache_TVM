@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 from typing import Callable
 import pytest
 import tvm
@@ -33,6 +36,8 @@ def test_op_correctness():
     assert relax.op.std(x).op == Op.get("relax.std")
     assert relax.op.sum(x).op == Op.get("relax.sum")
     assert relax.op.variance(x).op == Op.get("relax.variance")
+    assert relax.op.all(x).op == Op.get("relax.all")
+    assert relax.op.any(x).op == Op.get("relax.any")
 
 
 def _check_inference(bb: relax.BlockBuilder, call: relax.Call, expected_sinfo: relax.StructInfo):
@@ -118,6 +123,18 @@ def test_statistical_infer_struct_info():
     )
     _check_inference(bb, relax.op.sum(x0, axis=[-1, -4]), relax.TensorStructInfo((3, 4), "float32"))
     _check_inference(bb, relax.op.sum(x0, axis=[]), relax.TensorStructInfo((2, 3, 4, 5), "float32"))
+    _check_inference(bb, relax.op.all(x0, axis=[1, 2]), relax.TensorStructInfo((2, 5), "float32"))
+    _check_inference(
+        bb,
+        relax.op.all(x0, axis=[1, 2], keepdims=True),
+        relax.TensorStructInfo((2, 1, 1, 5), "float32"),
+    )
+    _check_inference(bb, relax.op.any(x0, axis=[1, 2]), relax.TensorStructInfo((2, 5), "float32"))
+    _check_inference(
+        bb,
+        relax.op.any(x0, axis=[1, 2], keepdims=True),
+        relax.TensorStructInfo((2, 1, 1, 5), "float32"),
+    )
 
 
 def test_statistical_infer_struct_info_shape_symbolic():
@@ -260,7 +277,7 @@ def test_scan_op_wrong_input_number(scan_op: Callable):
     x = relax.Var("x", R.Tensor((3, 4, 5), "float32"))
     y = relax.Var("y", R.Tensor((2, 3, 4), "float32"))
 
-    with pytest.raises(TVMError):
+    with pytest.raises(TypeError):
         scan_op(x, y)
 
 

@@ -16,9 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/*
- * This file has been modified by Arm China team.
- */
 
 /*!
  * \brief Planning where buffers to be allocated and update the AST.
@@ -215,7 +212,7 @@ class BufferAllocationLocator : public StmtExprMutator {
                        /*writes=*/{},
                        /*name_hint=*/"",
                        /*body=*/std::move(body),
-                       /*init=*/NullOpt,
+                       /*init=*/std::nullopt,
                        /*alloc_buffers=*/alloc_buffers);
     ObjectPtr<BlockNode> n = CopyOnWrite(opaque_block.get());
     Array<Array<BufferRegion>> access =
@@ -245,15 +242,10 @@ class BufferAllocationLocator : public StmtExprMutator {
 };
 
 PrimFunc PlanAndUpdateBufferAllocationLocation(PrimFunc func) {
-  // Only apply this pass to TIR that is not from TE schedules
-  if (!IsFromLegacyTESchedule(func)) {
-    auto fptr = func.CopyOnWrite();
-    BufferAllocationLocator locator(func);
-    fptr->body = locator(fptr->body);
-    return func;
-  } else {
-    return func;
-  }
+  auto fptr = func.CopyOnWrite();
+  BufferAllocationLocator locator(func);
+  fptr->body = locator(fptr->body);
+  return func;
 }
 
 namespace transform {
@@ -265,7 +257,7 @@ Pass PlanAndUpdateBufferAllocationLocation() {
   return CreatePrimFuncPass(pass_func, 0, "tir.PlanAndUpdateBufferAllocationLocation", {});
 }
 
-TVM_REGISTER_GLOBAL("tir.transform.PlanAndUpdateBufferAllocationLocation")
+TVM_FFI_REGISTER_GLOBAL("tir.transform.PlanAndUpdateBufferAllocationLocation")
     .set_body_typed(PlanAndUpdateBufferAllocationLocation);
 
 }  // namespace transform

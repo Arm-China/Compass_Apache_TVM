@@ -48,7 +48,7 @@ class StaticTypeDeriver : public StructInfoFunctor<Type(const StructInfo&)> {
   }
 
   Type VisitStructInfo_(const TensorStructInfoNode* op) final {
-    return DynTensorType(op->ndim, op->dtype);
+    return TensorType(op->ndim, op->dtype);
   }
 
   // module: distributed
@@ -66,13 +66,13 @@ class StaticTypeDeriver : public StructInfoFunctor<Type(const StructInfo&)> {
     Array<Type> params = op->params.value().Map(
         [this](const StructInfo& sinfo) { return this->VisitStructInfo(sinfo); });
     Type ret = this->VisitStructInfo(op->ret);
-    return FuncType(params, ret, {}, {}, op->span);
+    return FuncType(params, ret, op->span);
   }
 };
 
 Type GetStaticType(const StructInfo& info) { return StaticTypeDeriver()(info); }
 
-TVM_REGISTER_GLOBAL("relax.analysis.GetStaticType").set_body_typed([](const StructInfo& info) {
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.GetStaticType").set_body_typed([](const StructInfo& info) {
   return GetStaticType(info);
 });
 
@@ -87,7 +87,7 @@ StructInfo StructInfoFromType(const Type& type) {
     return PrimStructInfo(prim_type->dtype, prim_type->span);
   } else if (const ShapeTypeNode* shape_type = type.as<ShapeTypeNode>()) {
     return ShapeStructInfo(shape_type->ndim, type->span);
-  } else if (const DynTensorTypeNode* tensor_type = type.as<DynTensorTypeNode>()) {
+  } else if (const TensorTypeNode* tensor_type = type.as<TensorTypeNode>()) {
     return TensorStructInfo(tensor_type->dtype, tensor_type->ndim);
   } else if (const TupleTypeNode* tuple_type = type.as<TupleTypeNode>()) {
     Array<StructInfo> fields;
@@ -270,7 +270,7 @@ StructInfo EraseToWellDefined(const StructInfo& info, Map<tir::Var, PrimExpr> sh
     f_shape_var_map = [&](const tir::Var& var) -> Optional<PrimExpr> {
       auto it = shape_var_map.find(var);
       if (it != shape_var_map.end()) return (*it).second;
-      return NullOpt;
+      return std::nullopt;
     };
   }
 
@@ -278,14 +278,14 @@ StructInfo EraseToWellDefined(const StructInfo& info, Map<tir::Var, PrimExpr> sh
     f_var_map = [&](const Var& var) -> Optional<Expr> {
       auto it = var_map.find(var);
       if (it != var_map.end()) return (*it).second;
-      return NullOpt;
+      return std::nullopt;
     };
   }
 
   return EraseToWellDefined(info, f_shape_var_map, f_var_map, ana);
 }
 
-TVM_REGISTER_GLOBAL("relax.analysis.EraseToWellDefined")
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.EraseToWellDefined")
     .set_body_typed([](const StructInfo& info, Map<tir::Var, PrimExpr> shape_var_map,
                        Map<Var, Expr> var_map) {
       return EraseToWellDefined(info, shape_var_map, var_map);
@@ -595,7 +595,7 @@ BaseCheckResult StructInfoBaseCheck(const StructInfo& base, const StructInfo& de
   }
 }
 
-TVM_REGISTER_GLOBAL("relax.analysis.StructInfoBaseCheck")
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.StructInfoBaseCheck")
     .set_body_typed([](const StructInfo& base, const StructInfo& derived) -> int {
       return static_cast<int>(StructInfoBaseCheck(base, derived));
     });
@@ -604,7 +604,7 @@ bool IsBaseOf(const StructInfo& base, const StructInfo& derived, arith::Analyzer
   return StructInfoBaseCheck(base, derived, ana) == BaseCheckResult::kPass;
 }
 
-TVM_REGISTER_GLOBAL("relax.StructInfoIsBaseOf")
+TVM_FFI_REGISTER_GLOBAL("relax.StructInfoIsBaseOf")
     .set_body_typed([](const StructInfo& base, const StructInfo& derived) {
       return IsBaseOf(base, derived);
     });
@@ -955,7 +955,7 @@ StructInfo DeriveCallRetStructInfo(const FuncStructInfo& finfo, const Call& call
   }
 }
 
-TVM_REGISTER_GLOBAL("relax.analysis.DeriveCallRetStructInfo")
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.DeriveCallRetStructInfo")
     .set_body_typed([](const FuncStructInfo& finfo, const Call& call, const BlockBuilder& ctx) {
       return DeriveCallRetStructInfo(finfo, call, ctx);
     });
@@ -1143,7 +1143,7 @@ class StructInfoLCAFinder
   Optional<Array<StructInfo>> UnifyArray(const Array<StructInfo>& lhs,
                                          const Array<StructInfo>& rhs) {
     if (lhs.same_as(rhs)) return lhs;
-    if (lhs.size() != rhs.size()) return NullOpt;
+    if (lhs.size() != rhs.size()) return std::nullopt;
     size_t index = 0;
     return lhs.Map([&](const StructInfo& a) { return this->VisitStructInfo(a, rhs[index++]); });
   }
@@ -1158,7 +1158,7 @@ StructInfo StructInfoLCA(const StructInfo& lhs, const StructInfo& rhs, arith::An
   }
 }
 
-TVM_REGISTER_GLOBAL("relax.analysis.StructInfoLCA")
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.StructInfoLCA")
     .set_body_typed([](const StructInfo& lhs, const StructInfo& rhs) {
       return StructInfoLCA(lhs, rhs);
     });
@@ -1241,9 +1241,9 @@ Array<tir::Var> DefinableTIRVarsInStructInfo(const StructInfo& sinfo) {
   return detector.GetTIRVars();
 }
 
-TVM_REGISTER_GLOBAL("relax.analysis.TIRVarsInStructInfo").set_body_typed(TIRVarsInStructInfo);
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.TIRVarsInStructInfo").set_body_typed(TIRVarsInStructInfo);
 
-TVM_REGISTER_GLOBAL("relax.analysis.DefinableTIRVarsInStructInfo")
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.DefinableTIRVarsInStructInfo")
     .set_body_typed(DefinableTIRVarsInStructInfo);
 
 class NonNegativeExpressionCollector : relax::StructInfoVisitor {
@@ -1288,7 +1288,7 @@ Array<PrimExpr> CollectNonNegativeExpressions(const StructInfo& sinfo) {
   return NonNegativeExpressionCollector::Collect(sinfo);
 }
 
-TVM_REGISTER_GLOBAL("relax.analysis.CollectNonNegativeExpressions")
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.CollectNonNegativeExpressions")
     .set_body_typed(CollectNonNegativeExpressions);
 
 class SymbolicVarCollector : public relax::ExprVisitor,
@@ -1436,9 +1436,9 @@ Array<tir::Var> DefinedSymbolicVars(const Expr& expr) {
 }
 Array<tir::Var> FreeSymbolicVars(const Expr& expr) { return SymbolicVarCollector::Free(expr); }
 
-TVM_REGISTER_GLOBAL("relax.analysis.DefinedSymbolicVars").set_body_typed(DefinedSymbolicVars);
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.DefinedSymbolicVars").set_body_typed(DefinedSymbolicVars);
 
-TVM_REGISTER_GLOBAL("relax.analysis.FreeSymbolicVars").set_body_typed(FreeSymbolicVars);
+TVM_FFI_REGISTER_GLOBAL("relax.analysis.FreeSymbolicVars").set_body_typed(FreeSymbolicVars);
 
 }  // namespace relax
 }  // namespace tvm

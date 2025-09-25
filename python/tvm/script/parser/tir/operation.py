@@ -21,10 +21,11 @@
 
 from typing import Type
 
-from tvm import tir, target as tgt
-from tvm._ffi.runtime_ctypes import DataType, int_within_range
+from tvm import tir
+from tvm.runtime import DataType, int_within_range
 from tvm.tir import IntImm
 
+from ....compass import CompassInfo
 from .._core import OpMethod, doc, register_op
 
 
@@ -33,12 +34,12 @@ def _try_adjust_int_literal_type(lhs, rhs):
     # are floating, because can't know whether a float literal can be represented by float16 or not,
     # so can't do this. For other situations, C++ "BinaryOpMatchTypes" is good enough.
     if isinstance(lhs, int) and isinstance(rhs, tir.PrimExpr):
-        rtype = DataType(rhs.dtype)
+        rtype = rhs.dtype
         if rtype.is_integer and int_within_range(lhs, rtype):
             return IntImm(rtype.element_of, lhs), rhs
 
     if isinstance(lhs, tir.PrimExpr) and isinstance(rhs, int):
-        ltype = DataType(lhs.dtype)
+        ltype = lhs.dtype
         if ltype.is_integer and int_within_range(rhs, ltype):
             return lhs, IntImm(ltype.element_of, rhs)
 
@@ -62,7 +63,7 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
         if isinstance(b, bool):
             b = IntImm("bool", b)
         if DataType(a.dtype).lanes > 1 or DataType(b.dtype).lanes > 1:
-            if tgt.AipuInfo.current() is not None:
+            if CompassInfo.current() is not None:
                 raise TypeError("Invalid and operator between vector, use & instead.")
             return a & b
         else:
@@ -74,7 +75,7 @@ def _register_expr_op(ty: Type):  # pylint: disable=invalid-name
         if isinstance(b, bool):
             b = IntImm("bool", b)
         if DataType(a.dtype).lanes > 1 or DataType(b.dtype).lanes > 1:
-            if tgt.AipuInfo.current() is not None:
+            if CompassInfo.current() is not None:
                 raise TypeError("Invalid or operator between vector, use | instead.")
             return a | b
         else:

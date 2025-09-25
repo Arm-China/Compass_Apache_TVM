@@ -21,10 +21,7 @@
  * \file src/tir/ir/specialize.cc
  * \brief Specialize parameters of PrimFunc.
  */
-/*
- * This file has been modified by Arm China team.
- */
-#include <tvm/runtime/registry.h>
+#include <tvm/ffi/function.h>
 #include <tvm/tir/analysis.h>
 #include <tvm/tir/function.h>
 #include <tvm/tir/op.h>
@@ -39,7 +36,6 @@ namespace tvm {
 namespace tir {
 
 using VarMap = std::unordered_map<Var, PrimExpr>;
-using TypeMap = std::unordered_map<Var, DataType>;
 
 /**************** Helper functions ****************/
 
@@ -75,11 +71,10 @@ inline bool IsParam(const PrimFunc& func, const Var& param) {
 /*! \brief Mutator to specialize function and remove const parameters */
 class PrimFuncSpecializer : public StmtExprMutator {
  public:
-  explicit PrimFuncSpecializer(const VarMap& var_map, const TypeMap& type_map)
-      : var_map_(var_map), type_map_(type_map) {}
+  explicit PrimFuncSpecializer(const VarMap& var_map) : var_map_(var_map) {}
 
-  static PrimFunc Specialize(PrimFunc f, const VarMap& var_map, const TypeMap& type_map) {
-    PrimFuncSpecializer specializer(var_map, type_map);
+  static PrimFunc Specialize(PrimFunc f, const VarMap& var_map) {
+    PrimFuncSpecializer specializer(var_map);
     // Updating Buffer map
     Map<Var, Buffer> buffer_map;
     bool buffer_map_updated = false;
@@ -207,7 +202,6 @@ class PrimFuncSpecializer : public StmtExprMutator {
     } else {
       auto n = make_object<BufferLoadNode>(*op);
       n->buffer = new_buf;
-      n->dtype = new_buf.get()->dtype;
       return PrimExpr(n);
     }
   }
@@ -252,18 +246,9 @@ class PrimFuncSpecializer : public StmtExprMutator {
         buffer->strides.Map([this](const PrimExpr& e) { return VisitExpr(e); });
 
     PrimExpr elem_offset = VisitExpr(buffer->elem_offset);
-    Var var = MutateVarType(buffer->data.as<VarNode>());
-
-    // Get buffer's new type.
-    auto dtype = buffer->dtype;
-    auto it = type_map_.find(buffer->data);
-    if (it != type_map_.end()) {
-      dtype = it->second;
-    }
 
     if (buffer->data.same_as(data) && buffer->elem_offset.same_as(elem_offset) &&
-        buffer->shape.same_as(shape) && buffer->strides.same_as(strides) &&
-        buffer->dtype == dtype) {
+        buffer->shape.same_as(shape) && buffer->strides.same_as(strides)) {
       return buffer;
     } else {
       auto n = make_object<BufferNode>(*buffer.get());
@@ -271,27 +256,7 @@ class PrimFuncSpecializer : public StmtExprMutator {
       n->elem_offset = std::move(elem_offset);
       n->shape = std::move(shape);
       n->strides = std::move(strides);
-      n->dtype = std::move(dtype);
       return Buffer(n);
-    }
-  }
-
-  Var MutateVarType(const VarNode* op) const {
-    auto it = type_map_.find(GetRef<Var>(op));
-    if (it == type_map_.end()) {
-      return GetRef<Var>(op);
-    } else {
-      if (!op->type_annotation.defined()) {
-        return Var(op->name_hint, it->second, op->span);
-      } else if (auto ptr = op->type_annotation.as<PointerTypeNode>()) {
-        auto type = PointerType(PrimType(it->second), ptr->storage_scope);
-        return Var(op->name_hint, type, op->span);
-      } else if (op->type_annotation.as<PrimTypeNode>()) {
-        auto type = PrimType(it->second);
-        return Var(op->name_hint, type, op->span);
-      } else {
-        return GetRef<Var>(op);
-      }
     }
   }
 
@@ -350,8 +315,6 @@ class PrimFuncSpecializer : public StmtExprMutator {
  private:
   /*! \brief The vars to be substitute and their values */
   const VarMap& var_map_;
-  /*! \brief The buffers to be updated and their types */
-  const TypeMap& type_map_;
   /*! \brief map from old buffer to mutated buffer */
   std::unordered_map<Buffer, Buffer, ObjectPtrHash, ObjectPtrEqual> buffer_map_;
 };
@@ -374,7 +337,7 @@ class PrimFuncSpecializer : public StmtExprMutator {
  *   e.g. A = T.match_buffer(a, [m * 2, n + 1])
  */
 void UpdateSpecializeVarMap(const PrimFunc& func, const Var& param, const Buffer& specific_buf,
-                            VarMap* var_map, TypeMap* type_map) {
+                            VarMap* var_map) {
   // preliminaries
   tir::ExprDeepEqual equal;
 
@@ -420,10 +383,6 @@ void UpdateSpecializeVarMap(const PrimFunc& func, const Var& param, const Buffer
   }
   build_var_mapping(specific_buf->elem_offset, buf_to_specialize->elem_offset);
 
-  if (specific_buf->dtype != buf_to_specialize->dtype) {
-    (*type_map)[buf_to_specialize->data] = specific_buf->dtype;
-  }
-
   // Check data_alignment and offset_factor.
   // These two signatures are int, so we do not need map them.
   CHECK_EQ(specific_buf->data_alignment, buf_to_specialize->data_alignment)
@@ -457,26 +416,23 @@ void UpdateSpecializeVarMap(const PrimFunc& func, const Var& param, const PrimEx
 
 PrimFunc Specialize(PrimFunc func, const Map<Var, Variant<Buffer, PrimExpr>>& param_map) {
   VarMap var_map;
-  TypeMap type_map;
   for (const auto& kv : param_map) {
     const Var& param = kv.first;
-    const ObjectRef& instance = kv.second;
-    if (instance->IsInstance<BufferNode>()) {
-      UpdateSpecializeVarMap(func, param, Downcast<Buffer>(instance), &var_map, &type_map);
-    } else if (instance->IsInstance<PrimExprNode>()) {
-      UpdateSpecializeVarMap(func, param, Downcast<PrimExpr>(instance), &var_map);
+    const Variant<Buffer, PrimExpr>& instance = kv.second;
+    if (auto opt_buffer = instance.as<Buffer>()) {
+      UpdateSpecializeVarMap(func, param, opt_buffer.value(), &var_map);
+    } else if (auto opt_expr = instance.as<PrimExpr>()) {
+      UpdateSpecializeVarMap(func, param, opt_expr.value(), &var_map);
     } else {
-      CHECK(instance.defined()) << "Specialize instance is not defined for param " << param;
-      LOG(FATAL) << "TypeError: specialize expected instance to be Buffer or PrimExpr, but got "
-                 << instance->GetTypeKey();
+      LOG(FATAL) << "TypeError: specialize expected instance to be Buffer or PrimExpr";
     }
   }
-  return PrimFuncSpecializer::Specialize(func, std::move(var_map), std::move(type_map));
+  return PrimFuncSpecializer::Specialize(func, std::move(var_map));
 }
 
 /**************** FFI ****************/
 
-TVM_REGISTER_GLOBAL("tir.Specialize").set_body_typed(Specialize);
+TVM_FFI_REGISTER_GLOBAL("tir.Specialize").set_body_typed(Specialize);
 
 }  // namespace tir
 }  // namespace tvm

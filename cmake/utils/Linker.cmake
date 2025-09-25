@@ -16,6 +16,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+#
+# This file has been modified by Arm China team.
+#
 #######################################################
 function(find_and_set_linker use_alternative_linker)
   if(${use_alternative_linker} MATCHES ${IS_FALSE_PATTERN})
@@ -39,6 +42,7 @@ function(find_and_set_linker use_alternative_linker)
 
   if(MOLD_BIN)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.1)
+      get_filename_component(MOLD_BIN "${MOLD_BIN}" REALPATH)
       get_filename_component(MOLD_INSTALLATION_PREFIX "${MOLD_BIN}" DIRECTORY)
       get_filename_component(MOLD_INSTALLATION_PREFIX "${MOLD_INSTALLATION_PREFIX}" DIRECTORY)
       find_path(

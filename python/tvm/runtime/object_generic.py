@@ -19,105 +19,17 @@
 # This file has been modified by Arm China team.
 #
 # pylint: disable=unused-import, invalid-name
-from numbers import Number, Integral
-from tvm._ffi.base import string_types
-from tvm._ffi.runtime_ctypes import ObjectRValueRef
-
-from . import _ffi_node_api, _ffi_api
-from .object import ObjectBase, PyNativeObject, _set_class_object_generic
-from .ndarray import NDArrayBase
-from .packed_func import PackedFuncBase, convert_to_tvm_func
-from .module import Module
-
-
-class ObjectGeneric(object):
-    """Base class for all classes that can be converted to object."""
-
-    def asobject(self):
-        """Convert value to object"""
-        raise NotImplementedError()
-
-
-ObjectTypes = (ObjectBase, NDArrayBase, Module, ObjectRValueRef, PackedFuncBase, PyNativeObject)
-
-
-def convert_to_object(value):
-    """Convert a Python value to corresponding object type.
-
-    Type conversions performed by this function must *only* produce
-    types that are supported by `libtvm_runtime.so`.  This function
-    must be usable in environments where only TVM runtime support is
-    present.  Automatic conversions to compile-time representations
-    (e.g. `tir.IntImm` or `relax.PrimValue`) should not be done as
-    part of this conversion, as these types are not available in
-    `libtvm_runtime.so`.
-
-    Parameters
-    ----------
-    value : str
-        The value to be inspected.
-
-    Returns
-    -------
-    obj : Object
-        The corresponding object value.
-
-    """
-
-    if isinstance(value, ObjectTypes):
-        return value
-    elif isinstance(value, (bool, int, float)):
-        return value
-    elif isinstance(value, string_types):
-        return _ffi_api.String(value)
-    elif isinstance(value, (list, tuple)):
-        # The call to _ffi_api.Array will convert its own arguments,
-        # so we don't need to apply any explicit conversions here.
-        return _ffi_api.Array(*value)
-    elif isinstance(value, dict):
-        if any(not isinstance(key, (ObjectTypes, string_types, Number)) for key in value):
-            raise ValueError("key of map must already been a container type")
-
-        vlist = [kv for item in value.items() for kv in item]
-        return _ffi_api.Map(*vlist)
-    elif isinstance(value, ObjectGeneric):
-        return value.asobject()
-    elif callable(value):
-        return convert_to_tvm_func(value)
-    elif value is None:
-        return None
-    else:
-        raise TypeError(f"don't know how to convert type {type(value)} to object")
-
-
-def convert(value):
-    """Convert value to TVM object or function.
-
-    Parameters
-    ----------
-    value : python value
-
-    Returns
-    -------
-    tvm_val : Object or Function
-        Converted value in TVM
-
-    Note
-    ----
-    This function is redirected to `convert_to_object` as it is widely used in
-    the codebase. We can choose one to keep and discard the other one later.
-    """
-
-    return convert_to_object(value)
+from tvm.ffi import ObjectGeneric
+from . import _ffi_node_api
 
 
 def _scalar_type_inference(value):
-    from tvm import target as tgt  # pylint: disable=import-outside-toplevel
+    from ..compass import CompassInfo  # pylint: disable=import-outside-toplevel
 
-    is_aipu = tgt.AipuInfo.current() is not None
+    is_compass = CompassInfo.current() is not None
     if hasattr(value, "dtype"):
         dtype = str(value.dtype)
-        if is_aipu:
+        if is_compass:
             if dtype == "int64":
                 dtype = "int32"
             elif dtype == "uint64":
@@ -133,7 +45,7 @@ def _scalar_type_inference(value):
             return "float32"
         else:
             dtype = "float64"
-            if is_aipu:
+            if is_compass:
                 dtype = "float32"
             return dtype
     elif isinstance(value, int):
@@ -142,7 +54,7 @@ def _scalar_type_inference(value):
             return "int32"
         else:
             dtype = "int64"
-            if is_aipu:
+            if is_compass:
                 dtype = "uint32"
             return dtype
     else:
@@ -173,6 +85,3 @@ def const(value, dtype=None, span=None):
     if dtype == "uint64" and value >= (1 << 63):
         return _ffi_node_api.LargeUIntImm(dtype, value & ((1 << 32) - 1), value >> 32, span)
     return _ffi_node_api._const(value, dtype, span)
-
-
-_set_class_object_generic(ObjectGeneric, convert_to_object)

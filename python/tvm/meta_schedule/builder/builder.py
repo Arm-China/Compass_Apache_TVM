@@ -21,7 +21,7 @@ from typing import Callable, Dict, List, Optional, Union
 from typing_extensions import Literal
 
 # isort: on
-from tvm._ffi import register_object
+from tvm.ffi import register_object
 from tvm.ir import IRModule
 from tvm.runtime import NDArray, Object
 from tvm.target import Target
@@ -40,7 +40,7 @@ class BuilderInput(Object):
     target : Target
         The target to be built for.
     params: Optional[Dict[str, NDArray]]
-        The parameters for Relay build module
+        The parameters for Relax build module
     """
 
     mod: IRModule
@@ -62,7 +62,7 @@ class BuilderInput(Object):
         target : Target
             The target to be built for.
         params: Optional[Dict[str, NDArray]]
-            The parameters for Relay build module
+            The parameters for Relax build module
         """
         self.__init_handle_by_constructor__(
             _ffi_api.BuilderInput,  # type: ignore # pylint: disable=no-member

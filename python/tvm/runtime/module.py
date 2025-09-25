@@ -27,10 +27,9 @@ import uuid
 from typing import Sequence
 import numpy as np
 
-import tvm
-from tvm._ffi.base import _LIB, check_call, c_str, string_types, _RUNTIME_ONLY
-from tvm._ffi.libinfo import find_include_path
-from .packed_func import PackedFunc, PackedFuncHandle, _set_class_module
+import tvm.ffi
+from tvm.base import _RUNTIME_ONLY
+from tvm.libinfo import find_include_path
 
 from . import _ffi_api
 
@@ -102,22 +101,15 @@ class ModulePropertyMask(object):
     DSO_EXPORTABLE = 0b100
 
 
-class Module(object):
+@tvm.ffi.register_object("runtime.Module")
+class Module(tvm.ffi.Object):
     """Runtime Module."""
 
-    __slots__ = ["handle", "_entry", "entry_name"]
-
-    def __init__(self, handle):
-        self.handle = handle
-        self._entry = None
-        self.entry_name = "__tvm_main__"
-
-    def __del__(self):
-        if _LIB:
-            check_call(_LIB.TVMModFree(self.handle))
-
-    def __hash__(self):
-        return ctypes.cast(self.handle, ctypes.c_void_p).value
+    def __new__(cls):
+        instance = super(Module, cls).__new__(cls)  # pylint: disable=no-value-for-parameter
+        instance.entry_name = "__tvm_main__"
+        instance._entry = None
+        return instance
 
     @property
     def entry_func(self):
@@ -130,7 +122,7 @@ class Module(object):
         """
         if self._entry:
             return self._entry
-        self._entry = self.get_function(self.entry_name)
+        self._entry = self.get_function("__tvm_main__")
         return self._entry
 
     def implements_function(self, name, query_imports=False):
@@ -171,15 +163,10 @@ class Module(object):
         f : tvm.runtime.PackedFunc
             The result function.
         """
-        ret_handle = PackedFuncHandle()
-        check_call(
-            _LIB.TVMModGetFunction(
-                self.handle, c_str(name), ctypes.c_int(query_imports), ctypes.byref(ret_handle)
-            )
-        )
-        if not ret_handle.value:
+        func = _ffi_api.ModuleGetFunction(self, name, query_imports)
+        if func is None:
             raise AttributeError(f"Module has no function '{name}'")
-        return PackedFunc(ret_handle, False)
+        return func
 
     def import_module(self, module):
         """Add module to the import list of current one.
@@ -189,24 +176,18 @@ class Module(object):
         module : tvm.runtime.Module
             The other module.
         """
-        check_call(_LIB.TVMModImport(self.handle, module.handle))
+        _ffi_api.ModuleImport(self, module)
 
     def __getitem__(self, name):
-        if not isinstance(name, string_types):
+        if not isinstance(name, str):
             raise ValueError("Can only take string as function name")
         return self.get_function(name)
-
-    def __eq__(self, other):
-        return self.handle.value == other.handle.value
 
     def __call__(self, *args):
         if self._entry:
             return self._entry(*args)
         # pylint: disable=not-callable
         return self.entry_func(*args)
-
-    def __repr__(self):
-        return f"Module({self.type_key}, {self.handle.value:x})"
 
     @property
     def type_key(self):
@@ -232,22 +213,6 @@ class Module(object):
             The result source code.
         """
         return _ffi_api.ModuleGetSource(self, fmt)
-
-    def get_program(self):
-        """Get binary format program compiled from source code from module, if
-        available.
-
-        Returns
-        -------
-        program : bytes
-            The result binary format program.
-        """
-        return _ffi_api.ModuleGetProgram(self)
-
-    def save_program(self, file_name: str):
-        program = self.get_program()
-        with open(file_name, "wb") as f:
-            f.write(program)
 
     @property
     def imported_modules(self):
@@ -452,9 +417,6 @@ class Module(object):
         stack.append(self)
         while stack:
             module = stack.pop()
-            assert (
-                module.is_dso_exportable or module.is_binary_serializable
-            ), f"Module {module.type_key} should be either dso exportable or binary serializable."
 
             if filter_func(module):
                 dso_modules.append(module)
@@ -537,15 +499,6 @@ class Module(object):
 
         if isinstance(file_name, Path):
             file_name = str(file_name)
-
-        if self.type_key == "stackvm":
-            if not file_name.endswith(".stackvm"):
-                raise ValueError(
-                    f"Module[{self.type_key}]: can only be saved as stackvm format."
-                    "did you build with LLVM enabled?"
-                )
-            self.save(file_name)
-            return
 
         modules = self._collect_dso_modules()
         if workspace_dir is None:
@@ -677,12 +630,12 @@ def system_lib(symbol_prefix=""):
 
 
 def load_module(path, fmt=""):
-    """Load module from file.
+    """Load module from file or directory.
 
     Parameters
     ----------
     path : str
-        The path to the module file.
+        The path to the module file or directory.
 
     fmt : str, optional
         The format of the file, if not specified
@@ -698,7 +651,7 @@ def load_module(path, fmt=""):
     This function will automatically call
     cc.create_shared if the path is in format .o or .tar
     """
-    if os.path.isfile(path):
+    if os.path.isdir(path) or os.path.isfile(path):
         path = os.path.realpath(path)
     else:
         raise ValueError(f"cannot find file {path}")
@@ -764,9 +717,6 @@ def num_threads() -> int:
     return _ffi_api.NumThreads()
 
 
-_set_class_module(Module)
-
-
-@tvm.register_func("uuid.uuid4().hex")
+@tvm.ffi.register_func("uuid.uuid4().hex")
 def _():
     return uuid.uuid4().hex

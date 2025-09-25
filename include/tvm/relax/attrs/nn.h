@@ -21,6 +21,9 @@
  * \file tvm/relax/attrs/nn.h
  * \brief Attributes for neural network operators.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RELAX_ATTRS_NN_H_
 #define TVM_RELAX_ATTRS_NN_H_
 
@@ -455,6 +458,28 @@ struct LeakyReluAttrs : public tvm::AttrsNode<LeakyReluAttrs> {
   }
 };
 
+/*! \brief Attributes used in softplus operators */
+struct SoftplusAttrs : public tvm::AttrsNode<SoftplusAttrs> {
+  double beta;
+  double threshold;
+
+  TVM_DECLARE_ATTRS(SoftplusAttrs, "relax.attrs.SoftplusAttrs") {
+    TVM_ATTR_FIELD(beta).describe(
+        "Scaling factor controlling the sharpness of the Softplus transition.");
+    TVM_ATTR_FIELD(threshold).describe(
+        "Value determining when to use linear approximation for numerical stability.");
+  }
+};
+
+/*! \brief Attributes used in PReLU operator */
+struct PReluAttrs : public tvm::AttrsNode<PReluAttrs> {
+  int axis;
+
+  TVM_DECLARE_ATTRS(PReluAttrs, "relax.attrs.PReluAttrs") {
+    TVM_ATTR_FIELD(axis).describe("The axis along which the alpha values are applied.");
+  }
+};
+
 /*! \brief Attributes used in batch_norm operator */
 struct BatchNormAttrs : public tvm::AttrsNode<BatchNormAttrs> {
   int axis;
@@ -462,6 +487,7 @@ struct BatchNormAttrs : public tvm::AttrsNode<BatchNormAttrs> {
   bool center;
   bool scale;
   double momentum;
+  bool training;
 
   TVM_DECLARE_ATTRS(BatchNormAttrs, "relax.attrs.BatchNormAttrs") {
     TVM_ATTR_FIELD(axis).describe("The axis along which the normalization is applied.");
@@ -470,6 +496,7 @@ struct BatchNormAttrs : public tvm::AttrsNode<BatchNormAttrs> {
         "Indicating if the beta offset will be added to the normalized tensor.");
     TVM_ATTR_FIELD(scale).describe("Indicating if the gamma scale will be multiplied.");
     TVM_ATTR_FIELD(momentum).describe("The value used for the moving_mean and moving_var update.");
+    TVM_ATTR_FIELD(training).describe("Whether we are training (i.e., not in eval mode).");
   }
 };  // struct BatchNormAttrs
 
@@ -521,6 +548,89 @@ struct RMSNormAttrs : public tvm::AttrsNode<RMSNormAttrs> {
   }
 };  // struct RMSNormAttrs
 
+/*! \brief Attributes used in lrn operator */
+struct LRNAttrs : public tvm::AttrsNode<LRNAttrs> {
+  int size;
+  int axis;
+  double bias;
+  double alpha;
+  double beta;
+
+  TVM_DECLARE_ATTRS(LRNAttrs, "relax.attrs.LRNAttrs") {
+    TVM_ATTR_FIELD(size).describe(
+        "The size of the local region to be considered for normalization.");
+    TVM_ATTR_FIELD(axis).describe(
+        "Input data layout channel axis. Default value is 1 for NCHW format");
+    TVM_ATTR_FIELD(bias).describe("The offset parameter to avoid dividing by 0.");
+    TVM_ATTR_FIELD(alpha).describe("The scaling parameter.");
+    TVM_ATTR_FIELD(beta).describe("The exponent parameter.");
+  }
+};  // struct LRNAttrs
+
+/*! \brief Attributes used in space_to_depth operator */
+struct SpaceToDepthAttrs : public tvm::AttrsNode<SpaceToDepthAttrs> {
+  int block_size;
+  String layout;
+
+  TVM_DECLARE_ATTRS(SpaceToDepthAttrs, "relax.attrs.SpaceToDepthAttrs") {
+    TVM_ATTR_FIELD(block_size)
+        .describe("The size of SpaceToDepth blocks to compose or decompose.")
+        .set_default(1);
+    TVM_ATTR_FIELD(layout).set_default("NCHW").describe(
+        "Dimension ordering of input data. Can be 'NCHW', 'NHWC', etc."
+        "'N', 'C', 'H', 'W' stands for batch, channel, height, and width"
+        "dimensions respectively.");
+  }
+};  // struct SpaceToDepthAttrs
+
+/*! \brief Attributes used in depth_to_space operator */
+struct DepthToSpaceAttrs : public tvm::AttrsNode<DepthToSpaceAttrs> {
+  int block_size;
+  String layout;
+  String mode;
+
+  TVM_DECLARE_ATTRS(DepthToSpaceAttrs, "relax.attrs.DepthToSpaceAttrs") {
+    TVM_ATTR_FIELD(block_size)
+        .describe("The size of DepthToSpace blocks to compose or decompose.")
+        .set_default(1);
+    TVM_ATTR_FIELD(layout).set_default("NCHW").describe(
+        "Dimension ordering of input data. Can be 'NCHW', 'NHWC', etc."
+        "'N', 'C', 'H', 'W' stands for batch, channel, height, and width"
+        "dimensions respectively.");
+    TVM_ATTR_FIELD(mode).set_default("DCR").describe(
+        "Indicates order in which channels are accessed. Must be one of"
+        "DCR or CDR.");
+  }
+};  // struct DepthToSpaceAttrs
+
+/*! \brief Attributes used in space_to_batch_nd operator */
+struct SpaceToBatchNDAttrs : public tvm::AttrsNode<SpaceToBatchNDAttrs> {
+  Array<Integer> block_shape;
+  Array<Array<Integer>> paddings;
+  double pad_value;
+
+  TVM_DECLARE_ATTRS(SpaceToBatchNDAttrs, "relax.attrs.SpaceToBatchNDAttrs") {
+    TVM_ATTR_FIELD(block_shape)
+        .set_default(Array<Integer>({1, 1}))
+        .describe("1-D containing block size for each spatial dimension.");
+    TVM_ATTR_FIELD(paddings).describe("2-D containing paddings for each spatial dimension.");
+    TVM_ATTR_FIELD(pad_value).set_default(0.0).describe("The value used for padding.");
+  }
+};  // struct SpaceToBatchNDAttrs
+
+/*! \brief Attributes used in space_to_batch_nd operator */
+struct BatchToSpaceNDAttrs : public tvm::AttrsNode<BatchToSpaceNDAttrs> {
+  Array<Integer> block_shape;
+  Array<Array<Integer>> crops;
+
+  TVM_DECLARE_ATTRS(BatchToSpaceNDAttrs, "relax.attrs.BatchToSpaceNDAttrs") {
+    TVM_ATTR_FIELD(block_shape)
+        .set_default(Array<Integer>({1, 1}))
+        .describe("1-D containing block size for each spatial dimension.");
+    TVM_ATTR_FIELD(crops).describe("2-D containing amount to crop from spatial dimension.");
+  }
+};  // struct BatchToSpaceNDAttrs
+
 /*! \brief Attributes used in nll_loss operator */
 struct NLLLossAttrs : public tvm::AttrsNode<NLLLossAttrs> {
   String reduction;
@@ -562,18 +672,29 @@ struct AttentionAttrs : public tvm::AttrsNode<AttentionAttrs> {
 /*! \brief Attributes used for the padding operator */
 struct PadAttrs : public tvm::AttrsNode<PadAttrs> {
   Array<Integer> pad_width;
+  double pad_value = 0.0;
   tvm::String pad_mode;
 
-  TVM_DECLARE_ATTRS(PadAttrs, "relay.attrs.PadAttrs") {
+  TVM_DECLARE_ATTRS(PadAttrs, "relax.attrs.PadAttrs") {
     TVM_ATTR_FIELD(pad_width).describe(
         "Number of values padded to the edges of each axis, "
         "in the format of (before_1, after_1, ..., before_N, after_N)");
+    TVM_ATTR_FIELD(pad_value).set_default(0.0).describe("The value to fill in padded area with");
     TVM_ATTR_FIELD(pad_mode)
         .set_default("constant")
         .describe(
             "Padding type to use. \"constant\" pads with constant_value, "
             "\"edge\" pads using the edge values of the input array, "
             "\"reflect\" pads by reflecting values with respect to the edges.");
+  }
+};
+
+/*! \brief Attributes used for the pixel shuffle operator */
+struct PixelShuffleAttrs : public tvm::AttrsNode<PixelShuffleAttrs> {
+  int upscale_factor;
+
+  TVM_DECLARE_ATTRS(PixelShuffleAttrs, "relax.attrs.PixelShuffleAttrs") {
+    TVM_ATTR_FIELD(upscale_factor).describe("Scale factor for spatial upsampling.");
   }
 };
 

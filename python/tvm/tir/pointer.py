@@ -3,7 +3,7 @@
 """Abstraction for pointer."""
 from tvm import ir
 from ..ir import PrimExpr, PointerType, PrimType, GlobalVar
-from ..runtime import DataType, ObjectGeneric
+from ..runtime import ObjectGeneric
 from .expr import Var, Call, LT, LE, GT, GE, EqualOp, NotEqualOp
 from .buffer import decl_buffer
 from .op import pointer, isnullptr
@@ -35,7 +35,7 @@ class Pointer(ObjectGeneric):
 
         Parameters
         ----------
-        dtype : Union[str, DataType]
+        dtype : DataType
             The data type of the data that the pointer point to.
 
         scope : str
@@ -51,7 +51,7 @@ class Pointer(ObjectGeneric):
             The name of the pointer.
         """
         _in_block_check()
-        self.dtype = DataType(dtype)
+        self.dtype = dtype
         self.scope = scope
         self.base = Var(name, PointerType(PrimType(dtype), scope)) if base is None else base
         self.offset = offset
@@ -104,8 +104,9 @@ class Pointer(ObjectGeneric):
         ret : Pointer
             The new temporary pointer instance.
         """
-        from ..aipu.utils import resolve_dtype_alias  # pylint: disable=import-outside-toplevel
-        from ..aipu.utils import VALID_PTR_ELEMENT_DTYPES  # pylint: disable=import-outside-toplevel
+        # pylint: disable=import-outside-toplevel
+        from ..compass.dsl.utils import resolve_dtype_alias
+        from ..compass.dsl.utils import VALID_PTR_ELEMENT_DTYPES
 
         assert dtype not in (None, ""), 'Please use "void" to indicate convert to void pointer.'
         dtype = resolve_dtype_alias(dtype)
@@ -167,7 +168,7 @@ class Pointer(ObjectGeneric):
     def _move_check(self, step):
         assert not self.dtype.is_void, "The void pointer can't be moved."
         assert isinstance(step, int) or (
-            isinstance(step, PrimExpr) and DataType(step.dtype).is_integer_scalar
+            isinstance(step, PrimExpr) and step.dtype.is_integer_scalar
         ), "The step that the pointer will be moved must be a scalar integer."
 
     def __add__(self, other):

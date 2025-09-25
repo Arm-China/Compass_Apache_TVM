@@ -27,7 +27,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Union
 
 import numpy as np
 
-from tvm._ffi.base import TVMError
+from tvm.base import TVMError
 from tvm.error import DiagnosticError
 from tvm.ir import GlobalVar
 
@@ -869,11 +869,6 @@ class Parser(doc.NodeVisitor):
         ----------
         node : doc.Nonlocal
             The doc AST nonlocal node.
-
-        Returns
-        -------
-        res : Any
-            The visiting result.
 
         Returns
         -------

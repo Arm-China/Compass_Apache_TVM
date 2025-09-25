@@ -30,11 +30,11 @@
 
 #include <dmlc/io.h>
 #include <dmlc/serializer.h>
-#include <tvm/runtime/c_runtime_api.h>
-#include <tvm/runtime/container/array.h>
+#include <tvm/ffi/container/array.h>
+#include <tvm/runtime/base.h>
 #include <tvm/runtime/ndarray.h>
 
-namespace rt = tvm::runtime;
+namespace ffi = tvm::ffi;
 
 namespace dmlc {
 namespace serializer {
@@ -71,21 +71,21 @@ struct Handler<DLDevice> {
 };
 
 template <typename T>
-struct Handler<rt::Array<T>> {
-  inline static void Write(Stream* strm, const rt::Array<T>& array) {
+struct Handler<ffi::Array<T>> {
+  inline static void Write(Stream* strm, const ffi::Array<T>& array) {
     strm->Write(array.size());
     for (const auto& item : array) {
       strm->Write(item);
     }
     return;
   }
-  inline static bool Read(Stream* strm, rt::Array<T>* out_array) {
+  inline static bool Read(Stream* strm, ffi::Array<T>* out_array) {
     size_t size = 0;
     if (!strm->Read(&size)) return false;
     out_array->resize(size);
 
     for (size_t i = 0; i < size; ++i) {
-      rt::ObjectRef* item = &(out_array->GetArrayNode()->operator[](i));
+      ffi::ObjectRef* item = &(out_array->GetArrayNode()->operator[](i));
       if (!strm->Read(static_cast<T*>(item))) return false;
     }
     return true;

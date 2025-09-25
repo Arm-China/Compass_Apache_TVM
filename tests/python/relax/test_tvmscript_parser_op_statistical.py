@@ -14,7 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+#
+# This file has been modified by Arm China team.
+#
 from typing import Optional, Union
 
 import tvm
@@ -182,6 +184,36 @@ def test_scan():
     with bb.function("foo", [x]):
         lv = bb.emit(relax.op.cumsum(x, axis=1, dtype="int32"))
         gv = bb.emit(relax.op.cumprod(lv, axis=1, dtype="int32"))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_all():
+    @R.function
+    def foo(x: R.Tensor((1, 2, 3, 4), "float32")) -> R.Tensor((1, 3, 4), "float32"):
+        gv: R.Tensor((1, 3, 4), "float32") = R.all(x, axis=1)
+        return gv
+
+    x = relax.Var("x", R.Tensor((1, 2, 3, 4), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x]):
+        gv = bb.emit(relax.op.all(x, axis=1))
+        bb.emit_func_output(gv)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_any():
+    @R.function
+    def foo(x: R.Tensor((1, 2, 3, 4), "float32")) -> R.Tensor((1, 3, 4), "float32"):
+        gv: R.Tensor((1, 3, 4), "float32") = R.any(x, axis=1)
+        return gv
+
+    x = relax.Var("x", R.Tensor((1, 2, 3, 4), "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", [x]):
+        gv = bb.emit(relax.op.any(x, axis=1))
         bb.emit_func_output(gv)
 
     _check(foo, bb.get()["foo"])

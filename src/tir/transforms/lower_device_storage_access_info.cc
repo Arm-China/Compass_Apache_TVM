@@ -25,8 +25,8 @@
  * This file has been modified by Arm China team.
  */
 #include <tvm/arith/analyzer.h>
-#include <tvm/runtime/registry.h>
 #include <tvm/target/target.h>
+#include <tvm/ffi/function.h>
 #include <tvm/target/target_info.h>
 #include <tvm/tir/buffer.h>
 #include <tvm/tir/builtin.h>
@@ -42,9 +42,8 @@ namespace tir {
 using runtime::StorageRank;
 using runtime::StorageScope;
 
-// Special process on AllocateNode if target is aipu,
-// here we add a flag.
-bool IsAipu = false;
+// Special process on AllocateNode if target is Compass, here we add a flag.
+bool is_compass = false;
 
 class StorageAccessInfoLower : public StmtExprMutator {
  public:
@@ -63,8 +62,8 @@ class StorageAccessInfoLower : public StmtExprMutator {
       if (info->head_address.defined()) {
         return LetStmt(op->buffer_var, info->head_address, op->body);
       } else {
-        // For aipu target, there exist lsram & gsram, which need allocatenode.
-        if (IsAipu) return stmt;
+        // For Compass target, there exist lsram & gsram, which need allocatenode.
+        if (is_compass) return stmt;
         return op->body;
       }
     } else {
@@ -135,14 +134,14 @@ Pass LowerDeviceStorageAccessInfo() {
   auto pass_func = [](PrimFunc f, IRModule m, PassContext ctx) {
     auto target = f->GetAttr<Target>(tvm::attr::kTarget);
     auto* n = f.CopyOnWrite();
-    IsAipu = ((target != nullptr) && (target.value()->kind->name == "aipu"));
+    is_compass = ((target != nullptr) && (target.value()->kind->name == "compass"));
     n->body = StorageAccessInfoLower()(std::move(n->body));
     return f;
   };
   return CreatePrimFuncPass(pass_func, 0, "tir.LowerDeviceStorageAccessInfo", {});
 }
 
-TVM_REGISTER_GLOBAL("tir.transform.LowerDeviceStorageAccessInfo")
+TVM_FFI_REGISTER_GLOBAL("tir.transform.LowerDeviceStorageAccessInfo")
     .set_body_typed(LowerDeviceStorageAccessInfo);
 
 }  // namespace transform

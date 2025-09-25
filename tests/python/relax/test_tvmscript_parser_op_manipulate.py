@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 from typing import Optional, Union
 
@@ -434,6 +437,24 @@ def test_hint_on_device():
     bb = relax.BlockBuilder()
     with bb.function("foo", (x,)):
         tensor = bb.emit(relax.op.hint_on_device(x, R.cpu()))
+        bb.emit_func_output(tensor)
+
+    _check(foo, bb.get()["foo"])
+
+
+def test_reverse_sequence():
+    @R.function
+    def foo(
+        data: R.Tensor((4, 4), "int32"), seq: R.Tensor((4,), "int32")
+    ) -> R.Tensor((4, 4), "int32"):
+        r = R.reverse_sequence(data, seq)
+        return r
+
+    x = relax.Var("x", R.Tensor((4, 4), "int32"))
+    y = relax.Var("y", R.Tensor((4,), "int32"))
+    bb = relax.BlockBuilder()
+    with bb.function("foo", (x, y)):
+        tensor = bb.emit(relax.op.reverse_sequence(x, y))
         bb.emit_func_output(tensor)
 
     _check(foo, bb.get()["foo"])

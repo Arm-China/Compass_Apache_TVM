@@ -15,6 +15,9 @@
 # specific language governing permissions and limitations
 # under the License.
 # pylint: disable=redefined-builtin
+#
+# This file has been modified by Arm China team.
+#
 """Statistical operators."""
 from typing import List, Optional, Union
 
@@ -341,3 +344,59 @@ def variance(x: Expr, axis: Optional[Union[int, List[int]]] = None, keepdims: bo
     if isinstance(axis, int):
         axis = [axis]
     return _ffi_api.variance(x, axis, keepdims)  # type: ignore
+
+
+def all(x: Expr, axis: Optional[Union[int, List[int]]] = None, keepdims: bool = False) -> Expr:
+    """Computes the all of tensor elements over given axes.
+
+    Parameters
+    ----------
+    x : relax.Expr
+        The input data tensor
+
+    axis : Optional[Union[int, List[int]]]
+        Axis or axes along which a all operation is performed.
+        The default, axis=None, will compute the all of all elements in the input tensor.
+        Negative indexing is supported.
+
+    keepdims : bool
+        If this is set to True, the axes which are reduced are left in the result as dimensions
+        with size one.
+        With this option, the result will broadcast correctly against the input tensor.
+
+    Returns
+    -------
+    result : relax.Expr
+        The computed result.
+    """
+    if isinstance(axis, int):
+        axis = [axis]
+    return _ffi_api.all(x, axis, keepdims)  # type: ignore
+
+
+def any(x: Expr, axis: Optional[Union[int, List[int]]] = None, keepdims: bool = False) -> Expr:
+    """Computes the any of tensor elements over given axes.
+
+    Parameters
+    ----------
+    x : relax.Expr
+        The input data tensor
+
+    axis : Optional[Union[int, List[int]]]
+        Axis or axes along which a any operation is performed.
+        The default, axis=None, will compute the any of any elements in the input tensor.
+        Negative indexing is supported.
+
+    keepdims : bool
+        If this is set to True, the axes which are reduced are left in the result as dimensions
+        with size one.
+        With this option, the result will broadcast correctly against the input tensor.
+
+    Returns
+    -------
+    result : relax.Expr
+        The computed result.
+    """
+    if isinstance(axis, int):
+        axis = [axis]
+    return _ffi_api.any(x, axis, keepdims)  # type: ignore

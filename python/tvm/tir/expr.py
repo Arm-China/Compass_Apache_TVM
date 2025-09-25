@@ -33,12 +33,12 @@ For example, you can use addexp.a to get the left operand of an Add node.
 from typing import List, Optional, Union
 
 import tvm
-import tvm._ffi
+import tvm.ffi
 import tvm.ir._ffi_api
 from tvm import ir
 from tvm.ir import Op, PrimExpr
 from tvm.ir.base import Span
-from tvm.runtime import DataType, DataTypeCode, Object, ObjectGeneric, Scriptable, const
+from tvm.runtime import Object, ObjectGeneric, Scriptable, DataType, DataTypeCode, const
 
 from . import _ffi_api
 from . import generic as _generic
@@ -73,7 +73,7 @@ def _dtype_is_float(value):
     )  # type: ignore
 
 
-class ExprOp(object):
+class ExprOp:
     """Operator overloading for Expr like expressions."""
 
     # TODO(tkonolige): use inspect to add source information to these objects
@@ -95,16 +95,20 @@ class ExprOp(object):
         return _generic.subtract(other, self)
 
     def __mul__(self, other: PrimExpr) -> PrimExpr:
+        from ..compass import CompassInfo  # pylint: disable=import-outside-toplevel
+
         ret = _generic.multiply(self, other)
-        if tvm.target.AipuInfo.current() is not None:
-            if DataType(ret.dtype).bits == 8 and DataType(ret.dtype).is_vector:
+        if CompassInfo.current() is not None:
+            if ret.dtype.bits == 8 and ret.dtype.is_vector:
                 raise RuntimeError("The 8bit equal-width multiply is meaningless.")
         return ret
 
     def __rmul__(self, other: PrimExpr) -> PrimExpr:
+        from ..compass import CompassInfo  # pylint: disable=import-outside-toplevel
+
         ret = _generic.multiply(other, self)
-        if tvm.target.AipuInfo.current() is not None:
-            if DataType(ret.dtype).bits == 8 and DataType(ret.dtype).is_vector:
+        if CompassInfo.current() is not None:
+            if ret.dtype.bits == 8 and ret.dtype.is_vector:
                 raise RuntimeError("The 8bit equal-width multiply is meaningless.")
         return ret
 
@@ -119,25 +123,29 @@ class ExprOp(object):
         return _generic.divide(other, self)
 
     def __truediv__(self, other: PrimExpr) -> PrimExpr:
-        is_aipu = tvm.target.AipuInfo.current() is not None
+        from ..compass import CompassInfo  # pylint: disable=import-outside-toplevel
+
+        is_compass = CompassInfo.current() is not None
         if _dtype_is_int(self) and _dtype_is_int(other):
-            if is_aipu:
+            if is_compass:
                 return _ffi_api._OpTruncDiv(self, other, None)
             raise div_ambiguity_error()
         ret = _generic.divide(self, other)
-        if is_aipu and DataType(ret.dtype).is_float16_vector:
-            raise RuntimeError("The operand of '/' does not support float16 vector.")
+        if is_compass and ret.dtype.is_floating16_vector:
+            raise RuntimeError("The operand of '/' does not support float16/bfloat16 vector.")
         return ret
 
     def __rtruediv__(self, other: PrimExpr) -> PrimExpr:
-        is_aipu = tvm.target.AipuInfo.current() is not None
+        from ..compass import CompassInfo  # pylint: disable=import-outside-toplevel
+
+        is_compass = CompassInfo.current() is not None
         if _dtype_is_int(self) and _dtype_is_int(other):
-            if is_aipu:
+            if is_compass:
                 return _ffi_api._OpTruncDiv(other, self, None)
             raise div_ambiguity_error()
         ret = _generic.divide(other, self)
-        if is_aipu and DataType(ret.dtype).is_float16_vector:
-            raise RuntimeError("The operand of '/' does not support float16 vector.")
+        if is_compass and ret.dtype.is_floating16_vector:
+            raise RuntimeError("The operand of '/' does not support float16/bfloat16 vector.")
         return ret
 
     def __floordiv__(self, other: PrimExpr) -> PrimExpr:
@@ -367,7 +375,7 @@ class PrimExprWithOp(ExprOp, PrimExpr, Scriptable):
     def __getitem__(self, idx):
         from .op import vector_get_element  # pylint: disable=import-outside-toplevel
 
-        if not DataType(self.dtype).is_vector:
+        if not self.dtype.is_vector:
             raise TypeError("Only support get element from a vector expression.")
 
         return vector_get_element(self, idx)
@@ -396,7 +404,7 @@ class LogicalExpr(PrimExprWithOp):
     pass
 
 
-@tvm._ffi.register_object("tir.Var")
+@tvm.ffi.register_object("tir.Var")
 class Var(PrimExprWithOp):
     """Symbolic variable.
 
@@ -420,16 +428,17 @@ class Var(PrimExprWithOp):
 
     @property
     def addr(self):
-        from .pointer import Pointer  # pylint: disable=import-outside-toplevel
-        from ..aipu.utils import VALID_PTR_ELEMENT_DTYPES  # pylint: disable=import-outside-toplevel
+        # pylint: disable=import-outside-toplevel
+        from .pointer import Pointer
+        from ..compass.dsl.utils import VALID_PTR_ELEMENT_DTYPES
 
         msg = "Only support get address of variable whose scalar form is one of "
         msg += f'{VALID_PTR_ELEMENT_DTYPES[:-1]}, but got: "{self.dtype}".'
-        assert DataType(self.dtype).element_of in VALID_PTR_ELEMENT_DTYPES[:-1], msg
+        assert self.dtype.element_of in VALID_PTR_ELEMENT_DTYPES[:-1], msg
         return Pointer(self.dtype, "local", self)
 
 
-@tvm._ffi.register_object("tir.SizeVar")
+@tvm.ffi.register_object("tir.SizeVar")
 class SizeVar(Var):
     """Symbolic variable to represent a tensor index size
        which is greater or equal to zero.
@@ -451,8 +460,8 @@ class SizeVar(Var):
         self.__init_handle_by_constructor__(_ffi_api.SizeVar, name, dtype, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.IterVar")
-class IterVar(Object, ExprOp, Scriptable):
+@tvm.ffi.register_object("tir.IterVar")
+class IterVar(ExprOp, Object, Scriptable):
     """Represent iteration variable.
 
     IterVar represents axis iterations in the computation.
@@ -524,7 +533,7 @@ class IterVar(Object, ExprOp, Scriptable):
         )
 
 
-@tvm._ffi.register_object("tir.CommReducer")
+@tvm.ffi.register_object("tir.CommReducer")
 class CommReducer(Object, Scriptable):
     """Commutative reduce operator
 
@@ -564,7 +573,7 @@ class CommReducer(Object, Scriptable):
         )
 
 
-@tvm._ffi.register_object("tir.Reduce")
+@tvm.ffi.register_object("tir.Reduce")
 class Reduce(PrimExprWithOp):
     """Reduce node.
 
@@ -615,7 +624,7 @@ class Reduce(PrimExprWithOp):
         )
 
 
-@tvm._ffi.register_object
+@tvm.ffi.register_object
 class FloatImm(ConstExpr):
     """Float constant.
 
@@ -642,7 +651,7 @@ class FloatImm(ConstExpr):
         return self.value
 
 
-@tvm._ffi.register_object
+@tvm.ffi.register_object
 class IntImm(ConstExpr):
     """Int constant.
 
@@ -688,7 +697,7 @@ class IntImm(ConstExpr):
         return self.__nonzero__()
 
 
-@tvm._ffi.register_object("tir.StringImm")  # type: ignore
+@tvm.ffi.register_object("tir.StringImm")  # type: ignore
 class StringImm(ConstExpr):
     """String constant.
 
@@ -720,7 +729,7 @@ class StringImm(ConstExpr):
         return PrimExpr.__hash__(self)
 
 
-@tvm._ffi.register_object("tir.Cast")
+@tvm.ffi.register_object("tir.Cast")
 class Cast(PrimExprWithOp):
     """Cast expression.
 
@@ -742,7 +751,7 @@ class Cast(PrimExprWithOp):
         self.__init_handle_by_constructor__(_ffi_api.Cast, dtype, value, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Add")
+@tvm.ffi.register_object("tir.Add")
 class Add(BinaryOpExpr):
     """Add node.
 
@@ -762,7 +771,7 @@ class Add(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.Add, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Sub")
+@tvm.ffi.register_object("tir.Sub")
 class Sub(BinaryOpExpr):
     """Sub node.
 
@@ -782,7 +791,7 @@ class Sub(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.Sub, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Mul")
+@tvm.ffi.register_object("tir.Mul")
 class Mul(BinaryOpExpr):
     """Mul node.
 
@@ -802,7 +811,7 @@ class Mul(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.Mul, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Div")
+@tvm.ffi.register_object("tir.Div")
 class Div(BinaryOpExpr):
     """Div node.
 
@@ -822,7 +831,7 @@ class Div(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.Div, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Mod")
+@tvm.ffi.register_object("tir.Mod")
 class Mod(BinaryOpExpr):
     """Mod node.
 
@@ -842,7 +851,7 @@ class Mod(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.Mod, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.FloorDiv")
+@tvm.ffi.register_object("tir.FloorDiv")
 class FloorDiv(BinaryOpExpr):
     """FloorDiv node.
 
@@ -862,7 +871,7 @@ class FloorDiv(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.FloorDiv, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.FloorMod")
+@tvm.ffi.register_object("tir.FloorMod")
 class FloorMod(BinaryOpExpr):
     """FloorMod node.
 
@@ -882,7 +891,7 @@ class FloorMod(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.FloorMod, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Min")
+@tvm.ffi.register_object("tir.Min")
 class Min(BinaryOpExpr):
     """Min node.
 
@@ -902,7 +911,7 @@ class Min(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.Min, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Max")
+@tvm.ffi.register_object("tir.Max")
 class Max(BinaryOpExpr):
     """Max node.
 
@@ -922,7 +931,7 @@ class Max(BinaryOpExpr):
         self.__init_handle_by_constructor__(_ffi_api.Max, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.EQ")
+@tvm.ffi.register_object("tir.EQ")
 class EQ(CmpExpr):
     """EQ node.
 
@@ -942,7 +951,7 @@ class EQ(CmpExpr):
         self.__init_handle_by_constructor__(_ffi_api.EQ, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.NE")
+@tvm.ffi.register_object("tir.NE")
 class NE(CmpExpr):
     """NE node.
 
@@ -962,7 +971,7 @@ class NE(CmpExpr):
         self.__init_handle_by_constructor__(_ffi_api.NE, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.LT")
+@tvm.ffi.register_object("tir.LT")
 class LT(CmpExpr):
     """LT node.
 
@@ -982,7 +991,7 @@ class LT(CmpExpr):
         self.__init_handle_by_constructor__(_ffi_api.LT, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.LE")
+@tvm.ffi.register_object("tir.LE")
 class LE(CmpExpr):
     """LE node.
 
@@ -1002,7 +1011,7 @@ class LE(CmpExpr):
         self.__init_handle_by_constructor__(_ffi_api.LE, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.GT")
+@tvm.ffi.register_object("tir.GT")
 class GT(CmpExpr):
     """GT node.
 
@@ -1022,7 +1031,7 @@ class GT(CmpExpr):
         self.__init_handle_by_constructor__(_ffi_api.GT, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.GE")
+@tvm.ffi.register_object("tir.GE")
 class GE(CmpExpr):
     """GE node.
 
@@ -1042,7 +1051,7 @@ class GE(CmpExpr):
         self.__init_handle_by_constructor__(_ffi_api.GE, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.And")
+@tvm.ffi.register_object("tir.And")
 class And(LogicalExpr):
     """And node.
 
@@ -1062,7 +1071,7 @@ class And(LogicalExpr):
         self.__init_handle_by_constructor__(_ffi_api.And, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Or")
+@tvm.ffi.register_object("tir.Or")
 class Or(LogicalExpr):
     """Or node.
 
@@ -1085,7 +1094,7 @@ class Or(LogicalExpr):
         self.__init_handle_by_constructor__(_ffi_api.Or, a, b, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Not")
+@tvm.ffi.register_object("tir.Not")
 class Not(LogicalExpr):
     """Not node.
 
@@ -1104,7 +1113,7 @@ class Not(LogicalExpr):
         self.__init_handle_by_constructor__(_ffi_api.Not, a, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Select")
+@tvm.ffi.register_object("tir.Select")
 class Select(PrimExprWithOp):
     """Select node.
 
@@ -1148,7 +1157,7 @@ class Select(PrimExprWithOp):
         )
 
 
-@tvm._ffi.register_object("tir.BufferLoad")
+@tvm.ffi.register_object("tir.BufferLoad")
 class BufferLoad(PrimExprWithOp):
     """Buffer load node.
 
@@ -1186,7 +1195,7 @@ class BufferLoad(PrimExprWithOp):
         )
 
 
-@tvm._ffi.register_object("tir.ProducerLoad")
+@tvm.ffi.register_object("tir.ProducerLoad")
 class ProducerLoad(PrimExprWithOp):
     """Producer load node.
 
@@ -1213,7 +1222,7 @@ class ProducerLoad(PrimExprWithOp):
         )
 
 
-@tvm._ffi.register_object("tir.Ramp")
+@tvm.ffi.register_object("tir.Ramp")
 class Ramp(PrimExprWithOp):
     """Ramp node.
 
@@ -1244,7 +1253,7 @@ class Ramp(PrimExprWithOp):
         )
 
 
-@tvm._ffi.register_object("tir.Broadcast")
+@tvm.ffi.register_object("tir.Broadcast")
 class Broadcast(PrimExprWithOp):
     """Broadcast node.
 
@@ -1267,7 +1276,7 @@ class Broadcast(PrimExprWithOp):
         self.__init_handle_by_constructor__(_ffi_api.Broadcast, value, lanes, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Shuffle")
+@tvm.ffi.register_object("tir.Shuffle")
 class Shuffle(PrimExprWithOp):
     """Shuffle node.
 
@@ -1305,7 +1314,7 @@ class CallEffectKind:
     Opaque = UpdateState
 
 
-@tvm._ffi.register_object("tir.Call")
+@tvm.ffi.register_object("tir.Call")
 class Call(PrimExprWithOp):
     """Call node.
 
@@ -1345,7 +1354,7 @@ class Call(PrimExprWithOp):
         self.__init_handle_by_constructor__(_ffi_api.Call, dtype, op, args, span)  # type: ignore
 
 
-@tvm._ffi.register_object("tir.Let")
+@tvm.ffi.register_object("tir.Let")
 class Let(PrimExprWithOp):
     """Let node.
 
@@ -1372,18 +1381,6 @@ class Let(PrimExprWithOp):
         self, var: Var, value: PrimExpr, body: PrimExpr, span: Optional[Span] = None
     ) -> None:
         self.__init_handle_by_constructor__(_ffi_api.Let, var, value, body, span)  # type: ignore
-
-
-@tvm._ffi.register_object("tir.Any")
-class Any(PrimExprWithOp):
-    """Any node.
-
-    span : Optional[Span]
-        The location of this expression in the source code.
-    """
-
-    def __init__(self, span: Optional[Span] = None) -> None:
-        self.__init_handle_by_constructor__(_ffi_api.Any, span)  # type: ignore
 
 
 def convert_to_prim_expr(value):

@@ -26,8 +26,8 @@
  * This file has been modified by Arm China team.
  */
 #include <tvm/arith/analyzer.h>
+#include <tvm/ffi/function.h>
 #include <tvm/ir/type.h>
-#include <tvm/runtime/registry.h>
 #include <tvm/target/target.h>
 #include <tvm/target/target_info.h>
 #include <tvm/tir/analysis.h>
@@ -96,7 +96,7 @@ class LinearAccessPatternFinder final : public StmtExprVisitor {
     AllocEntry entry;
     entry.alloc = op;
     entry.level = level;
-    // Since StorageRewrite occurs after StorageFlatten/FlattenBuffer,
+    // Since StorageRewrite occurs after FlattenBuffer,
     // all allocations specify the extent of physical dimensions, and
     // is 1 for flat memory spaces.
     entry.num_physical_dimensions = op->extents.size();
@@ -546,7 +546,7 @@ class StoragePlanRewriter : public StmtExprMutator {
     // The storage scope.
     StorageScope scope;
     // The physical dimensionality of the allocations.  Since
-    // StorageRewrite is applied after StorageFlatten/FlattenBuffer,
+    // StorageRewrite is applied after FlattenBuffer,
     // this is size of `AllocateNode::extents`.  If moved
     size_t ndim;
     // Allocs that shares this entry.
@@ -620,8 +620,8 @@ class StoragePlanRewriter : public StmtExprMutator {
           ICHECK_NE(e->const_nbits, 0U) << "Special tagged memory must be const size";
           for (size_t j = 0; j < i; ++j) {
             if (e->scope == vec[j]->scope) {
-              // On the AIPU platform, temporarily we do not need to merge the arrays.
-              if (is_aipu_target == false) {
+              // On the Compass platform, temporarily we do not need to merge the arrays.
+              if (is_compass == false) {
                 vec[j]->merged_children.push_back(e);
               }
               break;
@@ -953,7 +953,7 @@ class StoragePlanRewriter : public StmtExprMutator {
     bool is_small_array =
         (scope.tag.length() == 0) && (scope.rank >= StorageRank::kWarp || op->dtype.is_handle() ||
                                       (is_known_size && const_nbits <= 32));
-    // AIPU need reuse lsram and gsram
+    // Compass need reuse lsram and gsram
     if (scope.rank == StorageRank::kLsram || scope.rank == StorageRank::kGsram) {
       is_small_array = false;
     }
@@ -974,8 +974,8 @@ class StoragePlanRewriter : public StmtExprMutator {
         if (e->scope != scope) continue;
         // when not divided, no reuse, eg, float4 vs float3
         if (e->bits_offset % op_elem_bits != 0) continue;
-        // On the AIPU platform, when dtype not match, no reuse (in sram).
-        if (is_aipu_target) {
+        // On the Compass platform, when dtype not match, no reuse (in sram).
+        if (is_compass) {
           if (e->elem_type != op->dtype.element_of()) continue;
         }
         if (reuse_require_exact_matched_dtype && e->elem_type != op->dtype) {
@@ -1061,8 +1061,7 @@ class StoragePlanRewriter : public StmtExprMutator {
   std::unordered_set<const BufferNode*> all_buffers_accessed_;
   // analyzer
   arith::Analyzer analyzer_;
-  bool is_aipu_target =
-      (Target::Current(true).defined() && Target::Current()->kind->name == "aipu");
+  bool is_compass = (Target::Current(true).defined() && Target::Current()->kind->name == "compass");
 };
 
 /* Helper struct containing information on how a buffer is declared and used
@@ -1140,10 +1139,10 @@ struct BufferVarInfo {
       }
       arith::Analyzer analyzer_;
       arith::ModularSet me = analyzer_.modular_set(extent);
-      bool is_aipu_target =
-          (Target::Current(true).defined() && Target::Current()->kind->name == "aipu");
-      if (((me->coeff % lanes == 0) && (me->base % lanes == 0)) || is_aipu_target) {
-        // For AIPU, the lanes of buffer should use the lanes of load/store,
+      bool is_compass =
+          (Target::Current(true).defined() && Target::Current()->kind->name == "compass");
+      if (((me->coeff % lanes == 0) && (me->base % lanes == 0)) || is_compass) {
+        // For Compass, the lanes of buffer should use the lanes of load/store,
         // even through the buffer size isn't divisible by the lanes, e.g.,
         // buffer size is 36, and the lanes is 32.
         preferred_lanes = lanes;
@@ -1198,8 +1197,8 @@ class VectorTypeAccessChecker : public StmtExprVisitor {
   }
 
   void VisitStmt_(const AttrStmtNode* op) final {
-    if (op->attr_key == "pragma_aipudma_copy") {
-      // For AIPU target, the scalar load or store node of SRAM variables inside
+    if (op->attr_key == "pragma_compass_dma_copy") {
+      // For Compass target, the scalar load or store node of SRAM variables inside
       // DMA, will prevent the allocation node of SRAM variables from being
       // converted to vector version, so ignore all of them.
       return;
@@ -1677,9 +1676,9 @@ class VectorTypeRewriter : public StmtExprMutator {
   }
 
   Stmt VisitStmt_(const AttrStmtNode* op) final {
-    if (op->attr_key == "pragma_aipudma_copy") is_in_dma_copy_ = true;
+    if (op->attr_key == "pragma_compass_dma_copy") is_in_dma_copy_ = true;
     Stmt ret = StmtExprMutator::VisitStmt_(op);
-    if (op->attr_key == "pragma_aipudma_copy") is_in_dma_copy_ = false;
+    if (op->attr_key == "pragma_compass_dma_copy") is_in_dma_copy_ = false;
     return ret;
   }
 
@@ -1813,7 +1812,7 @@ Pass StorageRewrite() {
   return CreatePrimFuncPass(pass_func, 0, "tir.StorageRewrite", {});
 }
 
-TVM_REGISTER_GLOBAL("tir.transform.StorageRewrite").set_body_typed(StorageRewrite);
+TVM_FFI_REGISTER_GLOBAL("tir.transform.StorageRewrite").set_body_typed(StorageRewrite);
 
 Pass PointerValueTypeRewrite() {
   auto pass_func = [](PrimFunc f, IRModule m, PassContext ctx) {
@@ -1822,7 +1821,7 @@ Pass PointerValueTypeRewrite() {
   return CreatePrimFuncPass(pass_func, 0, "tir.PointerValueTypeRewrite", {});
 }
 
-TVM_REGISTER_GLOBAL("tir.transform.PointerValueTypeRewrite")
+TVM_FFI_REGISTER_GLOBAL("tir.transform.PointerValueTypeRewrite")
     .set_body_typed(PointerValueTypeRewrite);
 
 }  // namespace transform
