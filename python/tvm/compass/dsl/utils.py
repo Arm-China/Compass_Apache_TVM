@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Common Compass DSL utilities."""
 import os
 from ... import tir, ir, DataType, int_within_range

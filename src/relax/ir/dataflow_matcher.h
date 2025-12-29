@@ -21,6 +21,9 @@
  * \file src/tvm/relax/dataflow_matcher.h
  * \brief The auxiliary data structure for dataflow matcher.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RELAX_IR_DATAFLOW_MATCHER_H_
 #define TVM_RELAX_IR_DATAFLOW_MATCHER_H_
 
@@ -58,6 +61,7 @@ class DFPatternMatcher : public DFPatternFunctor<bool(const DFPattern&, const Ex
   bool VisitDFPattern_(const ConstantPatternNode* op, const Expr& expr) override;
   bool VisitDFPattern_(const DataTypePatternNode* op, const Expr& expr) override;
   bool VisitDFPattern_(const ExprPatternNode* op, const Expr& expr) override;
+  bool VisitDFPattern_(const IfPatternNode* op, const Expr& expr) override;
   bool VisitDFPattern_(const FunctionPatternNode* op, const Expr& expr) override;
   bool VisitDFPattern_(const ShapePatternNode* op, const Expr& expr) override;
   bool VisitDFPattern_(const TupleGetItemPatternNode* op, const Expr& expr) override;

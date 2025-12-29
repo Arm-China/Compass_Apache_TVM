@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 # pylint: disable=no-self-argument
 from tvm.script import ir as I
 from tvm.script import relax as R

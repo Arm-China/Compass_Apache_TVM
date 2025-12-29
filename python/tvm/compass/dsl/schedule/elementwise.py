@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Zhouyi Compass schedule for elementwise."""
 from tvm import tir
 from ...compass_info import CompassInfo

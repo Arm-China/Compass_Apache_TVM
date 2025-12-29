@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Replaces a sequence of simple instructions with an equivalent optimized instruction."""
 from tvm import ir, tir
 from ..utils import hw_native_vdtype

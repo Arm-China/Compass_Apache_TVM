@@ -21,6 +21,9 @@
  * \file src/tvm/relax/dataflow_matcher.cc
  * \brief The dataflow pattern matcher for Relax.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <tvm/relax/dataflow_pattern_functor.h>
 
@@ -75,6 +78,12 @@ void DFPatternVisitor::VisitDFPattern_(const FunctionPatternNode* op) {
 }
 
 void DFPatternVisitor::VisitDFPattern_(const ShapePatternNode* op) { VisitDFPattern(op->pattern); }
+
+void DFPatternVisitor::VisitDFPattern_(const IfPatternNode* op) {
+  VisitDFPattern(op->cond);
+  VisitDFPattern(op->true_branch);
+  VisitDFPattern(op->false_branch);
+}
 
 void DFPatternVisitor::VisitDFPattern_(const TupleGetItemPatternNode* op) {
   VisitDFPattern(op->tuple);

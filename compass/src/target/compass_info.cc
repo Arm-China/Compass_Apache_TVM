@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 /*!
  * \file compass/src/target/compass_info.cc
  * \brief Various information about Zhouyi NPU configuration.
@@ -22,6 +22,9 @@ const std::unordered_map<String, CompassInfo> CompassInfo::kValidConfigs = {
     {"X3P_1304",    {"X3P_1304",    1, 4, 32 * 1024, 1, 128 * 1024, 1}},
     {"X3P_1304MP4", {"X3P_1304MP4", 4, 4, 32 * 1024, 1, 128 * 1024, 1}},
     {"X3P_1304MP2", {"X3P_1304MP2", 2, 4, 32 * 1024, 1, 128 * 1024, 1}},
+    {"X3S_1304",    {"X3S_1304",    1, 4, 32 * 1024, 1, 128 * 1024, 1}},
+    {"X3S_1304MP4", {"X3S_1304MP4", 4, 4, 32 * 1024, 1, 128 * 1024, 1}},
+    {"X3S_1304MP2", {"X3S_1304MP2", 2, 4, 32 * 1024, 1, 128 * 1024, 1}},
     // clang-format on
 };
 

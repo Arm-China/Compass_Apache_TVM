@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 
 # Configuration file for the Sphinx documentation builder.
 #
@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath("../../../python/"))
 project = "Compass DSL"
 author = "Arm China TVM team"
 copyright = "2024 Arm Technology (China) Co., Ltd"  # pylint: disable=redefined-builtin
-version = "1.4"
+version = "1.5"
 release = version
 
 # -- General configuration ---------------------------------------------------

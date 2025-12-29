@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 import re
 import pytest
 import numpy as np
@@ -581,7 +581,7 @@ def test_combine_rounded_vcast(dtype, rtype):
 
     expects = ("__vcvt",)
     if dtype in ("float16", "bfloat16"):
-        if bm.cps_info.version == "X3P":
+        if bm.cps_info.version in ("X3P", "X3S"):
             expects = ("__vcvtuh_tw", "__vcvtul_tw")
         else:
             expects = ("__vcvtue_tw", "__vcvtuo_tw")

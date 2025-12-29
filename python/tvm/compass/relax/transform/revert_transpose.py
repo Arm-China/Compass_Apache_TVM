@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Revert 'transpose' for fuse_pass."""
 from tvm import relax
 from tvm.relax.dpl import wildcard, is_op, rewrite_call, is_const

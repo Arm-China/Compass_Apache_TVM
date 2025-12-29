@@ -1,5 +1,5 @@
 <!---SPDX-License-Identifier: Apache-2.0-->
-<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<!---Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.-->
 # Remote Procedure Call
 Remote procedure call (RPC) is a very important and useful feature of Apache TVM, it allows us to run compiled NN models on the real hardware without need to touch the remote device, the output result will be passed back automatically through network. By eliminating that manual work like, dumping input data to file, copying the exported NN model to remote device, setuping the device user environment, copying the output result to host development environment, RPC improve the development efficiency extremely.
 

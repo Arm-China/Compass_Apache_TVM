@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 # pylint: disable=invalid-name, import-outside-toplevel
 """Tensorflow lite frontend."""
 import itertools
@@ -908,7 +908,9 @@ class TFLiteGraphImporter(object):
         assert 0 <= axis < data_dim, "Axis out of bounds"
 
         if self.has_expr(indices.tensor_idx):
-            indices_expr = relax.op.astype(self.get_expr(indices.tensor_idx), "int32")
+            indices_expr = self.get_expr(indices.tensor_idx)
+            if str(indices_expr.struct_info.dtype) != "int32":
+                indices_expr = relax.op.astype(indices_expr, "int32")
         else:
             indices_val = self.get_tensor_value(indices)
             indices_expr = self.exp_tab.new_const(
@@ -931,7 +933,21 @@ class TFLiteGraphImporter(object):
                 if np.any(np.subtract(data_shape, real_indices) < 0):
                     raise ValueError("TFLite out of bound indices are not supported.")
 
-        out = relax.op.take(data, indices_expr, axis=axis)
+        output_tensors = self.get_output_tensors(op)
+        assert len(output_tensors) == 1, "output tensors length should be 1"
+        output_tensor = output_tensors[0]
+
+        # If quantized, extracts qnn params and call dequant+op+quant.
+        if input_tensors[0].qnn_params:
+            assert output_tensor.qnn_params, "Output tensor should be quantized."
+            data_f32 = self.dequantize(data, input_tensors[0])
+            out = relax.op.take(data_f32, indices_expr, axis=axis)
+        else:
+            out = relax.op.take(data, indices_expr, axis=axis)
+
+        if output_tensor.qnn_params:
+            out = self.quantize(out, output_tensor)
+
         return out
 
     def convert_strided_slice(self, op):

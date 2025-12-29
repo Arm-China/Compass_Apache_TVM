@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 import numpy as np
 from tvm.compass.dsl import BuildManager, script as S
 from tvm.compass.dsl.testing import rand, assert_allclose
@@ -28,7 +28,7 @@ def test_operator_return_dtype():
     # Check return dtype before binary operator result.
     expects = (
         "out0[0] = (a[0] + 7);",
-        "out1[0] = (half)(b[0] * (half)7.000000e+00f);",
+        "out1[0] = (half)(b[0] * (half)0x1.cp+2f/*7.000000e+00*/);",
     )
     for expect in expects:
         assert expect in ex.c_code, f"\nExpect snippet:\n{expect}\n\nCompass C code:\n{ex.c_code}\n"

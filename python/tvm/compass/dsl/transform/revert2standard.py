@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Revert some Compass TIR nodes back to the corresponding standard representation."""
 from tvm import tir, ir
 from .utils import is_all_true_pred

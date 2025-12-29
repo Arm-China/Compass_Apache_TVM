@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 # pylint: disable=no-self-argument
 import tvm
 from tvm.script import ir as I
@@ -13,35 +13,48 @@ def test_rearrange_params():
     @I.ir_module
     class Module:
         @R.function
-        def tvm_compass_subfunc0(z: R.Tensor((10, 1024), dtype="int32"), x: R.Tensor((10, 1024), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+        def tvm_compass_subfunc0(z: R.Tensor((1024,), dtype="int32"), x: R.Tensor((1,), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
             R.func_attr({"Codegen": "compass"})
             # from tvm.script import relax as R
 
             @R.function
-            def gv(z_1: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+            def gv(z_1: R.Tensor((1024,), dtype="int32")) -> R.Tensor((1024,), dtype="int32"):
                 R.func_attr({"Composite": "compass.add"})
                 with R.dataflow():
-                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(z_1, R.const(1, "int32"))
+                    gv_1: R.Tensor((1024,), dtype="int32") = R.add(z_1, R.const(1, "int32"))
                     R.output(gv_1)
                 return gv_1
 
-            lv: R.Tensor((10, 1024), dtype="int32") = gv(z)
+            lv_z: R.Tensor((1024,), dtype="int32") = gv(z)
             # from tvm.script import relax as R
 
             @R.function
-            def gv1(x_1: R.Tensor((10, 1024), dtype="int32"), lv_1: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+            def gv1(y: R.Tensor((10, 1024), dtype="int32"), x_1: R.Tensor((1,), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
                 R.func_attr({"Composite": "compass.add"})
                 with R.dataflow():
-                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(x_1, lv_1)
+                    x_2: R.Tensor((10, 1024), dtype="int32") = R.tile(x_1, repeats=[10, 1024])
+                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(x_2, y)
                     R.output(gv_1)
                 return gv_1
 
-            lv1: R.Tensor((10, 1024), dtype="int32") = gv1(x, lv)
-            gv_1: R.Tensor((10, 1024), dtype="int32") = gv1(y, lv1)
+            lv_xy: R.Tensor((10, 1024), dtype="int32") = gv1(y, x)
+            # from tvm.script import relax as R
+
+            @R.function
+            def gv2(lv_1: R.Tensor((10, 1024), dtype="int32"), z: R.Tensor((1024,), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+                R.func_attr({"Composite": "compass.add"})
+                with R.dataflow():
+                    z_2: R.Tensor((10240,), dtype="int32") = R.tile(z, repeats=[10, ])
+                    z_3: R.Tensor((10, 1024), dtype="int32") = R.reshape(z_2, shape=[10, 1024])
+                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(z_3, lv_1)
+                    R.output(gv_1)
+                return gv_1
+
+            gv_1: R.Tensor((10, 1024), dtype="int32") = gv2(lv_xy, lv_z)
             return gv_1
 
         @R.function
-        def main(x: R.Tensor((10, 1024), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32"), z: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+        def main(x: R.Tensor((1,), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32"), z: R.Tensor((1024,), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
             cls = Module
             with R.dataflow():
                 gv: R.Tensor((10, 1024), dtype="int32") = cls.tvm_compass_subfunc0(z, x, y)
@@ -51,35 +64,48 @@ def test_rearrange_params():
     @I.ir_module
     class Expected:
         @R.function
-        def tvm_compass_subfunc0(x: R.Tensor((10, 1024), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32"), z: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+        def tvm_compass_subfunc0(x: R.Tensor((1,), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32"), z: R.Tensor((1024,), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
             R.func_attr({"Codegen": "compass"})
             # from tvm.script import relax as R
 
             @R.function
-            def gv(z_1: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+            def gv(z_1: R.Tensor((1024,), dtype="int32")) -> R.Tensor((1024,), dtype="int32"):
                 R.func_attr({"Composite": "compass.add"})
                 with R.dataflow():
-                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(z_1, R.const(1, "int32"))
+                    gv_1: R.Tensor((1024,), dtype="int32") = R.add(z_1, R.const(1, "int32"))
                     R.output(gv_1)
                 return gv_1
 
-            lv: R.Tensor((10, 1024), dtype="int32") = gv(z)
+            lv_z: R.Tensor((1024,), dtype="int32") = gv(z)
             # from tvm.script import relax as R
 
             @R.function
-            def gv1(x_1: R.Tensor((10, 1024), dtype="int32"), lv_1: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+            def gv1(y_1: R.Tensor((10, 1024), dtype="int32"), x_1: R.Tensor((1,), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
                 R.func_attr({"Composite": "compass.add"})
                 with R.dataflow():
-                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(x_1, lv_1)
+                    x_2: R.Tensor((10, 1024), dtype="int32") = R.tile(x_1, repeats=[10, 1024])
+                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(x_2, y_1)
                     R.output(gv_1)
                 return gv_1
 
-            lv1: R.Tensor((10, 1024), dtype="int32") = gv1(x, lv)
-            gv_1: R.Tensor((10, 1024), dtype="int32") = gv1(y, lv1)
+            lv_xy: R.Tensor((10, 1024), dtype="int32") = gv1(y, x)
+            # from tvm.script import relax as R
+
+            @R.function
+            def gv2(lv_1: R.Tensor((10, 1024), dtype="int32"), z_1: R.Tensor((1024,), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+                R.func_attr({"Composite": "compass.add"})
+                with R.dataflow():
+                    z_2: R.Tensor((10240,), dtype="int32") = R.tile(z_1, repeats=[10])
+                    z_3: R.Tensor((10, 1024), dtype="int32") = R.reshape(z_2, R.shape([10, 1024]))
+                    gv_1: R.Tensor((10, 1024), dtype="int32") = R.add(z_3, lv_1)
+                    R.output(gv_1)
+                return gv_1
+
+            gv_1: R.Tensor((10, 1024), dtype="int32") = gv2(lv_xy, lv_z)
             return gv_1
 
         @R.function
-        def main(x: R.Tensor((10, 1024), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32"), z: R.Tensor((10, 1024), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
+        def main(x: R.Tensor((1,), dtype="int32"), y: R.Tensor((10, 1024), dtype="int32"), z: R.Tensor((1024,), dtype="int32")) -> R.Tensor((10, 1024), dtype="int32"):
             cls = Expected
             with R.dataflow():
                 gv: R.Tensor((10, 1024), dtype="int32") = cls.tvm_compass_subfunc0(x, y, z)

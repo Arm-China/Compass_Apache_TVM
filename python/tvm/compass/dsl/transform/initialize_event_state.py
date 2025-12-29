@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Insert the event state initialization statement when "S.alloc_events" have been used."""
 from tvm import tir, ir
 from .utils import is_builtin

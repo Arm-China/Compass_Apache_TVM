@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Legalize var name so that it could be parsed by text parser."""
 from tvm import relax
 from tvm.relax.expr_functor import PyExprMutator, mutator

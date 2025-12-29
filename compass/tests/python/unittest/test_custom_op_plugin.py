@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 from tvm import ir, relax
 from tvm.compass.relax import Compass
 from tvm.compass.relax.codegen import CodeGenCompass
@@ -81,9 +81,9 @@ def main(Placeholder: R.Tensor((6, 4, 10, 3), dtype="float32")) -> R.Tuple(R.Ten
         lv: R.Tuple(R.Tensor((6, 2, 10, 3), dtype="float32"), R.Tensor((6, 2, 10, 3), dtype="int64")) = custom_topk(Placeholder, axis=1, dtype="int64", k=2, largest=True, ret_type="both", select_index="random", sorted=True)
         lv1: R.Tensor((6, 2, 10, 3), dtype="float32") = lv[0]
         lv2: R.Tensor((6, 2, 10, 3), dtype="int64") = lv[1]
-        gv: R.Tuple(R.Tensor((6, 2, 10, 3), dtype="float32"), R.Tensor((6, 2, 10, 3), dtype="int64")) = lv1, lv2
-        R.output(gv)
-    return gv"""
+        gv3: R.Tuple(R.Tensor((6, 2, 10, 3), dtype="float32"), R.Tensor((6, 2, 10, 3), dtype="int64")) = lv1, lv2
+        R.output(gv3)
+    return gv3"""
 
 gt_topk_layer = """layer_id=1
 layer_name=TopK_1

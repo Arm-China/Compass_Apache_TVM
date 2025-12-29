@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """ Rewrite module by pattern """
 import numpy as np
 from tvm import relax, ir
@@ -410,6 +410,56 @@ class MergePermMean:
             new_axis = [axes[int(x)] for x in mean.attrs.axis]
             new_mean = relax.op.mean(perm.args[0], new_axis, mean.attrs.keepdims)
             return new_mean
+
+        return self.pattern, rewriter
+
+
+class ExtractNegativePadFromConv2d:
+    """Extract negative pad from convolution 2D."""
+
+    def __init__(self):
+        self.conv2d = is_op("relax.nn.conv2d")(wildcard(), wildcard())
+        self.pattern = self.conv2d
+
+    @property
+    def pr(self):  # pylint: disable=invalid-name
+        """Return pattern and rewriter."""
+
+        def rewriter(expr, matches):  # pylint: disable=unused-argument
+            conv2d = matches[self.conv2d]
+            conv2d_pad = conv2d.attrs.padding
+            assert len(conv2d_pad) == 4
+            if all(x >= 0 for x in conv2d_pad):
+                return conv2d
+
+            # Although "nn.pad" hasn't layout information, but the attribute
+            # "data_layout" of "nn.conv2d" can be used to find the indices of
+            # dimension "H" and "W".
+            data_layout = conv2d.attrs.data_layout
+            if any(x in data_layout for x in ["h", "w"]):
+                # The dimension "H" or "W" is split, and "nn.conv2d" can't support
+                # padding on these complicated layout data.
+                return conv2d
+
+            h_idx = data_layout.index("H")
+            w_idx = data_layout.index("W")
+            pad_top, pad_left, pad_bottom, pad_right = conv2d_pad
+            pad_width = list()
+            data_shape = conv2d.args[0].struct_info.shape
+            for i in range(len(data_shape)):
+                if i == h_idx:
+                    pad_before, pad_after = pad_top, pad_bottom
+                elif i == w_idx:
+                    pad_before, pad_after = pad_left, pad_right
+                else:
+                    pad_before, pad_after = [IntImm("int64", 0)] * 2
+                pad_width.extend((pad_before, pad_after))
+
+            pad = relax.op.nn.pad(conv2d.args[0], pad_width)
+            new_attrs = {str(k): conv2d.attrs[k] for k in conv2d.attrs.keys()}
+            new_attrs["padding"] = [IntImm("int64", 0)] * 4
+            new_attrs = ir.make_node(str(conv2d.attrs).split("(")[0], **new_attrs)
+            return relax.Call(conv2d.op, [pad, conv2d.args[1]], new_attrs)
 
         return self.pattern, rewriter
 
@@ -1009,14 +1059,15 @@ class SimplifyConsecutivePermuteDims:
     def pr(self):  # pylint: disable=invalid-name
         """Return pattern and rewriter."""
 
-        def rewriter(expr, matches):
+        def rewriter(expr, matches):  # pylint: disable=unused-argument
             permute_dims0 = matches[self.permute_dims0]
             permute_dims1 = matches[self.permute_dims1]
             axes0 = permute_dims0.attrs.axes
             axes1 = permute_dims1.attrs.axes
             if all(x == y for x, y in zip(axes0, get_inverse_axes(axes1))):
                 return permute_dims0.args[0]
-            return expr
+            new_axes = [axes0[int(i)] for i in axes1]
+            return relax.op.permute_dims(permute_dims0.args[0], new_axes)
 
         return self.pattern, rewriter
 
@@ -1130,5 +1181,55 @@ class AdjustArgMinMaxKeepDim:
 
             new_call = relax.Call(call.op, [inp], new_attrs)
             return relax.op.squeeze(new_call, new_attrs.axis)
+
+        return self.pattern, rewriter
+
+
+class SubToMulADD:
+    """1 - x ---> x * (-1) + 1"""
+
+    def __init__(self):
+        self.sub = is_op("relax.subtract")(is_const(), wildcard())
+        self.pattern = self.sub
+
+    @property
+    def pr(self):  # pylint: disable=invalid-name
+        """Return pattern and rewriter."""
+
+        def rewriter(expr, matches):
+            sub = matches[self.sub]
+            if not isinstance(sub.args[0], relax.Constant):
+                return expr
+            const = sub.args[0].data.numpy()
+            dtype = sub.args[1].struct_info.dtype
+            if not np.allclose(const, 1):
+                return expr
+            mul = relax.op.multiply(sub.args[1], relax.const(-1, dtype))
+            return relax.op.add(mul, relax.const(1, dtype))
+
+        return self.pattern, rewriter
+
+
+class NormalizeSqueezeAxis:
+    """axis(-1) --> axis(len(dim) - 1)"""
+
+    def __init__(self):
+        self.inp = wildcard()
+        self.squeeze = is_op("relax.squeeze")(self.inp)
+        self.pattern = self.squeeze
+
+    @property
+    def pr(self):  # pylint: disable=invalid-name
+        """Return pattern and rewriter."""
+
+        def rewriter(expr, matches):
+            inp = matches[self.inp]
+            dim = len(inp.struct_info.shape)
+            squeeze = matches[self.squeeze]
+            axis = [int(x) for x in squeeze.attrs.axis]
+            new_axis = [x + dim if x < 0 else x for x in axis]
+            if all(x == y for x, y in zip(axis, new_axis)):
+                return expr
+            return relax.op.squeeze(inp, new_axis)
 
         return self.pattern, rewriter

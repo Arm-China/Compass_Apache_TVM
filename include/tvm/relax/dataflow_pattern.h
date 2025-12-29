@@ -21,6 +21,9 @@
  * \file tvm/relax/dataflow_pattern.h
  * \brief A pattern language for matching dataflow properties.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 #ifndef TVM_RELAX_DATAFLOW_PATTERN_H_
 #define TVM_RELAX_DATAFLOW_PATTERN_H_
 
@@ -603,6 +606,26 @@ class UnorderedTuplePattern : public DFPattern {
  public:
   TVM_DLL explicit UnorderedTuplePattern(tvm::Array<DFPattern> fields);
   TVM_DEFINE_OBJECT_REF_METHODS(UnorderedTuplePattern, DFPattern, UnorderedTuplePatternNode);
+};
+
+class IfPatternNode : public DFPatternNode {
+ public:
+  DFPattern cond, true_branch, false_branch;
+
+  void VisitAttrs(tvm::AttrVisitor* v) {
+    v->Visit("cond", &cond);
+    v->Visit("true_branch", &true_branch);
+    v->Visit("false_branch", &false_branch);
+  }
+
+  static constexpr const char* _type_key = "relax.dpl.IfPattern";
+  TVM_DECLARE_FINAL_OBJECT_INFO(IfPatternNode, DFPatternNode);
+};
+
+class IfPattern : public DFPattern {
+ public:
+  TVM_DLL IfPattern(DFPattern cond, DFPattern true_branch, DFPattern false_branch);
+  TVM_DEFINE_OBJECT_REF_METHODS(IfPattern, DFPattern, IfPatternNode);
 };
 
 /*!

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """The X3P specific part of AIFF function unit."""
 from ..aiff import RegisterConfigBase
 from ..function_unit import FunctionUnit, MultipleUnit

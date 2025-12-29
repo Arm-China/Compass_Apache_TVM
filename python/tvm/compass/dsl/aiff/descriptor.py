@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """The descriptor part of AIFF APIs."""
 import numpy as np
 
@@ -79,6 +79,7 @@ class ParamDescChain(_DescChain):
 _OUTPUT_REGISTER_INDICES = {
     "X2": (16, 17, 40, 41, 42, 43),
     "X3P": (16, 17, 19, 64, 65),
+    "X3S": (16, 17, 19, 64, 65),
 }
 
 

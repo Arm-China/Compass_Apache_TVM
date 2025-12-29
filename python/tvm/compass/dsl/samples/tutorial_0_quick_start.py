@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 import numpy as np
 from tvm.compass.dsl import BuildManager, script as S, get_rpc_session
 from tvm.compass.dsl.testing import rand, assert_allclose

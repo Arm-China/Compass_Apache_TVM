@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 import pytest
 from tvm import te
 from tvm.script import tir as T
@@ -39,8 +39,8 @@ def test_codegen_bufferload_unaligned():
 
     ex = BuildManager().build(sch.mod)
     expects = (
-        "__vstore((__vload((__global float8*)(A + cse_var_1), ALL_TRUE_w) + (float8)3.00000000000000000e+00f), (__global float8*)(B + cse_var_1), ALL_TRUE_w);",
-        "__vstore((__vload((__global float8*)(A + 32), __vmov_w(0x00000111)) + (float8)3.00000000000000000e+00f), (__global float8*)(B + 32), __vmov_w(0x00000111));",
+        "__vstore((__vload((__global float8*)(A + cse_var_1), ALL_TRUE_w) + (float8)0x1.8p+1f/*3.000000e+00*/), (__global float8*)(B + cse_var_1), ALL_TRUE_w);",
+        "__vstore((__vload((__global float8*)(A + 32), __vmov_w(0x00000111)) + (float8)0x1.8p+1f/*3.000000e+00*/), (__global float8*)(B + 32), __vmov_w(0x00000111));",
     )
     for expect in expects:
         assert expect in ex.c_code, f"\nExpect snippet:\n{expect}\n\nCompass C code:\n{ex.c_code}\n"

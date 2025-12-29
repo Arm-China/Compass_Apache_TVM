@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Lower the virtual vector cast instruction to the composite of multiple real instructions."""
 from tvm import tir, ir, get_range
 from .. import script as S
@@ -57,7 +57,7 @@ def _get_vcvtu_func(to_dtype, tgt_version):
 
     vcvtul = lambda expr: S.vzip(vcvtue(expr), vcvtuo(expr), part="low")
     vcvtuh = lambda expr: S.vzip(vcvtue(expr), vcvtuo(expr), part="high")
-    if tgt_version == "X3P":
+    if tgt_version in ("X3P", "X3S"):
         vcvtul = lambda expr: tir.call_extern("float32x8", "__vcvtul_tfp32", expr)
         vcvtuh = lambda expr: tir.call_extern("float32x8", "__vcvtuh_tfp32", expr)
         if to_dtype == "int32x8":

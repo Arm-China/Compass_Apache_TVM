@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 import pytest
 import numpy as np
 from tvm.compass.dsl import BuildManager, script as S, hw_native_vdtype
@@ -36,7 +36,7 @@ def test_explicit_conversion(dtype):
     ex = bm.build(prim_func)
 
     if dtype == "float16":
-        expect = f"max(min(inp[0], ({DTYPE2CL_DTYPE[dtype]})5.000000e+01f), ({DTYPE2CL_DTYPE[dtype]})1.000000e+00f)"
+        expect = f"max(min(inp[0], ({DTYPE2CL_DTYPE[dtype]})0x1.9p+5f/*5.000000e+01*/), ({DTYPE2CL_DTYPE[dtype]})0x1p+0f/*1.000000e+00*/)"
     else:
         expect = f"max(min(inp[0], ({DTYPE2CL_DTYPE[dtype]})50), ({DTYPE2CL_DTYPE[dtype]})1)"
     assert expect in ex.c_code, f"\nExpect snippet:\n{expect}\n\nCompass C code:\n{ex.c_code}\n"

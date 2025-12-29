@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Simple wrap of Zhouyi Compass compile flow."""
 import os
 import time
@@ -85,6 +85,8 @@ class Compass:
             relax.transform.EliminateCommonSubexpr(),
             relax.transform.DecomposeOpsForInference(),
             relax.transform.FoldConstant(),
+            compass_transform.FoldSplitConstant(),
+            compass_transform.MergeGRUV3(),
             compass_transform.PatternRewriteInOptimize(),
             compass_transform.RewriteOpsInOptimize(),
             relax.transform.RemoveUnusedOutputs(),
@@ -132,6 +134,7 @@ class Compass:
             compass_transform.GetPostProcessFunction(postprocess_hint_fn),
             # Need before FuseOpsByPattern. Don't use pattern rewrite after this pass.
             compass_transform.CopyDequantize(),
+            compass_transform.BroadcastBinaryOps(),
             relax.transform.FuseOpsByPattern(pattern_table),
             compass_transform.PatternRewriteAfterFuseOps(),
             compass_transform.FuseTuple(),
@@ -152,7 +155,6 @@ class Compass:
             relax.transform.MergeCompositeFunctions(),
             compass_transform.RenameCompassSubfunc(),
             compass_transform.InlineSingleOpFunc(),
-            compass_transform.ConvertCompassOps(),
             compass_transform.SaveInpQuantInfo(),
             compass_transform.RearrangeParams(),
         ]

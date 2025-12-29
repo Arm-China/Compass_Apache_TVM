@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 /*!
  * \file compass/dsl_common.h
  * \brief The common part of the Compass DSL header file for V2 and V3.

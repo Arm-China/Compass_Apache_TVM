@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Rearrange params of some Compass subgraphs."""
 from tvm import relax, ir
 from tvm.relax.expr_functor import PyExprMutator, mutator
@@ -16,6 +16,7 @@ class Rearranger(PyExprMutator):
         super().__init__()
         self.fix_gfuncs_dict = {}
         self.main_params_dict = {}
+        self.gv2new_gv = {}
 
     def _check(self, call):
         if len(call.args) == 1 or len(call.args) != len(self.main_params_dict.keys()):
@@ -42,14 +43,25 @@ class Rearranger(PyExprMutator):
             else:
                 new_args = list(self.main_params_dict.keys())
                 self.fix_gfuncs_dict[ret.op] = args_order
-                return relax.Call(ret.op, new_args, ret.attrs, ret.sinfo_args, ret.span)
+
+                # Create new gvar with correct order
+                if ret.op not in self.gv2new_gv:
+                    new_gvar = relax.GlobalVar(ret.op.name_hint)
+                    new_arg_sinfos = [x.struct_info for x in new_args]
+                    func_sinfo = relax.FuncStructInfo(new_arg_sinfos, ret.op.struct_info.ret)
+                    relax.expr._update_struct_info(new_gvar, func_sinfo)
+                    self.gv2new_gv[ret.op] = new_gvar
+                else:
+                    new_gvar = self.gv2new_gv[ret.op]
+
+                return relax.Call(new_gvar, new_args, ret.attrs, ret.sinfo_args, ret.span)
 
         return ret
 
     def visit(self, func):
         self.main_params_dict = {var: i for i, var in enumerate(func.params)}
         new_func = self.visit_expr(func)
-        return new_func, self.fix_gfuncs_dict
+        return new_func, self.fix_gfuncs_dict, self.gv2new_gv
 
 
 @ir.transform.module_pass(opt_level=0)
@@ -61,7 +73,7 @@ class RearrangeParams:
         for gvar, func in ir_mod.functions.items():
             if is_compass_func(func):
                 continue
-            new_func, fix_gfuncs_dict = Rearranger().visit(func)
+            new_func, fix_gfuncs_dict, gv2new_gv = Rearranger().visit(func)
             if not fix_gfuncs_dict:
                 continue
             ir_mod[gvar] = new_func
@@ -74,6 +86,9 @@ class RearrangeParams:
                 new_func = relax.Function(
                     new_params, gfunc.body, gfunc.ret_struct_info, attrs=gfunc.attrs
                 )
-                ir_mod[gvar_] = new_func
+
+                new_gvar = gv2new_gv[gvar_]
+                del ir_mod[gvar_]
+                ir_mod[new_gvar] = new_func
 
         return ir_mod

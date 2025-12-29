@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Support variable reassignment by converting the variable to a 0-dim buffer."""
 from collections import defaultdict
 from tvm import ir, tir

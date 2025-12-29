@@ -1,5 +1,5 @@
 <!---SPDX-License-Identifier: Apache-2.0-->
-<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<!---Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.-->
 
 # How to Use Mask
 This section describes how to use mask for vectorized programming. In vectorized programming, you can use mask if you want to compute specific elements in vector.

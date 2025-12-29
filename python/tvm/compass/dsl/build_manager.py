@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Implement build relevant APIs of Zhouyi Compass extension of TIR."""
 import os
 import uuid
@@ -126,6 +126,7 @@ class BuildManager:
             compass_transform.AlignParamVarWithBuffer(),
             compass_transform.ReassignVarBy0DimBuffer(),
             compass_transform.SimplifyBufferIndex(),
+            compass_transform.FoldConstant(),
         ]
 
         # PHASE 1

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 import re
 import pytest
 import numpy as np
@@ -51,7 +51,7 @@ def test_opt_vmul_to_vsl(dtype):
         r"b\[0\] = __vlsl\(a\[0\], .*2\)",
         r"b\[1\] = __vlsl\(a\[1\], .*3\)",
         r"b\[2\] = __vlsl\(a\[2\], .*1\)",
-        r".*a\[3\].* \* \(float8\)8\..*f\)",
+        r".*a\[3\].* \* \(float8\).*8\.2.*\)",
     )
     for expect in expects:
         matches = re.search(expect, ex.c_code, re.MULTILINE)

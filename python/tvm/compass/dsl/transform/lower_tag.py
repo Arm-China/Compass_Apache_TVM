@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Lower tag expr and optimize its node by its attr."""
 from tvm import tir
 from .utils import is_builtin
@@ -19,7 +19,7 @@ class _Mutator(tir.StmtExprMutator):
             return node
 
         if is_builtin(node, "vcast") and attr == "no_zip":
-            if self._cps_info.version == "X3P":
+            if self._cps_info.version in ("X3P", "X3S"):
                 return _del_tag()
 
             part = node.args[1]

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+// Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 /*!
  * \file compass/src/target/codegen_v2.cc
  */
@@ -662,7 +662,7 @@ void CodeGenCompassV2::VisitExpr_(const CallNode* op, std::ostream& os) {
         os << "(";
         PrintType(op->dtype, os);
         os << ")(" << this->PrintExpr(op->args[1]);
-        for (int i = 2; i <= num_inps; i++) {
+        for (size_t i = 2; i <= num_inps; i++) {
           os << "," << this->PrintExpr(op->args[i]);
         }
         os << ")";
@@ -834,14 +834,19 @@ void CodeGenCompassV2::VisitExpr_(const FloatImmNode* op, std::ostream& os) {  /
     os << "INFINITY";
   } else if (std::isnan(op->value)) {
     os << "NAN";
-  } else if (dtype.bits() == 32) {
-    // Using 17 can cover literal length passed from Python for float32
-    std::ostringstream temp;
-    temp.precision(17);
-    temp << std::scientific << op->value << 'f';
-    os << temp.str();
   } else {
-    CodeGenC::VisitExpr_(op, os);
+    if (dtype.bits() == 16) {
+      os << "(";
+      PrintType(dtype, os);
+      os << ")";
+    }
+
+    // The value in hexadecimal floating-point format to preserve the exact binary value,
+    // and additionally include the decimal form as a comment for readability.
+    std::ostringstream temp;
+    temp << std::hexfloat << op->value << 'f';
+    temp << "/*" << std::scientific << op->value << "*/";
+    os << temp.str();
   }
 }
 

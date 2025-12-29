@@ -21,6 +21,9 @@
  * \file src/relax/ir/dataflow_pattern.cc
  * \brief The dataflow pattern language for Relax
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include <tvm/relax/dataflow_pattern.h>
 #include <tvm/relax/dataflow_pattern_functor.h>
@@ -185,6 +188,23 @@ TVM_FFI_REGISTER_GLOBAL("relax.dpl.UnorderedTuplePattern")
     .set_body_typed([](tvm::Array<DFPattern> fields) { return UnorderedTuplePattern(fields); });
 RELAX_PATTERN_PRINTER_DEF(UnorderedTuplePatternNode, [](auto p, auto node) {
   p->stream << "UnorderedTuplePattern(" << node->fields << ")";
+});
+
+TVM_REGISTER_NODE_TYPE(IfPatternNode);
+IfPattern::IfPattern(DFPattern cond, DFPattern true_branch, DFPattern false_branch) {
+  ObjectPtr<IfPatternNode> n = make_object<IfPatternNode>();
+  n->cond = std::move(cond);
+  n->true_branch = std::move(true_branch);
+  n->false_branch = std::move(false_branch);
+  data_ = std::move(n);
+}
+TVM_FFI_REGISTER_GLOBAL("relax.dpl.IfPattern")
+    .set_body_typed([](DFPattern cond, DFPattern true_branch, DFPattern false_branch) {
+      return IfPattern(cond, true_branch, false_branch);
+    });
+RELAX_PATTERN_PRINTER_DEF(IfPatternNode, [](auto p, auto node) {
+  p->stream << "IfPattern(" << node->cond << ", " << node->true_branch << ", ";
+  p->stream << node->false_branch << ")";
 });
 
 TVM_REGISTER_NODE_TYPE(TupleGetItemPatternNode);
@@ -372,6 +392,9 @@ class DFPatternDuplicator : public DFPatternFunctor<DFPattern(const DFPattern&)>
   }
   DFPattern VisitDFPattern_(const UnorderedTuplePatternNode* op) override {
     return UnorderedTuplePattern(op->fields);
+  }
+  DFPattern VisitDFPattern_(const IfPatternNode* op) override {
+    return IfPattern(op->cond, op->true_branch, op->false_branch);
   }
   DFPattern VisitDFPattern_(const TupleGetItemPatternNode* op) override {
     return TupleGetItemPattern(op->tuple, op->index);

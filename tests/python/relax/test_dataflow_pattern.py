@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 import functools
 import math
@@ -139,6 +142,22 @@ def test_call_pattern():
     assert isinstance(c.args[0], WildcardPattern)
     assert isinstance(c.args[1], WildcardPattern)
     assert c.match(rx.op.add(rx.Var("x"), rx.Var("y")))
+
+
+def test_if_pattern():
+    cond = is_op("relax.less")(wildcard(), is_const())
+    true_branch = wildcard()
+    false_branch = is_tuple([wildcard(), wildcard()])
+    pat = is_if(cond, true_branch, false_branch)
+    assert isinstance(pat, IfPattern)
+    assert isinstance(pat.cond, CallPattern)
+    assert isinstance(pat.true_branch, WildcardPattern)
+    assert isinstance(pat.false_branch, TuplePattern)
+    rx_cond = rx.op.less(rx.Var("x"), rx.const(10))
+    rx_true_branch = rx.Var("y")
+    rx_false_branch = rx.Tuple([rx.Var("z1"), rx.Var("z2")])
+    rx_if = rx.If(rx_cond, rx_true_branch, rx_false_branch)
+    assert pat.match(rx_if)
 
 
 def test_function_pattern():

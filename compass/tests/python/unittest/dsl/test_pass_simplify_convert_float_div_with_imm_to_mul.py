@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 import numpy as np
 from tvm.compass.dsl import BuildManager, script as S, hw_native_vdtype
 
@@ -19,7 +19,7 @@ def test_fp32_div_imm_func():
     bm = BuildManager()
     ex = bm.build(fp32_div_imm_func)
 
-    expect = "b[0] = (float)(a[0] / 1.00000000000000000e+01f);"
+    expect = "b[0] = (float)(a[0] / 0x1.4p+3f/*1.000000e+01*/);"
     assert expect in ex.c_code, f"\nExpect snippet:\n{expect}\n\nCompass C code:\n{ex.c_code}\n"
 
     py_out = np.empty(n, dtype=dtype)

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 # pylint: disable=unused-argument, unsupported-binary-operation
 """Relax IR to Compass IR mapping rules."""
+import math
 import inspect
 from functools import reduce, wraps
 from operator import mul
@@ -328,11 +329,13 @@ def _layer_norm_pattern0():
     inp = wildcard()
     mean0 = is_op("relax.mean")(inp)
     sub = is_op("relax.subtract")(inp, mean0)
+    mul_xx = is_op("relax.multiply")(sub, sub)
     power = is_op("relax.power")(sub, is_const())
-    mean1 = is_op("relax.mean")(power)
+    mean1 = is_op("relax.mean")(power | mul_xx)
     add = is_op("relax.add")(mean1, is_const())
+    power_half = is_op("relax.power")(add, is_const())
     sqrt = is_op("relax.sqrt")(add)
-    divide = is_op("relax.divide")(sub, sqrt)
+    divide = is_op("relax.divide")(sub, sqrt | power_half)
     multiply = is_op("relax.multiply")(divide, is_const())
     out = is_op("relax.add")(multiply, is_const())
     annotations = {
@@ -342,18 +345,22 @@ def _layer_norm_pattern0():
         "mean1": mean1,
         "power": power,
         "add": add,
+        "power_half": power_half,
     }
 
     @_checker
     def _check(ctx: PatternCheckContext) -> bool:
         mean0 = ctx.annotated_expr["mean0"]
         mean1 = ctx.annotated_expr["mean1"]
-        power = ctx.annotated_expr["power"]
+        power = ctx.annotated_expr.get("power")
+        power_half = ctx.annotated_expr.get("power_half")
         add = ctx.annotated_expr["add"]
 
         if not ir.structural_equal(mean0.attrs.axis, mean1.attrs.axis):
             return False
-        if power.args[1].data.numpy() != 2.0:
+        if power and power.args[1].data.numpy() != 2.0:
+            return False
+        if power_half and power_half.args[1].data.numpy() != 0.5:
             return False
         if add.args[1].data.numpy() > 1e-4:
             return False
@@ -452,6 +459,34 @@ def _batch_norm_pattern():
     return ("compass.batch_norm", out, annotations, _check)
 
 
+def _batch_norm_mul_add_pattern():
+    inp = wildcard()
+    mul_const, add_const = is_const(), is_const()
+    multiply = is_op("relax.multiply")(inp, mul_const)
+    out = is_op("relax.add")(multiply, add_const)
+    annotations = {
+        "root": out,
+        "mul_const": mul_const,
+        "add_const": add_const,
+    }
+
+    @_checker
+    def _check(ctx: PatternCheckContext) -> bool:
+        mul_const = ctx.annotated_expr["mul_const"]
+        add_const = ctx.annotated_expr["add_const"]
+
+        for const_in in [mul_const, add_const]:
+            shape = [int(val) for val in const_in.struct_info.shape]
+            if len(shape) != 1 and not all([val == 1 for val in shape[:-1]]):
+                return False
+
+        yield
+
+        return True
+
+    return ("compass.batch_norm_mul_add", out, annotations, _check)
+
+
 @_checker
 def _check_rms_norm(ctx: PatternCheckContext) -> bool:
     rms_norm = ctx.annotated_expr["root"]
@@ -461,6 +496,31 @@ def _check_rms_norm(ctx: PatternCheckContext) -> bool:
     # support 2-6 dim
     res.append(_check_dim([in_shape], [2, 3, 4, 5, 6]))
     return all(res)
+
+
+def _gelu_pattern():
+    inp = wildcard()
+    div_const, add_const, mul_const = is_const(), is_const(), is_const()
+    div = is_op("relax.divide")(inp, div_const)
+    erf = is_op("relax.erf")(div)
+    add = is_op("relax.add")(erf, add_const)
+    multiply = is_op("relax.multiply")(inp, mul_const)
+    out = is_op("relax.multiply")(multiply, add)
+    annotations = {"root": out, "sqrt2": div_const, "one": add_const, "half": mul_const}
+
+    @_checker
+    def _check(ctx: PatternCheckContext) -> bool:
+        half = ctx.annotated_expr["half"]
+        one = ctx.annotated_expr["one"]
+        sqrt2 = ctx.annotated_expr["sqrt2"]
+        res = []
+        res.append(is_scalar_and_close(half, 0.5))
+        res.append(is_scalar_and_close(one, 1))
+        res.append(is_scalar_and_close(sqrt2, math.sqrt(2)))
+        yield
+        return all(res)
+
+    return ("compass.gelu", out, annotations, _check)
 
 
 @_checker
@@ -688,25 +748,73 @@ def _matmul_add_pattern():
         add_const = ctx.annotated_expr["add_const"]
         return _check_matmul_add(inp, add_const)
 
-    return ("compass.matmul_add", pattern, annotations, _check)
+    return ("compass.matmul2fc", pattern, annotations, _check)
 
 
-def _qnn_matmul_add_pattern():
+def _qnn_matmul2fc_pattern():
     inp = wildcard()
     matmul = is_op("relax.matmul")(_dq(inp), _dq(is_const()))
+    relu = is_op("relax.nn.relu")(matmul)
     add_const = is_const()
     add = is_op("relax.add")(matmul, _dq(add_const))
-    pattern = _quant(add)
+    pattern = _quant(add) | _quant(relu) | _quant(matmul)
     annotations = {"root": pattern, "inp": inp, "add_const": add_const}
 
     @_checker
     def _check(ctx: PatternCheckContext) -> bool:
         # Check if the given match is supported by Compass.
         inp = ctx.annotated_expr["inp"]
-        add_const = ctx.annotated_expr["add_const"]
-        return _check_matmul_add(inp, add_const)
+        add_const = ctx.annotated_expr.get("add_const")
+        if add_const:
+            return _check_matmul_add(inp, add_const)
+        in_shape = inp.struct_info.shape.values
+        return _check_dim([in_shape], [2])
 
-    return ("compass.qnn.matmul_add", pattern, annotations, _check)
+    return ("compass.qnn.matmul2fc", pattern, annotations, _check)
+
+
+def _qnn_matmul_resp_pattern():
+    reshape0 = is_op("relax.reshape")(wildcard(), wildcard())
+    reshape1 = is_op("relax.reshape")(wildcard(), wildcard())
+    matmul = is_op("relax.matmul")(_dq(reshape0), _dq(reshape1))
+    quant = _quant(matmul)
+    reshape_out = is_op("relax.reshape")(quant, wildcard())
+    pattern = reshape_out
+    annotations = {"root": pattern, "reshape0": reshape0, "reshape1": reshape1}
+
+    @_checker
+    def _check(ctx: PatternCheckContext) -> bool:
+        # Check if the given match is supported by Compass.
+        call = ctx.annotated_expr["root"]
+        reshape0 = ctx.annotated_expr["reshape0"]
+        reshape1 = ctx.annotated_expr["reshape1"]
+        in0_shape = reshape0.struct_info.shape.values
+        in1_shape = reshape1.struct_info.shape.values
+        res = []
+        res.append(_check_dim([in0_shape, in1_shape], [2]))
+        res.append(in0_shape[1] == in1_shape[0])
+        out_shape = call.struct_info.shape.values
+        if len(out_shape) != 3:
+            return False
+        res.append(call.args[0].struct_info.shape.values[:] == out_shape[1:])
+        return all(res)
+
+    return ("compass.qnn.matmul_reshape", pattern, annotations, _check)
+
+
+def _qnn_cast_quant_pattern():
+    pattern = _quant(is_op("relax.astype")(wildcard()))
+    annotations = {"root": pattern}
+
+    return ("compass.qnn.cast", pattern, annotations)
+
+
+def _gen_qnn_take():
+    inp = wildcard()
+    take = is_op("relax.take")(_dq(inp), wildcard())
+    out = _quant(take)
+
+    return ("compass.qnn.take", out)
 
 
 def _qnn_squared_difference_pattern():
@@ -1219,6 +1327,42 @@ def _check_channel_shuffle(ctx: PatternCheckContext) -> bool:
 
 
 @_checker
+def _check_gruv3(ctx: PatternCheckContext) -> bool:
+    gruv3 = ctx.annotated_expr["root"]
+    attrs = gruv3.attrs
+    in_shape0 = gruv3.args[0].struct_info.shape.values
+    in_shape1 = gruv3.args[1].struct_info.shape.values
+    in_type1 = gruv3.args[1].struct_info.dtype
+    out_sinfo = gruv3.struct_info
+    if isinstance(out_sinfo, relax.TupleStructInfo):
+        out_sinfo = out_sinfo.fields[0]
+    res = []
+    res.append(len(in_shape0) == 3 and _check_range(in_shape0[:], [16384, 4096, 16384]))
+    res.append(len(in_shape1) == 2 and _check_range(in_shape1[:], [16384, 8192]))
+    res.append(out_sinfo.dtype == in_type1)
+    res.append(attrs.out_sequence in ["H", "Hn", "H, Hn"])
+    res.append(
+        all(
+            x.strip().lower()
+            in [
+                "relu",
+                "tanh",
+                "sigmoid",
+                "affine",
+                "leakyrelu",
+                "thresholdedrelu",
+                "hardsighmoid",
+                "elu",
+                "softsign",
+                "softplus",
+            ]
+            for x in attrs.activations.split(",")
+        )
+    )
+    return all(res)
+
+
+@_checker
 def _check_one_hot(ctx: PatternCheckContext) -> bool:
     call = ctx.annotated_expr["root"]
     in_shape = [int(x) for x in call.args[0].struct_info.shape]
@@ -1323,6 +1467,21 @@ def _check_reverse_sequence(ctx: PatternCheckContext) -> bool:
     return all(res)
 
 
+@_checker
+def _check_mod(ctx: PatternCheckContext) -> bool:
+    call = ctx.annotated_expr["root"]
+    in0_shape = [int(x) for x in call.args[0].struct_info.shape]
+    in1_shape = [int(x) for x in call.args[1].struct_info.shape]
+
+    res = []
+    # support 2, 3, 4 dim
+    res.append(_check_dim([in0_shape, in1_shape], [2, 3, 4]))
+    # check shape of input and output
+    res.append(_check_shape(in0_shape, 0, 0, 4))
+    res.append(_check_shape(in1_shape, 0, 0, 4))
+    return all(res)
+
+
 def _gen_single_op_pattern(relax_name, num_inputs=1, checker=None):
     pattern = is_op(f"relax.{relax_name}")(*tuple(wildcard() for _ in range(num_inputs)))
     ret = (f"compass.{relax_name}", pattern)
@@ -1347,9 +1506,11 @@ FLOAT_PATTERNS = [
     _layer_norm_pattern1(),
     _batch_norm_pattern(),
     _hard_swish_pattern(),
+    _gelu_pattern(),
     _softplus_pattern(),
     _matmul_add_pattern(),
     _elementwise_relu_pattern(),
+    _batch_norm_mul_add_pattern(),
     _batch_norm_single_pattern(),
     _dense_pattern(),
     # single op
@@ -1359,6 +1520,7 @@ FLOAT_PATTERNS = [
     _gen_single_op_pattern("clip", 3),
     _gen_single_op_pattern("permute_dims", checker=_check_transpose),
     _gen_single_op_pattern("matmul", 2, checker=_check_matmul),
+    _gen_single_op_pattern("mod", 2, checker=_check_mod),
     _gen_single_op_pattern("sign", checker=_check_sign),
     _gen_single_op_pattern("nn.log_softmax", checker=_check_softmax),
     _gen_single_op_pattern("nn.softmax", checker=_check_softmax),
@@ -1436,17 +1598,20 @@ FLOAT_PATTERNS = [
     _gen_single_op_pattern("decode_box", 6),
     _gen_single_op_pattern("cps_nms", 4),
     _gen_single_op_pattern("channel_shuffle", checker=_check_channel_shuffle),
+    _gen_single_op_pattern("gruv3", 4, _check_gruv3),
 ]
 
 
 QUANT_PATTERNS = [
     _qnn_conv2d_pattern(),
     _qnn_basic_lstm_pattern(),
-    _qnn_matmul_add_pattern(),
+    _qnn_matmul2fc_pattern(),
+    _qnn_matmul_resp_pattern(),
     _qnn_hard_swish_pattern(),
     _qnn_squared_difference_pattern(),
     _qnn_elementwise_relu_pattern(),
     _qnn_silu_pattern(),
+    _qnn_cast_quant_pattern(),
     _gen_qnn_single_op_pattern("add", 2),
     _gen_qnn_single_op_pattern("subtract", 2),
     _gen_qnn_single_op_pattern("multiply", 2),
@@ -1461,7 +1626,8 @@ QUANT_PATTERNS = [
     *_gen_qnn_concat([2, 3, 4, 5]),
     _gen_qnn_single_op_pattern("nn.avg_pool2d", checker=_check_avg_pool2d),
     _gen_qnn_single_op_pattern("nn.max_pool2d", checker=_check_max_pool2d),
+    _gen_qnn_single_op_pattern("matmul", 2, checker=_check_matmul),
+    _gen_qnn_take(),
     _gen_single_op_pattern("dequantize", 3),
     _gen_single_op_pattern("quantize", 3),
-    _gen_qnn_single_op_pattern("matmul", 2, checker=_check_matmul),
 ]

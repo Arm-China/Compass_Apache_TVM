@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Align the width of all narrower vector nodes with the hardware vector width by pad."""
 from tvm import tir, ir
 from ..analysis import ensure_well_formed, get_mask_associated_dtype

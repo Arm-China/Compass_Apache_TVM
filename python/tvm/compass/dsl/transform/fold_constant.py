@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Fold constant value."""
 from tvm import ir, tir
 from .utils import is_builtin, is_broadcast_const, is_const_pred

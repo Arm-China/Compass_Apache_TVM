@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Extract the head quantize and tail dequantize nodes of Compass subgraph for Relax."""
 from tvm import relax, ir
 from tvm.relax.expr_functor import PyExprMutator, mutator

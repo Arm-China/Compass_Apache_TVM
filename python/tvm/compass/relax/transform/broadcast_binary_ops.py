@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
-"""Convert ops in Compass subfunc."""
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
+"""Broadcast binary ops if needed."""
 import numpy as np
 from tvm import relax, ir
 from tvm.relax.expr_functor import PyExprMutator, mutator
-from .utils import is_compass_func
 
 
 def _broadcast_inputs(call):
@@ -53,36 +52,18 @@ def _broadcast_inputs(call):
     return relax.Call(call.op, new_args, call.attrs)
 
 
+_BROADCAST_OPS = ("logical_and", "logical_or", "logical_xor", "equal", "less")
+_BROADCAST_OPS += ("greater_equal", "less_equal", "greater", "not_equal", "mod")
+
+
 @mutator
 class Convertor(PyExprMutator):
-    """Convert ops to equivalent but more efficient ops."""
-
-    def visit_function_(self, func):
-        # Avoid visiting call in composite functions.
-        if "Composite" in func.attrs and func.attrs["Composite"].startswith("compass"):
-            return func
-        return super().visit_function_(func)
+    """Broadcast binary ops if needed for pattern table shape check."""
 
     def visit_call_(self, call):
         ret = super().visit_call_(call)
-        _broadcast_ops = [
-            "add",
-            "multiply",
-            "subtract",
-            "divide",
-            "maximum",
-            "minimum",
-            "logical_and",
-            "logical_or",
-            "logical_xor",
-            "equal",
-            "less",
-            "greater_equal",
-            "less_equal",
-            "greater",
-            "not_equal",
-        ]
-        if not isinstance(ret.op, ir.Op) or ret.op.name[6:] not in _broadcast_ops:
+
+        if not isinstance(ret.op, ir.Op) or ret.op.name[6:] not in _BROADCAST_OPS:
             return ret
         shape1 = ret.args[0].struct_info.shape.values
         shape2 = ret.args[1].struct_info.shape.values
@@ -93,11 +74,9 @@ class Convertor(PyExprMutator):
 
 
 @relax.transform.function_pass(opt_level=0)
-class ConvertCompassOps:
-    """Convert ops in Compass subfunc."""
+class BroadcastBinaryOps:
+    """Broadcast binary ops if needed."""
 
     def transform_function(self, func, mod, pass_ctx):  # pylint: disable=unused-argument
         """Transform the given function and return the result."""
-        if not is_compass_func(func):
-            return func
         return Convertor().visit_expr(func)

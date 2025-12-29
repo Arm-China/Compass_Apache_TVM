@@ -21,6 +21,9 @@
  * \file src/relax/ir/dataflow_matcher.cc
  * \brief The dataflow pattern matcher for Relax.
  */
+/*
+ * This file has been modified by Arm China team.
+ */
 
 #include "dataflow_matcher.h"
 
@@ -327,6 +330,17 @@ bool DFPatternMatcher::VisitDFPattern_(const FunctionPatternNode* op, const Expr
     }
   }
   return matches;
+}
+
+bool DFPatternMatcher::VisitDFPattern_(const IfPatternNode* op, const Expr& expr0) {
+  if (const auto* if_node = expr0.as<IfNode>()) {
+    auto cond = if_node->cond;
+    auto true_branch = if_node->true_branch;
+    auto false_branch = if_node->false_branch;
+    return VisitDFPattern(op->cond, cond) && VisitDFPattern(op->true_branch, true_branch) &&
+           VisitDFPattern(op->false_branch, false_branch);
+  }
+  return false;
 }
 
 bool DFPatternMatcher::VisitDFPattern_(const TupleGetItemPatternNode* op, const Expr& expr0) {

@@ -14,6 +14,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
+# This file has been modified by Arm China team.
+#
 
 """Pattern types in Relax Dataflow Pattern Language"""
 # pylint: disable=no-member
@@ -504,6 +507,26 @@ class UnorderedTuplePattern(DFPattern):
 
 
 @register_df_node
+class IfPattern(DFPattern):
+    """A patern matching a Relax If.
+
+    Parameters
+    ----------
+    cond: tvm.relax.dpl.DFPattern
+        The pattern describing the condition of If.
+
+    true_branch: tvm.relax.dpl.DFPattern
+        The pattern describing the true branch of If.
+
+    false_branch: tvm.relax.dpl.DFPattern
+        The pattern describing the false branch of If.
+    """
+
+    def __init__(self, cond: "DFPattern", true_branch: "DFPattern", false_branch: "DFPattern"):
+        self.__init_handle_by_constructor__(ffi.IfPattern, cond, true_branch, false_branch)
+
+
+@register_df_node
 class TupleGetItemPattern(DFPattern):
     """Get index-th item from a TuplePattern.
 
@@ -804,6 +827,29 @@ def is_tuple(
     if unordered:
         return UnorderedTuplePattern(fields)
     return TuplePattern(fields)
+
+
+def is_if(cond, true_branch, false_branch) -> IfPattern:
+    """
+    Syntatic sugar for creating an IfPattern.
+
+    Parameters
+    ----------
+    cond: tvm.relax.dpl.DFPattern
+        The pattern describing the condition of If.
+
+    true_branch: tvm.relax.dpl.DFPattern
+        The pattern describing the true branch of If.
+
+    false_branch: tvm.relax.dpl.DFPattern
+        The pattern describing the false branch of If.
+
+    Returns
+    -------
+    result: tvm.relax.dpl.DFPattern
+        The resulting pattern.
+    """
+    return IfPattern(cond, true_branch, false_branch)
 
 
 def is_tuple_get_item(tuple_value: DFPattern, index: Optional[int] = None) -> TupleGetItemPattern:

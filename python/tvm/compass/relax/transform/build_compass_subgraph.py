@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Build all the Compass subgraphs."""
 import re
 import json
@@ -248,6 +248,54 @@ class OpCanonicalizer(PyExprMutator):
         return post
 
 
+@mutator
+class RedundantTupleCleaner(PyExprMutator):
+    """Remove the redundant tuples."""
+
+    def __init__(self, var2val):
+        super().__init__()
+        self._var2val = var2val
+        self._val2var = {val: var for var, val in var2val.items()}
+
+    def _find(self, x, i=None):
+        if isinstance(x, relax.TupleGetItem):
+            var = x.tuple_value
+            src_tup = self._var2val[var]
+
+            index_status = x.index == i
+            return index_status, self._val2var[src_tup]
+
+        if x not in self._var2val:
+            return False, x
+
+        val = self._var2val.get(x, x)
+        return self._find(val, i)
+
+    def visit_tuple_(self, tup):
+        post = super().visit_tuple_(tup)
+
+        tup_status = [self._find(x, i) for i, x in enumerate(tup)]
+        # Check each item's index is same as source tuple's.
+        if not all(x[0] for x in tup_status):
+            return post
+
+        # Check each item has same source tuple.
+        if len(set(x[1] for x in tup_status)) != 1:
+            return post
+
+        # Check tuple length is same as source tuple.
+        var_src_tup = tup_status[0][1]
+        val_src_tup = self._var2val[var_src_tup]
+        if isinstance(val_src_tup, relax.Call):
+            len_src_tup = len(val_src_tup.struct_info.fields)
+        else:
+            len_src_tup = len(val_src_tup)
+
+        if len(tup) != len_src_tup:
+            return post
+        return var_src_tup
+
+
 @ir.transform.module_pass(opt_level=0)
 class BuildCompassSubgraph:
     """Build the Compass subgraphs, store the result in the attribute of the corresponding function,
@@ -288,6 +336,9 @@ class BuildCompassSubgraph:
                     quant_info, gv2new_gv, ir_mod, self._bypass_output_dequant
                 ).visit_expr(func)
                 new_func = OpCanonicalizer().visit_expr(new_func)
+
+                var2val = relax.analysis.get_var2val(func)
+                new_func = RedundantTupleCleaner(var2val).visit_expr(new_func)
                 ir_mod[gvar] = new_func
                 ir_mod = relax.transform.RemoveUnusedOutputs()(ir_mod)
         return ir_mod

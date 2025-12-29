@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Implement execute relevant APIs of Zhouyi Compass extension of TIR."""
 import os
 import copy
@@ -433,14 +433,19 @@ class Executor:
             nbytes = np_arr.size * np_arr.dtype.itemsize
             runtime._ffi_api.TVMArrayCopyToBytes(nd_arr, data, nbytes)
 
-    def _run(self, args):
-        # 1. Update and check arguments.
+    def _update_and_check(self, args):
         args = self._update_for_nullptr(args)
         self._check_param_arg_type(args)
         args = self._update_from_descs(args)
         args = self._update_if_lack_input_tensor(args)
         self._check_op_lib()
         self._collect_arg_offset(args)
+
+        return args
+
+    def _run(self, args):
+        # 1. Update and check arguments.
+        args = self._update_and_check(args)
 
         # 2. Dump input tensors if needed.
         in_nd_arrs, out_nd_arrs, const_nd_arrs = self._get_nd_arrs(args)
@@ -603,10 +608,7 @@ class Executor:
         --------
         - :doc:`../getting_started/tutorials/0_quick_start`
         """
-        args = self._update_for_nullptr(args)
-        self._check_param_arg_type(args)
-        args = self._update_from_descs(args)
-        args = self._update_if_lack_input_tensor(args)
+        args = self._update_and_check(args)
 
         in_nd_arrs, out_nd_arrs, _ = self._get_nd_arrs(args)
 

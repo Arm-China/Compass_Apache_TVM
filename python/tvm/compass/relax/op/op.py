@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 # pylint: disable=unused-argument
 """Operators extended by Zhouyi Compass."""
 import numpy as np
@@ -441,6 +441,58 @@ def channel_shuffle(data, group, axis, splits):
     return _ffi_api.channel_shuffle(data, *args)
 
 
+def _infer_sinfo_gruv3(call: relax.Call, context):
+    activations = call.attrs.activations
+    out_sequence = call.attrs.out_sequence
+    inp, _, _, bias = call.args[:4]
+    batch, time_steps, _ = [int(x) for x in inp.struct_info.shape]
+    cell_size = int(bias.struct_info.shape[0]) // 3
+    dtype = inp.struct_info.dtype
+    assert activations == "SIGMOID,TANH", "activations only support 'SIGMOID,TANH'"
+    assert out_sequence in ["H", "Hn", "H,Hn"], "out_sequence only support 'H', 'Hn', 'H,Hn'"
+    if out_sequence == "H":
+        return relax.TensorStructInfo([batch, time_steps, cell_size], dtype)
+    if out_sequence == "Hn":
+        return relax.TensorStructInfo([batch, cell_size], dtype)
+    ret_type0 = relax.TensorStructInfo([batch, time_steps, cell_size], dtype)
+    ret_type1 = relax.TensorStructInfo([batch, cell_size], dtype)
+    return relax.TupleStructInfo([ret_type0, ret_type1])
+
+
+def gruv3(seq, init_state, kernels, biases, out_sequence, activations="SIGMOID,TANH"):
+    """Make an Compass GRUv3 operator.
+
+    Parameters
+    ----------
+    seq : relax.Expr
+        The input of GRUv3.
+
+    init_state : relax.Expr
+        The init_state of GRUv3.
+
+    kernels : relax.Expr
+        The kernels of GRUv3.
+
+    biases : relax.Expr
+        The biases of GRUv3.
+
+    out_sequence : string
+        string indicate the out_sequence, only support "H", "Hn", "H,Hn".
+
+    activations : string
+        string indicate the activations of GRUv3, only support "SIGMOID,TANH".
+
+    Returns
+    -------
+    result : relax.Expr
+        The computed result.
+    """
+    op = ir.Op.get("relax.gruv3")
+    attr_node = ir.make_node("DictAttrs", out_sequence=out_sequence, activations=activations)
+    inps = [seq, init_state, kernels, biases]
+    return relax.Call(op, inps, attr_node)
+
+
 def default_infer_struct_info(call: relax.Call, context):
     """Default infer struct info function to return struct info of inp0."""
     return call.args[0].struct_info
@@ -459,3 +511,4 @@ register_op("relax.ctc_greedy_decoder", 2, _infer_sinfo_ctc_greedy_decoder)
 register_op("relax.requantize", 5, _infer_sinfo_requantize)
 register_op("relax.decode_box", 6, _infer_sinfo_decode_box)
 register_op("relax.cps_nms", 4, _infer_sinfo_nms)
+register_op("relax.gruv3", 4, _infer_sinfo_gruv3)

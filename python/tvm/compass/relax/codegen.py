@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """Compass IR codegen of Relax."""
 import os
 import numpy as np
@@ -108,6 +108,10 @@ def _get_quant_info(func):
             if value.args[1] in var2val and _is_dq(var2val[value.args[1]]):
                 alpha_dq = var2val[value.args[1]]
                 quant_info["alpha"] = _get_quant(*alpha_dq.args[1:])
+        if op_name == "take":
+            if value.args[0] in var2val and _is_dq(var2val[value.args[0]]):
+                inp_dq = var2val[value.args[0]]
+                quant_info["input"] = _get_quant(*inp_dq.args[1:])
     quantize = _find_op_from_bindings(bindings, "quantize")
     quant_info["out"] = _get_quant(*quantize.args[1:])
     return quant_info
@@ -238,8 +242,8 @@ class CodeGenCompass:
         is_quant = CompassConfig.get().common["compat_quantized_model"] == "true"
         with Graph() as g:
             inp_quant_infos = None
+            g.attrs["compat_quantized_model"] = is_quant
             if is_quant:
-                g.attrs["compat_quantized_model"] = True
                 inp_quant_infos = func.attrs["quant_infos"]
                 self.is_quant = True
 
@@ -299,7 +303,10 @@ class CodeGenCompass:
                     elif op_name == "cos":
                         ret = ops.cosine(inps[0])
                     elif op_name == "divide":
-                        ret = ops.div(*self._get_inputs(value.args))
+                        ret = ops.div(*_broadcast_inps(self._get_inputs(value.args)))
+                    elif op_name == "mod":
+                        # The relax equivalent of np.fmod is relax.op.mod, so set fmod as true
+                        ret = ops.mod(*self._get_inputs(value.args), fmod=True)
                     elif op_name == "reshape":
                         ret = ops.reshape(inps[0], [int(x) for x in value.args[1]])
                     elif op_name == "permute_dims":
@@ -369,7 +376,7 @@ class CodeGenCompass:
                         ret = self._gen_cps_nms(inps, attrs)
                     elif op_name == "rms_norm":
                         weight = _create_tensor("weight", value.args[1].data.numpy())
-                        ret = ops.rms_norm(inps[0], weight, None, attrs.axes, attrs.epsilon)
+                        ret = ops.rms_norm(inps[0], weight, attrs.axes, attrs.epsilon)
                     elif op_name == "channel_shuffle":
                         ret = ops.channel_shuffle(inps[0], attrs.group, attrs.axis, attrs.splits)
                         ret = ret[0] if len(ret) == 1 else ret
@@ -385,6 +392,8 @@ class CodeGenCompass:
                     elif op_name == "scatter_nd":
                         reduction = "none" if attrs.reduction == "update" else attrs.reduction
                         ret = ops.scatter_nd(*self._get_inputs(value.args), reduction)
+                    elif op_name == "gruv3":
+                        ret = self._gen_gruv3(value.args, attrs)
                     elif op_name in CODEGEN_CUSTOM_OP_DICT:
                         ret = self._gen_custom_op(value, g, CODEGEN_CUSTOM_OP_DICT[op_name])
                     else:
@@ -415,10 +424,18 @@ class CodeGenCompass:
                         ret = self._gen_layer_norm1(value.args, compass_func)
                     elif op_name == "batch_norm":
                         ret = self._gen_batch_norm(value.args, compass_func)
+                    elif op_name == "batch_norm_mul_add":
+                        ret = self._gen_batch_norm_mul_add(value.args, compass_func)
                     elif op_name == "batch_norm_single":
                         ret = self._gen_batch_norm_single(value.args, compass_func)
-                    elif op_name == "matmul_add":
-                        ret = self._gen_matmul_add(value.args, compass_func, quant)
+                    elif op_name == "matmul2fc":
+                        ret = self._gen_matmul2fc(value.args, compass_func, quant)
+                    elif op_name == "matmul_reshape":
+                        ret = self._qnn_matmul_reshape(value.args, quant)
+                    elif op_name == "cast":
+                        ret = self._qnn_cast(value.args, compass_func, quant)
+                    elif op_name == "take":
+                        ret = self._gen_take(value.args, compass_func, quant)
                     elif op_name == "hard_swish":
                         ret = ops.hard_swish(self.var2tensor[value.args[0]], q_out)
                     elif op_name == "silu":
@@ -431,6 +448,8 @@ class CodeGenCompass:
                         ret = self._gen_squared_diff(value.args, quant)
                     elif op_name == "basic_lstm":
                         ret = self._gen_basic_lstm(value.args, compass_func)
+                    elif op_name == "gelu":
+                        ret = ops.gelu(self.var2tensor[value.args[0]], "none")
                     if ret is not None:
                         self.var2tensor[bind.var] = ret
                         continue
@@ -641,32 +660,76 @@ class CodeGenCompass:
 
         return ops.avg_pool(inp, kernel, strides, dilation, padding, attrs.ceil_mode)
 
-    def _gen_matmul_add(self, inps, func, quant):
+    def _gen_matmul2fc(self, inps, func, quant):
         inp = self.var2tensor[inps[0]]
         var2val = get_var2val(func)
         bindings = func.body.blocks[0].bindings
         matmul, add = _find_op_from_bindings(bindings, ["matmul", "add"])
         weight = matmul.args[1]
-        bias = add.args[1]
+        has_bias = add is not None
+        if has_bias:
+            bias = add.args[1]
 
         w_quant, b_quant, out_quant = None, None, None
         if quant:
             weight = var2val[weight].args[0]
-            bias = var2val[bias].args[0]
-            w_quant, b_quant, out_quant = quant["weight"], quant["bias"], quant["out"]
+            if has_bias:
+                bias = var2val[bias].args[0]
+                b_quant = quant["bias"]
+            w_quant, out_quant = quant["weight"], quant["out"]
 
         weight_data = weight.data.numpy()
         weight_data = np.transpose(weight_data, [1, 0])
         weight = _create_tensor("weight", weight_data, w_quant)
-        bias_data = bias.data.numpy()
-        bias = _create_tensor("bias", bias_data, b_quant)
+        if has_bias:
+            bias_data = bias.data.numpy()
+            bias = _create_tensor("bias", bias_data, b_quant)
+        else:
+            bias_shape = [int(matmul.struct_info.shape.values[-1])]
+            bias_data = np.zeros(bias_shape, dtype="float32")
+            bias = _create_tensor("bias", bias_data)
 
         act = None
-        if len(bindings) == 3:
+        if has_bias and len(bindings) == 3:
             act = str(bindings[2].value.op.name).split(".")[-1]
+            assert act in ["relu"]
+        elif len(bindings) == 5:
+            act = str(bindings[-2].value.op.name).split(".")[-1]
             assert act in ["relu"]
 
         out = ops.fully_connected(inp, weight, bias, activation=act, quantization=out_quant)
+        return out
+
+    def _qnn_matmul_reshape(self, inps, quant):
+        inp0 = self.var2tensor[inps[1]]
+        inp1 = self.var2tensor[inps[0]]
+        inp1.quantization = quant["weight"]
+
+        out_quant = quant["out"]
+        out = ops.matmul(inp0, inp1, quantization=out_quant)
+        return out
+
+    def _qnn_cast(self, inps, func, quant):
+        inp = self.var2tensor[inps[0]]
+        bindings = func.body.blocks[0].bindings
+        in_dtype = str(bindings[0].value.args[0].struct_info.dtype)
+        out_dtype = str(bindings[-1].value.struct_info.dtype)
+        dtype_mapping = {
+            "bool": "uint8",
+            "int64": "int32",
+        }
+        dtype = dtype_mapping[out_dtype] if out_dtype in dtype_mapping else out_dtype
+        return ops.cast(inp, _DTYPE_DICT[dtype], in_dtype == "int32", quantization=quant["out"])
+
+    def _gen_take(self, inps, func, quant):
+        var2val = get_var2val(func)
+        bindings = func.body.blocks[0].bindings
+        take = _find_op_from_bindings(bindings, "take")
+        deq = var2val[take.args[0]]
+        data_constant = deq.args[0]
+        inp = self._get_const(data_constant, quant["input"])
+        indices = self.var2tensor[inps[0]]
+        out = ops.gather(inp, indices, take.attrs.axis)
         return out
 
     def _gen_instance_norm(self, inps, func):
@@ -735,6 +798,29 @@ class CodeGenCompass:
         shift = shift + add_data
         weight = _create_tensor("weight", scale)
         bias = _create_tensor("bias", shift)
+        axis = len(inps[0].struct_info.shape) - 1
+
+        return ops.batch_norm(inp, weight, bias, axis)
+
+    def _gen_batch_norm_mul_add(self, inps, func):
+        inp = self.var2tensor[inps[0]]
+        c = int(inps[0].struct_info.shape[-1])
+        bindings = func.body.blocks[0].bindings
+        names = ["multiply", "add"]
+        mul, add = _find_op_from_bindings(bindings, names)
+        _, mul_const = unpack_commutative_args(mul)
+        _, add_const = unpack_commutative_args(add)
+        mul_const = mul_const.data.numpy()
+        add_const = add_const.data.numpy()
+        mul_const_shape = mul_const.shape
+        add_const_shape = add_const.shape
+        if len(mul_const_shape) == 0 or mul_const_shape[-1] == 1:
+            mul_const = np.tile(mul_const.reshape([-1]), [c])
+        if len(add_const_shape) == 0 or add_const_shape[-1] == 1:
+            add_const = np.tile(add_const.reshape([-1]), [c])
+
+        weight = _create_tensor("weight", mul_const.reshape(-1))
+        bias = _create_tensor("bias", add_const.reshape(-1))
         axis = len(inps[0].struct_info.shape) - 1
 
         return ops.batch_norm(inp, weight, bias, axis)
@@ -835,7 +921,7 @@ class CodeGenCompass:
             "int64": "int32",
         }
         dtype = dtype_mapping[attrs.dtype] if attrs.dtype in dtype_mapping else attrs.dtype
-        return ops.cast(inp, _DTYPE_DICT[dtype], inp.dtype == "int32")
+        return ops.cast(inp, _DTYPE_DICT[dtype], str(inp.dtype) == "int32")
 
     def _gen_fake_quant_min_max_vars(self, inp, attrs, graph):
         name = self._get_valid_name("fake_quant_with_min_max_vars")
@@ -1055,3 +1141,12 @@ class CodeGenCompass:
                 else:
                     self.unused_outputs.append(ret[0])
                     return ret[1]
+
+    def _gen_gruv3(self, inps, attrs):
+        inputs = self._get_inputs(inps[:2])
+        weight = _create_tensor("weight", inps[2].data.numpy())
+        bias = _create_tensor("bias", inps[3].data.numpy())
+        out_sequence = attrs.out_sequence.replace(",", "_")
+        activations = attrs.activations.split(",")
+        ret = ops.gru_v3(*inputs, weight, bias, out_sequence, activations)
+        return ret[0] if len(ret) == 1 else ret

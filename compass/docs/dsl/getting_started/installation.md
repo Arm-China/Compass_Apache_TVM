@@ -1,5 +1,5 @@
 <!---SPDX-License-Identifier: Apache-2.0-->
-<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<!---Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.-->
 
 # Installation
 Compass DSL is packed as the same Python wheel package with Compass Apache TVM, in order to

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """The Relax IR namespace contains Zhouyi Compass extended transform passes."""
 from .transform import FuseTuple
 from .build_compass_subgraph import BuildCompassSubgraph
@@ -8,7 +8,7 @@ from .pattern_rewrite_in_optimize import PatternRewriteInOptimize
 from .pattern_rewrite_before_convert_layout import PatternRewriteBeforeConvertLayout
 from .pattern_rewrite_after_convert_layout import PatternRewriteAfterConvertLayout
 from .pattern_rewrite_after_fuse_ops import PatternRewriteAfterFuseOps
-from .convert_compass_ops import ConvertCompassOps
+from .broadcast_binary_ops import BroadcastBinaryOps
 from .sink_transpose import SinkTranspose
 from .revert_transpose import RevertTranspose
 from .sink_dequantize import SinkDequantize
@@ -25,3 +25,5 @@ from .prune_compass_subgraph import PruneCompassSubGraphs
 from .unique_var_name import UniqueVarName
 from .fallback_nodes_to_cpu import FallbackNodesToCPU
 from .extract_in_out_quant_ops import ExtractInOutQuantOps
+from .fold_split_constant import FoldSplitConstant
+from .merge_gruv3 import MergeGRUV3

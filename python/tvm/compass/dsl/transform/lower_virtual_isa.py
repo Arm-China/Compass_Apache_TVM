@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 # pylint: disable=invalid-name
 """Lower each virtual instruction to the composite of multiple real instructions."""
 from tvm import ir, tir
@@ -23,6 +23,20 @@ class _Mutator(tir.StmtExprMutator):
         new_vmul = S.vmul(x, y, out_sign=out_sign)
         return S.vsel(new_vmul, r, mask)
 
+    def _mutate_vconcat(self, call):
+        # S.vconcat((8T, 8T, 8T, 8T), part="all") -> 32T
+        ret_vdtype = call.dtype
+        part = call.args[-1]
+
+        if ret_vdtype.is_bool and part == "all":
+            for mask in call.args[1:-1]:
+                if not is_all_true_pred(mask):
+                    return call
+
+            return tir.const_pred([True] * ret_vdtype.lanes)
+
+        return call
+
     def visit_call(self, call):
         ret = super().visit_call(call)
 
@@ -32,6 +46,8 @@ class _Mutator(tir.StmtExprMutator):
         func_name = ret.args[0].value
         if func_name == "vmul":
             return self._mutate_vmul(ret)
+        elif func_name == "vconcat":
+            return self._mutate_vconcat(ret)
 
         return ret
 

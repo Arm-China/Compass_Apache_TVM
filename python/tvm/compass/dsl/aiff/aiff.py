@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.
+# Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.
 """The main part of AIFF APIs."""
 import copy
 import numpy as np
@@ -87,7 +87,7 @@ class RegisterConfigBase:
 def _new_register_config(cps_info):
     from . import x2, x3p  # pylint: disable=import-outside-toplevel
 
-    return {"X2": x2, "X3P": x3p}[cps_info.version].RegisterConfig()
+    return {"X2": x2, "X3P": x3p, "X3S": x3p}[cps_info.version].RegisterConfig()
 
 
 def _deserialize_register_config(cps_info, desc, begin_idx, end_idx):
@@ -157,7 +157,7 @@ class Aiff:
 
     @property
     def sys(self):
-        assert self._cps_info.version != "X3P", 'There is not "sys" in X3P AIFF.'
+        assert self._cps_info.version not in ("X3P", "X3S"), 'There is not "sys" in X3P/X3S AIFF.'
         return self.reg_cfgs[-1].sys
 
     @property

@@ -1,5 +1,5 @@
 <!---SPDX-License-Identifier: Apache-2.0-->
-<!---Copyright (c) 2023-2024 Arm Technology (China) Co. Ltd.-->
+<!---Copyright (c) 2023-2025 Arm Technology (China) Co. Ltd.-->
 
 # How to use AIFF
 This section describes how to use AIFF in Compass DSL.
@@ -297,7 +297,7 @@ def test_aiff():
 
 ## Multi-AIFF
 
-Multiple physical AIFFs exist simultaneously in the Zhouyi X3P target. Obviously, in this case, multiple AIFFs will start, and one AIFF object is not enough.
+Multiple physical AIFFs exist simultaneously in the Zhouyi X3P/X3S target. Obviously, in this case, multiple AIFFs will start, and one AIFF object is not enough.
 
 The solution is to create multiple AIFF objects. The key is to organize the relationship between descriptors.
 
