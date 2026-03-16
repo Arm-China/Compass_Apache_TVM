@@ -167,7 +167,7 @@ def test_integer_vqdpa(in0_dtype, in1_dtype, out_dtype):
     _test_vqdpa(in0_dtype, in1_dtype, out_dtype)
 
 
-@pytest.mark.NOT_X3P
+@pytest.mark.NOT_X3S
 @pytest.mark.parametrize(
     "in0_dtype, in1_dtype, out_dtype",
     (
@@ -210,7 +210,7 @@ def test_fail_invalid_dtype_integer_vqdpa(capfd, in0_dtype, in1_dtype, out_dtype
     _test_fail_invalid_dtype_vqdpa(capfd, in0_dtype, in1_dtype, out_dtype)
 
 
-@pytest.mark.NOT_X3P
+@pytest.mark.NOT_X3S
 def test_fail_invalid_dtype_floating_vqdpa(capfd):
     _test_fail_invalid_dtype_vqdpa(capfd, in0_dtype="float32", in1_dtype="float32", out_dtype="float16")
 

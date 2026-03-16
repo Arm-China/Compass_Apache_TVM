@@ -25,7 +25,7 @@ def gen_vmml_vmma_func(name, vdtype):
     return vmml_vmma_func
 
 
-@pytest.mark.NOT_X3P
+@pytest.mark.NOT_X3S
 @pytest.mark.parametrize("dtype", ("float16", "bfloat16"))
 @pytest.mark.parametrize("name", ("vmml", "vmma"))
 def test_vmml_vmma(name, dtype):

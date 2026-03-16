@@ -378,7 +378,7 @@ class CodeGenCompass:
                         weight = _create_tensor("weight", value.args[1].data.numpy())
                         ret = ops.rms_norm(inps[0], weight, attrs.axes, attrs.epsilon)
                     elif op_name == "channel_shuffle":
-                        ret = ops.channel_shuffle(inps[0], attrs.group, attrs.axis, attrs.splits)
+                        ret = ops.channel_shuffle(inps[0], attrs.group, attrs.splits)
                         ret = ret[0] if len(ret) == 1 else ret
                     elif op_name == "one_hot":
                         values = [value.args[2].value.value, value.args[1].value.value]

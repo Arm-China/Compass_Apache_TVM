@@ -1323,6 +1323,8 @@ def _check_channel_shuffle(ctx: PatternCheckContext) -> bool:
     res.append(_check_shape(out_shape, 0, 0, 4))
     # check group
     res.append(1 <= call.attrs.group <= 16384)
+    # check axis
+    res.append(call.attrs.axis in [-1, len(in_shape) - 1])
     return all(res)
 
 

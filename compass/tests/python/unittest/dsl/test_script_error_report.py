@@ -529,7 +529,7 @@ def test_bf16_scalar_python_call(capfd):
 
 @pytest.mark.NOT_X1
 @pytest.mark.NOT_X2
-def test_x3p_unsupported_ir_api(capfd):
+def test_x3s_unsupported_ir_api(capfd):
     @S.prim_func
     def fail_func(
         a: S.ptr("fp16x16", "global"),
@@ -544,7 +544,7 @@ def test_x3p_unsupported_ir_api(capfd):
         d[1] = cc1
 
     with pytest.raises(RuntimeError):
-        BuildManager(target="X3P_1304").build(fail_func)
+        BuildManager(target="X3S_1304").build(fail_func)
 
     if capfd is None:
         return
@@ -580,4 +580,4 @@ if __name__ == "__main__":
     test_aiff_transposed_array_in_desc()
     test_bf16_scalar_operator(None)
     test_bf16_scalar_python_call(None)
-    test_x3p_unsupported_ir_api(None)
+    test_x3s_unsupported_ir_api(None)

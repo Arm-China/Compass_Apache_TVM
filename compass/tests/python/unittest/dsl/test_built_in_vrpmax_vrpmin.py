@@ -110,7 +110,7 @@ def test_all_vrpmaxe(dtype):
     gt_out = get_vrpmax_gt(a, mask, dtype, return_idx=True)
 
     prim_func = vrpmax_gen(vdtype, mask, return_idx=True)
-    bm = BuildManager(target="X3P_1304")
+    bm = BuildManager(target="X3S_1304")
     ex = bm.build(prim_func)
 
     py_out = np.empty(n, dtype)
@@ -136,7 +136,7 @@ def test_all_vrpmine(dtype):
     gt_out = get_vrpmin_gt(a, mask, dtype, return_idx=True)
 
     prim_func = vrpmin_gen(vdtype, mask, return_idx=True)
-    bm = BuildManager(target="X3P_1304")
+    bm = BuildManager(target="X3S_1304")
     ex = bm.build(prim_func)
 
     py_out = np.empty(n, dtype)

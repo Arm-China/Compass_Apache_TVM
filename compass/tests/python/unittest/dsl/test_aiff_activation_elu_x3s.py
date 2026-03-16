@@ -57,7 +57,7 @@ def get_desc(aiff, inp, out):
 @pytest.mark.NOT_X1
 @pytest.mark.NOT_X2
 def test_aiff_activation_elu():
-    tgt = "X3P_1304"
+    tgt = "X3S_1304"
     dtype = "uint8"
     out_dtype = "int8"
     shape = (8192,)

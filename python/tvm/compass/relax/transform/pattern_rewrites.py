@@ -605,6 +605,35 @@ class ReorderMatmulReshapeAdd:
         return self.pattern, rewriter
 
 
+class ReorderMatmulAddReshapeRelu:
+    """matmul -> add -> reshape -> (relu) ===> matmul -> add -> (relu) -> reshape"""
+
+    def __init__(self):
+        self.matmul = is_op("relax.matmul")(wildcard(), is_const())
+        self.add_const = is_const()
+        self.add = is_op("relax.add")(self.matmul, self.add_const)
+        self.reshape = is_op("relax.reshape")(self.add, wildcard())
+        self.relu = is_op("relax.nn.relu")(self.reshape)
+        self.pattern = self.relu
+
+    @property
+    def pr(self):  # pylint: disable=invalid-name
+        """Return pattern and rewriter."""
+
+        def rewriter(expr, matches):
+            matmul = matches[self.matmul]
+            reshape = matches[self.reshape]
+            add_const = matches[self.add_const]
+            data = add_const.data.numpy()
+            if data.ndim > 1:
+                return expr
+            matmul_add = matmul + add_const
+            matmul_add_relu = relax.op.nn.relu(matmul_add)
+            return relax.op.reshape(matmul_add_relu, reshape.args[1])
+
+        return self.pattern, rewriter
+
+
 class ReorderConv2dReshapeAddActivation:
     """conv2d -> reshape -> add -> (relu) ===> conv2d -> add -> (relu) -> reshape"""
 

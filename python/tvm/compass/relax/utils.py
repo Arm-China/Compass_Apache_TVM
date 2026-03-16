@@ -4,6 +4,7 @@
 import os
 import numpy as np
 from tvm import runtime, relax
+from tvm.ffi.container import Array
 
 
 X86_DESIRED_LAYOUTS = {
@@ -25,12 +26,8 @@ def convert_to_tuple(x):
     if isinstance(x, runtime.NDArray):
         return (x,)
 
-    if isinstance(x, list):
+    if isinstance(x, (list, Array)):
         return tuple(value for value in x)
-
-    if isinstance(x, runtime.container.ADT):
-        if x.tag == 0:
-            return tuple(field for field in x)
 
     raise RuntimeError(f'Can\'t convert type "{type(x)}" to tuple.')
 

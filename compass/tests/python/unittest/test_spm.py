@@ -36,7 +36,7 @@ def test_spm():
         run_spm()
         return
 
-    os.environ["CPS_TVM_GBUILDER_TARGET"] = "X3P_1304"
+    os.environ["CPS_TVM_GBUILDER_TARGET"] = "X3S_1304"
     try:
         run_spm()
     finally:

@@ -8,7 +8,7 @@ from .pattern_rewrites import EliminateUselessPermuteDims, MergeQuantCast, Merge
 from .pattern_rewrites import EliminateIdentityOp, AddToMul, FoldDilatedConv2d, Conv1DToConv2D
 from .pattern_rewrites import ReorderConv2dReshapeAddActivation, SimplifyConsecutivePermuteDims
 from .pattern_rewrites import ReorderBinaryOpsConstArgs, BroadcastToTile, MergeAddSubToSub
-from .pattern_rewrites import AdjustArgMinMaxKeepDim, SubToMulADD
+from .pattern_rewrites import AdjustArgMinMaxKeepDim, SubToMulADD, ReorderMatmulAddReshapeRelu
 
 
 @transform.function_pass(opt_level=0)
@@ -24,6 +24,7 @@ class PatternRewriteInOptimize:
             BroadcastToTile(),
             ReorderMatmulReshapeAdd(),
             MergeAdjacentReshape(),
+            ReorderMatmulAddReshapeRelu(),
             EliminateUselessPermuteDims(),
             MergeQuantCast(),
             MergePermMean(),

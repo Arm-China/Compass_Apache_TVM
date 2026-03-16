@@ -83,7 +83,7 @@ def test_aiff_get_none_type_register():
         ctrl[[57, 58, 60, 64, 65, 80, 83, 84, 87, 96]] = (0x12C0, 0xAFC80, 0xAFC80, 0x90040, 0x22100002, 0x90050, 0x960, 0x2BF20, 0x2BF20, 0x40020)
         # fmt: on
 
-        Aiff(target="X3P_1304", descriptor=ctrl)
+        Aiff(target="X3S_1304", descriptor=ctrl)
 
     exc_msg = str(exc_info.value)
     expect = "The register with address '0' could not found in the AIFF function units for target"

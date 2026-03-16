@@ -410,7 +410,7 @@ def test_integer_vqdpa(in0_dtype, in1_dtype, out_dtype):
     _test_vqdpa(in0_dtype, in1_dtype, out_dtype)
 
 
-@pytest.mark.NOT_X3P
+@pytest.mark.NOT_X3S
 @pytest.mark.parametrize(
     "in0_dtype, in1_dtype, out_dtype",
     (
